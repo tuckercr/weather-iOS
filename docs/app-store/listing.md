@@ -32,6 +32,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 > Sun, cloud, rain, storms, snow, heat, cold and night each get their own scene, with a fresh caption every day.
 >
 > EVERYTHING ELSE YOU'D EXPECT
+> - Air quality for every city, and walk times that steer clear of smoky or polluted hours
 > - Current conditions, feels-like, humidity, wind, visibility, cloud cover, UV index, sunrise and sunset
 > - An hourly strip with rain chance, and a 7-day forecast with hour-by-hour detail for each day
 > - Animated precipitation radar
@@ -58,7 +59,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 | Privacy policy URL | https://sunnyandmisty.com/privacy |
 
 **Screenshots** (both sets are required, because the app runs on iPhone and iPad):
-- 6.9-inch iPhone (1320 × 2868) from `screenshots/app-store/`, suggested order 03, 04, 02, 05, 06 (01 optional)
+- 6.9-inch iPhone (1320 × 2868) from `screenshots/app-store/`, suggested order 02, 03, 04, 05, 06 (01 optional); the README's App Store section lists what each shows
 - 13-inch iPad (2064 × 2752): `screenshots/app-store/ipad-02-tokyo.png`, then `ipad-01-amsterdam.png`
 
 ## App Review information
