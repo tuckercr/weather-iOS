@@ -21,6 +21,19 @@ final class OpenMeteoForecastTests: XCTestCase {
         XCTAssertEqual(result.first?.hourlySlots.first?.timeLabel, "5 AM")
     }
 
+    func testTodaysHighAndLowCoverTheWholeDayNotJustTheHoursLeft() {
+        // Warmest at 2 PM, then cooling: by 9 PM only the cool evening hours are left on the list,
+        // but today's high is still the afternoon's.
+        var response = openMeteoResponse(hours: 24)
+        response.hourly.temperature = (0..<24).map { hour in Double(20 - abs(14 - hour)) }
+
+        let today = days(response, now: dayStart + 21 * 3600).first
+
+        XCTAssertEqual(today?.hourlySlots.first?.timeLabel, "9 PM")
+        XCTAssertEqual(today?.tempMax, 20)
+        XCTAssertEqual(today?.tempMin, 6)
+    }
+
     func testGroupsAndLabelsHoursInTheCitysOwnTimeZone() {
         // UTC+10: midnight UTC is 10 AM local, and 14:00 UTC is midnight on the next local day.
         let result = days(openMeteoResponse(hours: 24, offset: 36_000))
