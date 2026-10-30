@@ -547,9 +547,12 @@ private struct CurrentWeatherContent: View {
                     // into it so it sits close under the city name.
                     .padding(.top, -10)
                 // Today's high and low in whole degrees: "H 64° · L 61°".
-                Text("H \(Int(weather.tempMax.rounded()))° · L \(Int(weather.tempMin.rounded()))°")
+                let highLow = TodayDetails.highLow(current: weather, today: todayForecast)
+                let high = Int(highLow.high.rounded())
+                let low = Int(highLow.low.rounded())
+                Text("H \(high)° · L \(low)°")
                     // "H 64°" would be read as the letter H.
-                    .accessibilityLabel("High \(Int(weather.tempMax.rounded()))°, low \(Int(weather.tempMin.rounded()))°")
+                    .accessibilityLabel("High \(high)°, low \(low)°")
                 Text(mood.caption(on: now, timeZone: weather.timeZone))
                     .font(.brand(.headline))
                     .multilineTextAlignment(.center)

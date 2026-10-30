@@ -196,4 +196,12 @@ enum TodayDetails {
         if minutes == 0 { return "\(hours) h" }
         return "\(hours) h \(minutes) min"
     }
+
+    /// Today's high and low for the hero. OpenWeather's current reading has its own min and max,
+    /// but they're the spread across nearby stations right now, not the day's, so today's forecast
+    /// is used whenever there is one, widened to take in the temperature now.
+    static func highLow(current: CurrentWeather, today: DayForecast?) -> (high: Double, low: Double) {
+        guard let today else { return (current.tempMax, current.tempMin) }
+        return (max(today.tempMax, current.temperature), min(today.tempMin, current.temperature))
+    }
 }
