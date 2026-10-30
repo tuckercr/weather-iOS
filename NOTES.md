@@ -148,4 +148,4 @@ Merge in this order; each stacked PR moves onto main or master once the one belo
 - [x] The hero's high and low came from OpenWeather's current reading (the spread across nearby
       stations right now) and today's forecast only covered the hours left. Both now show the
       whole day from the forecast. (10-30)
-- [x] Fresh README and App Store screenshots. (10-30)
+- [x] Fresh README, App Store and Play Store screenshots. (10-30)
