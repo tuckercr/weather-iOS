@@ -7,6 +7,7 @@ struct WeatherRepository {
     private let timeZone: TimeZone
     private let now: @Sendable () -> Date
     private let useOpenMeteo: @Sendable () -> Bool
+    private let useAirQuality: @Sendable () -> Bool
 
     init(
         client: any OpenWeatherAPI = OpenWeatherClient(),
@@ -14,7 +15,8 @@ struct WeatherRepository {
         airQuality: any AirQualityAPI = AirQualityClient(),
         timeZone: TimeZone = .current,
         now: @escaping @Sendable () -> Date = { Date() },
-        useOpenMeteo: (@Sendable () -> Bool)? = nil
+        useOpenMeteo: (@Sendable () -> Bool)? = nil,
+        useAirQuality: (@Sendable () -> Bool)? = nil
     ) {
         self.client = client
         self.openMeteo = openMeteo
@@ -22,6 +24,7 @@ struct WeatherRepository {
         self.timeZone = timeZone
         self.now = now
         self.useOpenMeteo = useOpenMeteo ?? { RemoteConfigRepository.openMeteoEnabled }
+        self.useAirQuality = useAirQuality ?? { RemoteConfigRepository.airQualityEnabled }
     }
 
     func fetchCurrentWeather(
@@ -68,11 +71,14 @@ struct WeatherRepository {
                 return await performForecastFetch(units: units, cityQuery: nil, latitude: latitude, longitude: longitude)
             }
             do {
-                // Air quality comes alongside for the walk planner; without it the forecast still stands.
-                async let bands = try? airQuality.hourly(latitude: latitude, longitude: longitude).bandsByHour
+                // Air quality comes alongside, for the tile and the walk planner; without it the
+                // forecast still stands.
+                async let air = useAirQuality()
+                    ? try? airQuality.hourly(latitude: latitude, longitude: longitude).byHour
+                    : nil
                 let response = try await openMeteo.forecast(latitude: latitude, longitude: longitude, units: units)
                 let days = OpenMeteoForecast.dayForecasts(from: response, units: units, now: now())
-                return .success(Self.withAirQuality(days, bands: await bands ?? [:]))
+                return .success(Self.withAirQuality(days, byHour: await air ?? [:]))
             } catch {
                 return .failure(error)
             }
@@ -91,14 +97,14 @@ struct WeatherRepository {
         )
     }
 
-    /// Puts each hour's air quality band on its slot.
-    static func withAirQuality(_ days: [DayForecast], bands: [Int: Int]) -> [DayForecast] {
-        guard !bands.isEmpty else { return days }
+    /// Puts each hour's air quality on its slot.
+    static func withAirQuality(_ days: [DayForecast], byHour: [Int: AirQuality]) -> [DayForecast] {
+        guard !byHour.isEmpty else { return days }
         return days.map { day in
             var day = day
             day.hourlySlots = day.hourlySlots.map { slot in
                 var slot = slot
-                slot.airQualityBand = slot.epochSeconds.flatMap { bands[$0] }
+                slot.airQuality = slot.epochSeconds.flatMap { byHour[$0] }
                 return slot
             }
             return day

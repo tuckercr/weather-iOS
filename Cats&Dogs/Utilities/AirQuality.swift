@@ -1,9 +1,10 @@
 import Foundation
 
-/// The air quality right now: an index on the scale the city uses (Europe's, or the US one
-/// everywhere else), and the pollutant behind it. Same rules as Android's `AirQuality`.
-struct AirQuality: Equatable, Sendable {
-    enum Scale: Equatable, Sendable {
+/// An hour's air quality: an index on the scale the city uses (Europe's, or the US one everywhere
+/// else), and the pollutant behind it. Same rules as Android's `AirQuality`. Codable, as it's cached
+/// with the forecast.
+struct AirQuality: Codable, Equatable, Sendable {
+    enum Scale: String, Codable, Equatable, Sendable {
         case us, european
 
         /// Europe's index for cities on a European clock, the US one everywhere else.
@@ -28,7 +29,7 @@ struct AirQuality: Equatable, Sendable {
         }
     }
 
-    enum Pollutant: CaseIterable, Sendable {
+    enum Pollutant: String, Codable, CaseIterable, Sendable {
         case fineParticles, coarseParticles, ozone, nitrogenDioxide, sulphurDioxide, carbonMonoxide
 
         var name: String {
@@ -42,9 +43,6 @@ struct AirQuality: Equatable, Sendable {
             }
         }
     }
-
-    /// From this band up (US "Unhealthy", Europe's "Poor") an hour is no good for a walk.
-    static let badAirBand = 3
 
     let index: Int
     let scale: Scale
@@ -90,26 +88,24 @@ struct AirQuality: Equatable, Sendable {
         }
     }
 
-    /// Picks the scale for the city and the pollutant with the highest sub-index. Nil without an index.
-    static func from(_ response: AirQualityResponse) -> AirQuality? {
-        let scale = Scale.forTimeZone(response.timezone)
-        let current = response.current
+    /// Picks the pollutant with the highest sub-index on `scale`. Nil without an index.
+    static func from(_ readings: AirQualityReadings, scale: Scale) -> AirQuality? {
         let index: Int?
         let subIndices: [(Pollutant, Int?)]
         switch scale {
         case .us:
-            index = current.usAqi
+            index = readings.usAqi
             subIndices = [
-                (.fineParticles, current.usAqiPm25), (.coarseParticles, current.usAqiPm10),
-                (.ozone, current.usAqiOzone), (.nitrogenDioxide, current.usAqiNitrogenDioxide),
-                (.sulphurDioxide, current.usAqiSulphurDioxide), (.carbonMonoxide, current.usAqiCarbonMonoxide),
+                (.fineParticles, readings.usAqiPm25), (.coarseParticles, readings.usAqiPm10),
+                (.ozone, readings.usAqiOzone), (.nitrogenDioxide, readings.usAqiNitrogenDioxide),
+                (.sulphurDioxide, readings.usAqiSulphurDioxide), (.carbonMonoxide, readings.usAqiCarbonMonoxide),
             ]
         case .european:
-            index = current.europeanAqi
+            index = readings.europeanAqi
             subIndices = [
-                (.fineParticles, current.europeanAqiPm25), (.coarseParticles, current.europeanAqiPm10),
-                (.ozone, current.europeanAqiOzone), (.nitrogenDioxide, current.europeanAqiNitrogenDioxide),
-                (.sulphurDioxide, current.europeanAqiSulphurDioxide),
+                (.fineParticles, readings.europeanAqiPm25), (.coarseParticles, readings.europeanAqiPm10),
+                (.ozone, readings.europeanAqiOzone), (.nitrogenDioxide, readings.europeanAqiNitrogenDioxide),
+                (.sulphurDioxide, readings.europeanAqiSulphurDioxide),
             ]
         }
         guard let index else { return nil }
@@ -122,69 +118,96 @@ struct AirQuality: Equatable, Sendable {
     }
 }
 
-/// Open-Meteo's hourly air quality forecast, for the walk planner.
+/// Open-Meteo's hourly air quality forecast: one request feeds both the walk planner and the Air
+/// quality tile, which shows the hour in progress.
 struct AirQualityHourlyResponse: Decodable, Sendable {
     let timezone: String?
-    let hourly: Hourly
+    /// Each hour's start in Unix seconds, with its readings.
+    let hours: [(time: Int, readings: AirQualityReadings)]
 
-    struct Hourly: Decodable, Sendable {
-        let time: [Int]
-        let usAqi: [Int?]?
-        let europeanAqi: [Int?]?
+    private enum CodingKeys: String, CodingKey { case timezone, hourly }
+    private struct FieldKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
 
-        enum CodingKeys: String, CodingKey {
-            case time
-            case usAqi = "us_aqi"
-            case europeanAqi = "european_aqi"
+    init(timezone: String?, hours: [(time: Int, readings: AirQualityReadings)]) {
+        self.timezone = timezone
+        self.hours = hours
+    }
+
+    /// The hourly block is a list per field, so it's turned round into readings per hour.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
+        let hourly = try container.nestedContainer(keyedBy: FieldKey.self, forKey: .hourly)
+        let times = try hourly.decode([Int].self, forKey: FieldKey(stringValue: "time"))
+        var columns: [AirQualityReadings.Field: [Int?]] = [:]
+        for field in AirQualityReadings.Field.allCases {
+            columns[field] = try hourly.decodeIfPresent([Int?].self, forKey: FieldKey(stringValue: field.rawValue))
+        }
+        hours = times.indices.map { row in
+            (times[row], AirQualityReadings { field in
+                guard let column = columns[field] ?? nil, row < column.count else { return nil }
+                return column[row]
+            })
         }
     }
 
-    /// Each hour's band on the city's scale, by the hour's start in Unix seconds.
-    var bandsByHour: [Int: Int] {
+    /// Each hour's air quality on the city's scale, by the hour's start in Unix seconds.
+    var byHour: [Int: AirQuality] {
         let scale = AirQuality.Scale.forTimeZone(timezone)
-        let indices = (scale == .european ? hourly.europeanAqi : hourly.usAqi) ?? []
-        var bands: [Int: Int] = [:]
-        for (time, index) in zip(hourly.time, indices) {
-            if let index { bands[time] = AirQuality(index: index, scale: scale, mainPollutant: nil).band }
+        var result: [Int: AirQuality] = [:]
+        for (time, readings) in hours {
+            if let air = AirQuality.from(readings, scale: scale) { result[time] = air }
         }
-        return bands
+        return result
     }
 }
 
-/// Open-Meteo's air quality response, only the fields the tile uses.
-struct AirQualityResponse: Decodable, Sendable {
-    let timezone: String?
-    let current: Current
-
-    struct Current: Decodable, Sendable {
-        let usAqi: Int?
-        let usAqiPm25: Int?
-        let usAqiPm10: Int?
-        let usAqiOzone: Int?
-        let usAqiNitrogenDioxide: Int?
-        let usAqiSulphurDioxide: Int?
-        let usAqiCarbonMonoxide: Int?
-        let europeanAqi: Int?
-        let europeanAqiPm25: Int?
-        let europeanAqiPm10: Int?
-        let europeanAqiOzone: Int?
-        let europeanAqiNitrogenDioxide: Int?
-        let europeanAqiSulphurDioxide: Int?
-
-        enum CodingKeys: String, CodingKey, CaseIterable {
-            case usAqi = "us_aqi"
-            case usAqiPm25 = "us_aqi_pm2_5"
-            case usAqiPm10 = "us_aqi_pm10"
-            case usAqiOzone = "us_aqi_ozone"
-            case usAqiNitrogenDioxide = "us_aqi_nitrogen_dioxide"
-            case usAqiSulphurDioxide = "us_aqi_sulphur_dioxide"
-            case usAqiCarbonMonoxide = "us_aqi_carbon_monoxide"
-            case europeanAqi = "european_aqi"
-            case europeanAqiPm25 = "european_aqi_pm2_5"
-            case europeanAqiPm10 = "european_aqi_pm10"
-            case europeanAqiOzone = "european_aqi_ozone"
-            case europeanAqiNitrogenDioxide = "european_aqi_nitrogen_dioxide"
-            case europeanAqiSulphurDioxide = "european_aqi_sulphur_dioxide"
-        }
+/// One hour's indices from Open-Meteo, overall and per pollutant, on both scales.
+struct AirQualityReadings: Equatable, Sendable {
+    enum Field: String, CaseIterable, Sendable {
+        case usAqi = "us_aqi"
+        case usAqiPm25 = "us_aqi_pm2_5"
+        case usAqiPm10 = "us_aqi_pm10"
+        case usAqiOzone = "us_aqi_ozone"
+        case usAqiNitrogenDioxide = "us_aqi_nitrogen_dioxide"
+        case usAqiSulphurDioxide = "us_aqi_sulphur_dioxide"
+        case usAqiCarbonMonoxide = "us_aqi_carbon_monoxide"
+        case europeanAqi = "european_aqi"
+        case europeanAqiPm25 = "european_aqi_pm2_5"
+        case europeanAqiPm10 = "european_aqi_pm10"
+        case europeanAqiOzone = "european_aqi_ozone"
+        case europeanAqiNitrogenDioxide = "european_aqi_nitrogen_dioxide"
+        case europeanAqiSulphurDioxide = "european_aqi_sulphur_dioxide"
     }
+
+    private let values: [Field: Int]
+
+    init(_ value: (Field) -> Int?) {
+        var values: [Field: Int] = [:]
+        for field in Field.allCases { values[field] = value(field) }
+        self.values = values
+    }
+
+    init(_ values: [Field: Int]) {
+        self.values = values
+    }
+
+    var usAqi: Int? { values[.usAqi] }
+    var usAqiPm25: Int? { values[.usAqiPm25] }
+    var usAqiPm10: Int? { values[.usAqiPm10] }
+    var usAqiOzone: Int? { values[.usAqiOzone] }
+    var usAqiNitrogenDioxide: Int? { values[.usAqiNitrogenDioxide] }
+    var usAqiSulphurDioxide: Int? { values[.usAqiSulphurDioxide] }
+    var usAqiCarbonMonoxide: Int? { values[.usAqiCarbonMonoxide] }
+    var europeanAqi: Int? { values[.europeanAqi] }
+    var europeanAqiPm25: Int? { values[.europeanAqiPm25] }
+    var europeanAqiPm10: Int? { values[.europeanAqiPm10] }
+    var europeanAqiOzone: Int? { values[.europeanAqiOzone] }
+    var europeanAqiNitrogenDioxide: Int? { values[.europeanAqiNitrogenDioxide] }
+    var europeanAqiSulphurDioxide: Int? { values[.europeanAqiSulphurDioxide] }
 }

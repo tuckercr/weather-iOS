@@ -123,7 +123,7 @@ final class WeatherRepositoryTests: XCTestCase {
         XCTAssertEqual(slot?.uvIndex, 0)
     }
 
-    func testOpenMeteoForecastCarriesEachHoursAirQualityBand() async {
+    func testOpenMeteoForecastCarriesEachHoursAirQuality() async {
         let repository = WeatherRepository(
             client: FakeOpenWeatherAPI(),
             openMeteo: StubOpenMeteoAPI(response: openMeteoResponse(hours: 2)),
@@ -134,7 +134,35 @@ final class WeatherRepositoryTests: XCTestCase {
 
         let result = await repository.fetchForecast(units: .metric, latitude: 30, longitude: -97)
 
-        XCTAssertEqual(try? result.get().flatMap(\.hourlySlots).map(\.airQualityBand), [0, 3])
+        XCTAssertEqual(try? result.get().flatMap(\.hourlySlots).map(\.airQuality?.band), [0, 3])
+        XCTAssertEqual(try? result.get().first?.hourlySlots.last?.airQuality?.index, 172)
+    }
+
+    func testNoAirQualityIsFetchedWhileItIsSwitchedOff() async {
+        let repository = WeatherRepository(
+            client: FakeOpenWeatherAPI(),
+            openMeteo: StubOpenMeteoAPI(response: openMeteoResponse(hours: 2)),
+            airQuality: StubAirQualityAPI(hourlyIndices: [fixtureDayStart: 172]),
+            timeZone: utc,
+            now: { Date(timeIntervalSince1970: TimeInterval(fixtureDayStart)) },
+            useAirQuality: { false }
+        )
+
+        let result = await repository.fetchForecast(units: .metric, latitude: 30, longitude: -97)
+
+        XCTAssertEqual(try? result.get().flatMap(\.hourlySlots).map(\.airQuality), [nil, nil])
+    }
+
+    func testAirQualityIsCachedWithTheForecast() throws {
+        var slot = HourlySlot(
+            timeLabel: "3 PM", iconCode: "01d", description: "clear", temperature: 20, feelsLike: 20,
+            windSpeed: 1, windDeg: 0, humidity: 50, pressure: 1013, units: .metric
+        )
+        slot.airQuality = AirQuality(index: 120, scale: .european, mainPollutant: .ozone)
+
+        let decoded = try JSONDecoder().decode(HourlySlot.self, from: JSONEncoder().encode(slot))
+
+        XCTAssertEqual(decoded.airQuality, slot.airQuality)
     }
 
     func testForecastStillLoadsWhenAirQualityFails() async {
@@ -148,7 +176,7 @@ final class WeatherRepositoryTests: XCTestCase {
 
         let result = await repository.fetchForecast(units: .metric, latitude: 30, longitude: -97)
 
-        XCTAssertEqual(try? result.get().flatMap(\.hourlySlots).map(\.airQualityBand), [nil, nil])
+        XCTAssertEqual(try? result.get().flatMap(\.hourlySlots).map(\.airQuality), [nil, nil])
     }
 
     func testFetchForecastWithCoordinatesUsesOpenWeatherWhenOpenMeteoIsSwitchedOff() async {

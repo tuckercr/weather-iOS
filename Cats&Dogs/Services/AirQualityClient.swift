@@ -1,7 +1,6 @@
 import Foundation
 
 protocol AirQualityAPI: Sendable {
-    func current(latitude: Double, longitude: Double) async throws -> AirQualityResponse
     func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse
 }
 
@@ -15,19 +14,11 @@ struct AirQualityClient: AirQualityAPI {
         self.session = session
     }
 
-    func current(latitude: Double, longitude: Double) async throws -> AirQualityResponse {
-        try await get(latitude: latitude, longitude: longitude, [
-            URLQueryItem(
-                name: "current",
-                value: AirQualityResponse.Current.CodingKeys.allCases.map(\.rawValue).joined(separator: ",")
-            ),
-        ])
-    }
-
-    /// The next two days hour by hour, enough for the walk planner's day ahead.
+    /// The next two days hour by hour, enough for the walk planner's day ahead, with every index
+    /// the tile needs for the hour in progress.
     func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse {
         try await get(latitude: latitude, longitude: longitude, [
-            URLQueryItem(name: "hourly", value: "us_aqi,european_aqi"),
+            URLQueryItem(name: "hourly", value: AirQualityReadings.Field.allCases.map(\.rawValue).joined(separator: ",")),
             URLQueryItem(name: "timeformat", value: "unixtime"),
             URLQueryItem(name: "forecast_days", value: "2"),
         ])

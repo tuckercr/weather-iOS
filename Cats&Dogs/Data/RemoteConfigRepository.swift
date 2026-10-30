@@ -45,9 +45,12 @@ final class RemoteConfigRepository {
     nonisolated static let keyWalkHoursEnd = "walk_hours_end"
     nonisolated static let keyPetHotThresholdC = "pet_hot_threshold_c"
     nonisolated static let keyPetColdThresholdC = "pet_cold_threshold_c"
+    nonisolated static let keyWalkBadAirBand = "walk_bad_air_band"
 
     /// Hides the "time to walk the dog" card.
     nonisolated static let keyWalkCardEnabled = "walk_card_enabled"
+    /// Stops fetching air quality: no Air quality tile, and the walk planner ignores the air.
+    nonisolated static let keyAirQualityEnabled = "air_quality_enabled"
     /// Off sends forecasts for cities with coordinates to OpenWeatherMap instead of Open-Meteo.
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
@@ -83,6 +86,7 @@ final class RemoteConfigRepository {
             Self.keyRainNotificationsEnabled: NSNumber(value: true),
             Self.keyForegroundRefreshMinMinutes: NSNumber(value: Self.defaultForegroundRefreshMinMinutes),
             Self.keyOpenMeteoEnabled: NSNumber(value: true),
+            Self.keyAirQualityEnabled: NSNumber(value: true),
             Self.keyOpenWeatherApiKey: "" as NSString,
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
@@ -98,6 +102,7 @@ final class RemoteConfigRepository {
             Self.keyWalkHoursEnd: NSNumber(value: PetWeatherThresholds.standard.walkHours.upperBound),
             Self.keyPetHotThresholdC: NSNumber(value: PetWeatherThresholds.standard.petHotC),
             Self.keyPetColdThresholdC: NSNumber(value: PetWeatherThresholds.standard.petColdC),
+            Self.keyWalkBadAirBand: NSNumber(value: PetWeatherThresholds.standard.badAirBand),
         ])
         // Activated values apply from the next read; this launch keeps what was last activated.
         remoteConfig.fetchAndActivate()
@@ -132,7 +137,8 @@ final class RemoteConfigRepository {
             walkHoursStart: number(Self.keyWalkHoursStart)?.intValue,
             walkHoursEnd: number(Self.keyWalkHoursEnd)?.intValue,
             petHotC: number(Self.keyPetHotThresholdC)?.doubleValue,
-            petColdC: number(Self.keyPetColdThresholdC)?.doubleValue
+            petColdC: number(Self.keyPetColdThresholdC)?.doubleValue,
+            badAirBand: number(Self.keyWalkBadAirBand)?.intValue
         )
     }
 
@@ -172,6 +178,9 @@ final class RemoteConfigRepository {
 
     /// Read from the forecast fetch, which isn't on the main actor. Remote Config is thread-safe.
     nonisolated static var openMeteoEnabled: Bool { flag(keyOpenMeteoEnabled) }
+
+    /// Read from the forecast fetch too. Air quality comes from Open-Meteo, so it also needs that on.
+    nonisolated static var airQualityEnabled: Bool { flag(keyAirQualityEnabled) }
 
     /// Nil when unset or blank, so the key built into the app is used. Not a secret: Remote Config
     /// values reach every device.
