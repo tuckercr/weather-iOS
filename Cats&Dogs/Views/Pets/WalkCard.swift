@@ -40,7 +40,7 @@ struct WalkCard: View {
     }
 
     /// After a walk now: when the good spell ends and why, sunset coming up, or so-so air.
-    static func outlookLine(_ outlook: WalkOutlook) -> String {
+    nonisolated static func outlookLine(_ outlook: WalkOutlook) -> String {
         switch outlook {
         case let .until(time, change): "Good until \(time), then \(changePhrase(change))."
         case .darkIn(0): "Getting dark soon."
@@ -50,7 +50,7 @@ struct WalkCard: View {
         }
     }
 
-    private static func changePhrase(_ change: WalkChange) -> String {
+    private nonisolated static func changePhrase(_ change: WalkChange) -> String {
         switch change {
         case .storms: "storms"
         case .maybeStorms: "maybe storms"
