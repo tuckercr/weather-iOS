@@ -412,7 +412,8 @@ private struct CurrentWeatherContent: View {
             now: now,
             timeZone: weather.timeZone,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            precipitatingNow: WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain)
+            precipitatingNow: WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
+            sunsetEpoch: weather.sunsetEpoch
         )
     }
 
