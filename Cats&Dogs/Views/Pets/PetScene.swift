@@ -107,11 +107,8 @@ struct PetSceneIcon: View {
 private enum Palette {
     static let catFur = Color(hex: 0x5F5E5A)
     static let catBelly = Color(hex: 0xF1EFE8)
-    static let catInnerEar = Color(hex: 0xED93B1)
     static let catNose = Color(hex: 0xE8849A)
     static let collar = Color(hex: 0x185FA5)
-    static let mouth = Color(hex: 0x412402)
-    static let tongueSoft = Color(hex: 0xED93B1)
     static let shine = Color.white
     static let dogFur = Color(hex: 0xE9B158)
     static let dogFace = Color(hex: 0xFAC775)
@@ -223,8 +220,8 @@ private struct Painter {
         }
     }
 
-    /// A tuxedo cat, as on the app icon: grey with pink inner ears, a white blaze down the face
-    /// into white cheeks, a small pink nose, a "w" mouth and whiskers.
+    /// A tuxedo cat, as on the app icon: grey with a white blaze down the face into white cheeks, a
+    /// small pink nose, a "w" mouth and whiskers.
     func cat(_ mood: PetMood) {
         // A storm sends the cat low (hiding); otherwise it sits upright.
         let dy: CGFloat = mood == .storm ? 14 : 0
@@ -232,8 +229,6 @@ private struct Painter {
         circle(Palette.catFur, cx: 95, cy: 80 + dy, r: 20)
         poly(Palette.catFur, [(78, 68 + dy), (82, 50 + dy), (92, 64 + dy)])
         poly(Palette.catFur, [(98, 64 + dy), (108, 50 + dy), (112, 68 + dy)])
-        poly(Palette.catInnerEar, [(81, 64 + dy), (83.5, 55 + dy), (89, 62 + dy)])
-        poly(Palette.catInnerEar, [(101, 62 + dy), (106.5, 55 + dy), (109, 64 + dy)])
         poly(Palette.catBelly, [(93, 66 + dy), (97, 66 + dy), (101, 86 + dy), (89, 86 + dy)])
         oval(Palette.catBelly, cx: 90, cy: 90 + dy, rx: 7.5, ry: 6.5)
         oval(Palette.catBelly, cx: 100, cy: 90 + dy, rx: 7.5, ry: 6.5)
@@ -258,8 +253,8 @@ private struct Painter {
         eyes(mood, left: 88, right: 102, y: 78 + dy)
     }
 
-    /// A golden retriever, as on the app icon: floppy ears, eyebrows, a shiny nose, an open smile
-    /// and a blue collar with a sun tag. Asleep at night the mouth is closed.
+    /// A golden retriever, as on the app icon: floppy ears, eyebrows and a blue collar with a sun
+    /// tag. Panting in the heat, the tongue hangs out.
     func dog(_ mood: PetMood) {
         oval(Palette.dogFur, cx: 160, cy: 110, rx: 28, ry: 28)
         // A rim of body fur round the face, so it doesn't vanish into the sunny sky (the same colour).
@@ -276,25 +271,14 @@ private struct Painter {
         }
         context.stroke(brows, with: .color(Palette.dogEar), style: StrokeStyle(lineWidth: 1.6 * scale, lineCap: .round))
         eyes(mood, left: 152, right: 168, y: 72)
-        oval(Palette.outline, cx: 160, cy: 81, rx: 5.6, ry: 4)
-        if mood != .night { oval(Palette.shine.opacity(0.6), cx: 158.4, cy: 79.8, rx: 1.6, ry: 0.9) }
-        if mood == .night {
+        oval(Palette.outline, cx: 160, cy: 82, rx: 5, ry: 3.5)
+        if mood == .hot {
+            oval(Palette.tongue, cx: 160, cy: 94, rx: 4, ry: 7)
+        } else {
             var smile = Path()
             smile.move(to: point(154, 88))
-            smile.addQuadCurve(to: point(166, 88), control: point(160, 93))
-            context.stroke(smile, with: .color(Palette.outline), style: StrokeStyle(lineWidth: 1.8 * scale, lineCap: .round))
-        } else {
-            var mouth = Path()
-            mouth.move(to: point(153, 86.5))
-            mouth.addQuadCurve(to: point(167, 86.5), control: point(160, 97))
-            mouth.closeSubpath()
-            context.fill(mouth, with: .color(Palette.mouth))
-            // Panting in the heat: the tongue hangs out.
-            if mood == .hot {
-                oval(Palette.tongue, cx: 160, cy: 95, rx: 3.8, ry: 6)
-            } else {
-                oval(Palette.tongueSoft, cx: 160, cy: 92.2, rx: 3.4, ry: 2.6)
-            }
+            smile.addQuadCurve(to: point(166, 88), control: point(160, 94))
+            context.stroke(smile, with: .color(Palette.outline), lineWidth: 2 * scale)
         }
     }
 
@@ -328,17 +312,16 @@ private struct Painter {
         turned.fill(Path(ellipseIn: rect), with: .color(color))
     }
 
-    /// Open eyes with a catch-light, or closed, smiling curves when the pets are asleep at night.
+    /// Open eyes, or closed lines when the pets are asleep at night.
     private func eyes(_ mood: PetMood, left: CGFloat, right: CGFloat, y: CGFloat) {
         for x in [left, right] {
             if mood == .night {
                 var line = Path()
                 line.move(to: point(x - 3, y))
-                line.addQuadCurve(to: point(x + 3, y), control: point(x, y + 2))
-                context.stroke(line, with: .color(Palette.outline), style: StrokeStyle(lineWidth: 1.8 * scale, lineCap: .round))
+                line.addLine(to: point(x + 3, y))
+                context.stroke(line, with: .color(Palette.outline), lineWidth: 2 * scale)
             } else {
-                circle(Palette.outline, cx: x, cy: y, r: 2.95)
-                circle(Palette.shine, cx: x + 0.9, cy: y - 0.9, r: 0.95)
+                circle(Palette.outline, cx: x, cy: y, r: 2.6)
             }
         }
     }
