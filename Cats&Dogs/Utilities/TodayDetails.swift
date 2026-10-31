@@ -2,7 +2,35 @@ import Foundation
 
 /// The rules behind the Today tiles, kept out of the views so they can be tested. Same rules as
 /// Android's `util/TodayDetails.kt`.
+/// Which Today tiles show, from Remote Config. UV starts off.
+struct TodayTileSwitches: Equatable {
+    var feelsLike = true
+    var wind = true
+    var humidity = true
+    var pawCheck = true
+    var uv = false
+    var daylight = true
+    var sky = true
+}
+
 enum TodayDetails {
+    /// The UV tile's line: today's peak while it's still ahead ("Peak 8 at 1 PM"); from the peak hour
+    /// on, shade for pale-nosed dogs on a high day (6 and up) with a dog, otherwise "At today's peak"
+    /// or "Easing off now".
+    /// `isPetLine` is set for the dog's line, which takes the pets' colour.
+    static func uvLine(
+        peak: HourlySlot?,
+        now: Date,
+        hasDog: Bool
+    ) -> (text: String, isPetLine: Bool) {
+        guard let peak, let peakUV = peak.uvIndex else { return ("", false) }
+        let rounded = Int(peakUV.rounded())
+        guard let start = peak.date else { return ("Peak \(rounded) today", false) }
+        if start > now { return ("Peak \(rounded) at \(peak.timeLabel)", false) }
+        if hasDog, rounded >= 6 { return ("Shade for pale noses", true) }
+        return start.addingTimeInterval(60 * 60) > now ? ("At today's peak", false) : ("Easing off now", false)
+    }
+
     /// How far you can see, in the bands the Sky tile names.
     enum VisibilityBand: Equatable {
         case excellent, good, moderate, poor

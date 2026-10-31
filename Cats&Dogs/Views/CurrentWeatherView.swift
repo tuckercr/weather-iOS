@@ -578,13 +578,15 @@ private struct CurrentWeatherContent: View {
                 || WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
             // UV is always 0 after dark, so it only shows in the daytime (night icons end in "n").
             uvIndex: weather.iconCode.hasSuffix("n") ? nil : upcomingSlots.first?.uvIndex,
+            uvPeak: todayForecast?.hourlySlots.filter { $0.uvIndex != nil }.max { ($0.uvIndex ?? 0) < ($1.uvIndex ?? 0) },
             // The forecast's hour in progress, so it shows offline too. A forecast cached before the
             // switch went off can still have it, hence the check here as well.
             airQuality: RemoteConfigRepository.airQualityEnabled ? upcomingSlots.first?.airQuality : nil,
             hasDog: showWalkCard,
             now: now,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            distanceInMiles: distanceInMiles
+            distanceInMiles: distanceInMiles,
+            switches: RemoteConfigRepository.shared.todayTiles
         )
     }
 }
