@@ -11,15 +11,15 @@ Copy each field into App Store Connect. Character counts are checked against App
 | Primary category | Weather |
 | Secondary category | Lifestyle |
 | Bundle ID | com.fangjet.weather |
-| SKU | sunny-and-misty-ios |
+| SKU | sunny-and-misty (set when the record was created; can't be changed) |
 | Content rights | Does not contain, show or access third-party content that needs rights (weather data is licensed from the providers below) |
 | Copyright | 2026 FangJet LLC |
 
 ## Version 1.0
 
-**Promotional text** (149/170, can be changed any time without a new build)
+**Promotional text** (154/170, can be changed any time without a new build)
 
-> Rain or shine, your cat and dog act out the forecast and tell you the best time for a walk, with hot-pavement warnings, live radar and daily updates.
+> Rain or shine, your cat and dog act out the forecast and tell you the best time for a walk, with hot-pavement warnings, live radar and a morning briefing.
 
 **Description** (up to 4,000)
 
@@ -37,7 +37,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 > - An hourly strip with rain chance, and a 7-day forecast with hour-by-hour detail for each day
 > - Animated precipitation radar
 > - Save as many cities as you like, or use your current location, each shown in its own time zone
-> - Optional daily weather updates at 9 AM, 1 PM and 7 PM
+> - A morning briefing at 8:30, a nudge at the best walk time, and a heads-up before rain, each optional
 > - Celsius or Fahrenheit, or follow your device setting
 > - Designed for iPhone and iPad, in portrait and landscape
 >
@@ -59,13 +59,14 @@ Copy each field into App Store Connect. Character counts are checked against App
 | Privacy policy URL | https://sunnyandmisty.com/privacy |
 
 **Screenshots** (both sets are required, because the app runs on iPhone and iPad):
-- 6.9-inch iPhone (1320 × 2868) from `screenshots/app-store/`, suggested order 02, 03, 04, 05, 06 (01 optional); the README's App Store section lists what each shows
+- 6.3-inch iPhone (1206 × 2622), now the required size: `screenshots/app-store/6.3-inch/`, order 02, 03, 04, 05, 06. These are the 6.9-inch shots scaled down (`sips -z 2622 1206`)
+- 6.9-inch iPhone (1320 × 2868), optional but sharper on the largest phones: `screenshots/app-store/`, same order (01 optional); the README's App Store section lists what each shows
 - 13-inch iPad (2064 × 2752): `screenshots/app-store/ipad-02-tokyo.png`, then `ipad-01-amsterdam.png`
 
 ## App Review information
 
 - Sign-in required: No
-- Contact: Colin Tucker, colin@fangjet.com, plus a phone number
+- Contact: Colin Tucker, colin@fangjet.com, plus a phone number (entered in App Store Connect)
 - Notes:
 
 > Sunny & Misty needs no account. On first launch it asks for notification and location permission; both are optional. Without location, tap + to add any city by name. The best-walk-time card, hourly strip and radar appear on the main screen; tap a day in "Rest of week" for its hourly detail. Settings has units, permissions, saved cities and a "Share usage statistics" switch. Weather comes from OpenWeather and Open-Meteo, radar from RainViewer.

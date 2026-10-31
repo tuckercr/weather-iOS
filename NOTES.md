@@ -12,9 +12,11 @@ Finished items move to Done at the bottom.
 
 ## Do soon
 
-- [ ] **First TestFlight upload**, also the build for Jessica. Create the app record in App Store
-      Connect (`com.fangjet.weather`), archive from `main` once the open PRs merge, and upload
-      from Xcode's Organizer. (10-24)
+- [ ] **App Store submission.** The listing is filled in (10-31). Before Add for Review: publish
+      App Privacy (it asks you to confirm the answers), answer Content Rights once the licences
+      below are settled, and pick a build on the version page. Release is set to manual.
+- [ ] **Add Jessica to the TestFlight "Family" group** once she accepts the App Store Connect
+      invitation (sent 10-31). (10-31)
 - [ ] **Storms in the dog walking line, and maybe the hero text.** Warn about thunder in the walk
       card ("Storms from 4 PM, walk before 3"), and possibly the pets' hero line. Check that both
       forecast providers give thunderstorm codes hourly. Should storm hours also be dropped from
@@ -70,10 +72,10 @@ Finished items move to Done at the bottom.
 - [ ] OpenStreetMap tile policy: at scale, a commercial tile provider. (10-24)
 - [ ] The OpenWeather key ships in the app: watch usage on the dashboard, rotate via Remote Config
       if abused. (10-24)
-- [ ] Set `ios_app_store_url` in Remote Config once the App Store record exists. Until then the
-      iOS update screen has no Update button. (10-30)
-- [ ] App Store screenshots (`screenshots/app-store/`) and `screenshots/settings.png` in both repos
-      are out of date. (10-28)
+- [ ] Set `ios_app_store_url` in Remote Config to `https://apps.apple.com/app/id6827945995` once the
+      app is live. Until then the iOS update screen has no Update button. (10-30)
+- [ ] Mac: the iPad app isn't offered on Apple silicon Macs. Try it on a Mac, then tick Mac
+      availability in Pricing and Availability. (10-31)
 - [ ] Store screenshot captions in the pets' voice. (10-26)
 - [ ] Website store buttons need the real App Store and Play links on launch day, ideally the
       official badges. (10-27)
@@ -124,6 +126,11 @@ Finished items move to Done at the bottom.
 
 ## Done
 
+- [x] First TestFlight build: 1.0 (1) uploaded from `main` with `xcodebuild`, internal group
+      "Family". The next upload needs build 2. (10-31)
+- [x] App Store listing in App Store Connect: name "Sunny & Misty: Pet Weather", text, screenshots
+      (6.3" and 6.9" iPhone, 13" iPad), age rating 4+, free in 174 countries (not China mainland),
+      App Review contact and notes. (10-31)
 - [x] The day detail's empty row under the header (two dividers in a row) is gone. (10-30)
 - [x] iOS signing: FangJet LLC's team (`3V3NR8HP58`), your iPhone registered, and a Release archive
       that exports with App Store signing. (10-30)
