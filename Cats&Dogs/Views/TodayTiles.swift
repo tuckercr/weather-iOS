@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Today's details as a grid of tiles: feels like, wind, humidity, pavement and air quality in pairs (an odd one
-/// out takes the full width), then daylight (with the UV index) and the sky across the full width. Each tile has a plain fact under its number; only the
-/// pavement and sky tiles speak for the pets. Same layout as Android's `TodayTiles`.
+/// Today's details as a grid of tiles: feels like, wind, humidity, pavement, UV and air quality in pairs (an odd
+/// one out takes the full width), then daylight (with the UV index, when UV has no tile) and the sky across the
+/// full width. Each tile has a plain fact under its number; only the pavement, UV, air and sky tiles speak for
+/// the pets. Remote Config can hide any of them. Same layout as Android's `TodayTiles`.
 struct TodayTiles: View {
     let weather: CurrentWeather
     /// True when `weather` is the cached forecast's current hour standing in for an old reading:
@@ -14,6 +15,8 @@ struct TodayTiles: View {
     let groundWet: Bool
     /// Today's UV index, or nil after dark or when not forecast.
     let uvIndex: Double?
+    /// Today's hour with the highest UV, for the UV tile's peak.
+    var uvPeak: HourlySlot? = nil
     /// Nil until it's fetched, or when it can't be.
     let airQuality: AirQuality?
     /// Air quality speaks of walks with a dog, of people without one.
@@ -21,21 +24,28 @@ struct TodayTiles: View {
     let now: Date
     let thresholds: PetWeatherThresholds
     let distanceInMiles: Bool
+    var switches = TodayTileSwitches()
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let gap: CGFloat = 8
 
-    private var hasDaylight: Bool { weather.sunriseEpoch != nil && weather.sunsetEpoch != nil }
+    private var showsDaylight: Bool {
+        switches.daylight && weather.sunriseEpoch != nil && weather.sunsetEpoch != nil
+    }
+
+    /// UV gets its own tile when switched on, or when there's no Daylight tile to carry it.
+    private var showsUVTile: Bool { uvIndex != nil && (switches.uv || !showsDaylight) }
 
     private var smallTiles: [AnyView] {
-        var tiles = [AnyView(feelsLike), AnyView(wind), AnyView(humidity)]
-        if let pavementNow { tiles.append(AnyView(pavement(pavementNow))) }
+        var tiles: [AnyView] = []
+        if switches.feelsLike { tiles.append(AnyView(feelsLike)) }
+        if switches.wind { tiles.append(AnyView(wind)) }
+        if switches.humidity { tiles.append(AnyView(humidity)) }
+        if switches.pawCheck, let pavementNow { tiles.append(AnyView(pavement(pavementNow))) }
+        if showsUVTile, let uvIndex { tiles.append(AnyView(uv(uvIndex))) }
         if let airQuality { tiles.append(AnyView(air(airQuality))) }
-        // UV normally rides in the Daylight tile's header; only without sunrise and sunset does it
-        // need a tile of its own.
-        if let uvIndex, !hasDaylight { tiles.append(AnyView(uv(uvIndex))) }
         return tiles
     }
 
@@ -56,10 +66,10 @@ struct TodayTiles: View {
             if paired < tiles.count {
                 tiles[paired]
             }
-            if let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch {
+            if showsDaylight, let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch {
                 daylight(sunrise: sunrise, sunset: sunset)
             }
-            sky
+            if switches.sky { sky }
         }
     }
 
@@ -169,9 +179,17 @@ struct TodayTiles: View {
     }
 
     private func uv(_ uv: Double) -> some View {
-        Tile(icon: "sun.max.fill", label: "UV index") {
-            TileValue("\(Int(uv.rounded()))")
-            TileNote(WeatherFormatting.uvLevel(uv))
+        let line = TodayDetails.uvLine(peak: uvPeak, now: now, hasDog: hasDog)
+        return Tile(icon: "sun.max.fill", label: "UV index") {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                TileValue("\(Int(uv.rounded()))")
+                Text(WeatherFormatting.uvLevel(uv))
+                    .font(.subheadline)
+                    .foregroundStyle(Color.secondaryText)
+            }
+            if !line.text.isEmpty {
+                TileNote(line.text, color: line.isPetLine ? petLineTint : .secondaryText)
+            }
         }
     }
 
@@ -191,7 +209,7 @@ struct TodayTiles: View {
             summary = "The sun has set"
         }
         let isUp = if case .daytime = state { true } else { false }
-        let uvNote = uvIndex.map { "UV \(Int($0.rounded())) · \(WeatherFormatting.uvLevel($0))" }
+        let uvNote = showsUVTile ? nil : uvIndex.map { "UV \(Int($0.rounded())) · \(WeatherFormatting.uvLevel($0))" }
         return Tile(icon: "sun.horizon.fill", label: "Daylight", trailing: uvNote) {
             SunArc(fraction: fraction, isUp: isUp)
                 .frame(height: 44)

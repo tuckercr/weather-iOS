@@ -51,6 +51,14 @@ final class RemoteConfigRepository {
     nonisolated static let keyWalkCardEnabled = "walk_card_enabled"
     /// Stops fetching air quality: no Air quality tile, and the walk planner ignores the air.
     nonisolated static let keyAirQualityEnabled = "air_quality_enabled"
+    /// One switch per Today tile, so any can be hidden for everyone. UV is new and starts off.
+    nonisolated static let keyTileFeelsLikeEnabled = "tile_feels_like_enabled"
+    nonisolated static let keyTileWindEnabled = "tile_wind_enabled"
+    nonisolated static let keyTileHumidityEnabled = "tile_humidity_enabled"
+    nonisolated static let keyTilePawCheckEnabled = "tile_paw_check_enabled"
+    nonisolated static let keyTileUvEnabled = "tile_uv_enabled"
+    nonisolated static let keyTileDaylightEnabled = "tile_daylight_enabled"
+    nonisolated static let keyTileSkyEnabled = "tile_sky_enabled"
     /// Off sends forecasts for cities with coordinates to OpenWeatherMap instead of Open-Meteo.
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
@@ -87,6 +95,13 @@ final class RemoteConfigRepository {
             Self.keyForegroundRefreshMinMinutes: NSNumber(value: Self.defaultForegroundRefreshMinMinutes),
             Self.keyOpenMeteoEnabled: NSNumber(value: true),
             Self.keyAirQualityEnabled: NSNumber(value: true),
+            Self.keyTileFeelsLikeEnabled: NSNumber(value: true),
+            Self.keyTileWindEnabled: NSNumber(value: true),
+            Self.keyTileHumidityEnabled: NSNumber(value: true),
+            Self.keyTilePawCheckEnabled: NSNumber(value: true),
+            Self.keyTileUvEnabled: NSNumber(value: false),
+            Self.keyTileDaylightEnabled: NSNumber(value: true),
+            Self.keyTileSkyEnabled: NSNumber(value: true),
             Self.keyOpenWeatherApiKey: "" as NSString,
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
@@ -182,6 +197,19 @@ final class RemoteConfigRepository {
     /// Read from the forecast fetch too. Air quality comes from Open-Meteo, so it also needs that on.
     nonisolated static var airQualityEnabled: Bool { flag(keyAirQualityEnabled) }
 
+    /// Which Today tiles show. Air quality has its own switch above, as it also stops the fetch.
+    var todayTiles: TodayTileSwitches {
+        TodayTileSwitches(
+            feelsLike: Self.flag(Self.keyTileFeelsLikeEnabled),
+            wind: Self.flag(Self.keyTileWindEnabled),
+            humidity: Self.flag(Self.keyTileHumidityEnabled),
+            pawCheck: Self.flag(Self.keyTilePawCheckEnabled),
+            uv: Self.flag(Self.keyTileUvEnabled, fallback: false),
+            daylight: Self.flag(Self.keyTileDaylightEnabled),
+            sky: Self.flag(Self.keyTileSkyEnabled)
+        )
+    }
+
     /// Nil when unset or blank, so the key built into the app is used. Not a secret: Remote Config
     /// values reach every device.
     nonisolated static var openWeatherApiKey: String? {
@@ -194,10 +222,11 @@ final class RemoteConfigRepository {
 
     /// Every flag defaults to on. A key with no value at all reads as false, so that counts as
     /// "not set" rather than "off".
-    private nonisolated static func flag(_ key: String) -> Bool {
-        guard FirebaseApp.app() != nil else { return true }
+    /// `fallback` is used without Firebase or a value, so a switch that starts off stays off.
+    private nonisolated static func flag(_ key: String, fallback: Bool = true) -> Bool {
+        guard FirebaseApp.app() != nil else { return fallback }
         let value = RemoteConfig.remoteConfig()[key]
-        return value.source == .static ? true : value.boolValue
+        return value.source == .static ? fallback : value.boolValue
     }
 
     nonisolated static func refreshInterval(minutes: Int?) -> TimeInterval {

@@ -164,4 +164,48 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(highLow.high, current.tempMax)
         XCTAssertEqual(highLow.low, current.tempMin)
     }
+
+    // MARK: - UV
+
+    private func uvSlot(_ uv: Double, at epoch: Int) -> HourlySlot {
+        HourlySlot(
+            timeLabel: "1 PM",
+            iconCode: "01d",
+            description: "Clear sky",
+            temperature: 25,
+            feelsLike: 25,
+            windSpeed: 2,
+            windDeg: 0,
+            humidity: 40,
+            pressure: 1013,
+            units: .metric,
+            precipitationChance: 0,
+            uvIndex: uv,
+            epochSeconds: epoch
+        )
+    }
+
+    func testTheUVTileSaysWhenTodaysPeakIsWhileItsAhead() {
+        let peak = uvSlot(7.6, at: 13 * 3600)
+        let line = TodayDetails.uvLine(peak: peak, now: Date(timeIntervalSince1970: 10 * 3600), hasDog: true)
+        XCTAssertEqual(line.text, "Peak 8 at 1 PM")
+        XCTAssertFalse(line.isPetLine)
+    }
+
+    func testFromAHighPeakOnTheUVTileMindsPaleNosesWithADog() {
+        let peak = uvSlot(7, at: 13 * 3600)
+        let during = Date(timeIntervalSince1970: 13 * 3600 + 600)
+        let after = Date(timeIntervalSince1970: 16 * 3600)
+        XCTAssertEqual(TodayDetails.uvLine(peak: peak, now: after, hasDog: true).text, "Shade for pale noses")
+        XCTAssertTrue(TodayDetails.uvLine(peak: peak, now: after, hasDog: true).isPetLine)
+        XCTAssertEqual(TodayDetails.uvLine(peak: peak, now: during, hasDog: false).text, "At today's peak")
+        XCTAssertEqual(TodayDetails.uvLine(peak: peak, now: after, hasDog: false).text, "Easing off now")
+        XCTAssertEqual(TodayDetails.uvLine(peak: uvSlot(4, at: 13 * 3600), now: after, hasDog: true).text, "Easing off now")
+    }
+
+    func testEveryTileShowsByDefaultExceptUV() {
+        let switches = TodayTileSwitches()
+        XCTAssertTrue(switches.feelsLike && switches.wind && switches.humidity && switches.pawCheck && switches.daylight && switches.sky)
+        XCTAssertFalse(switches.uv)
+    }
 }
