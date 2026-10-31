@@ -354,6 +354,96 @@ final class WalkAdvisorTests: XCTestCase {
         }
     }
 
+    // MARK: After a walk now
+
+    /// 3 PM; the slots below are an hour apart from it.
+    private let t0 = 1_800_000_000
+
+    private func outlook(_ slots: [HourlySlot], feelsLikeC: Double = 20, sunsetIn: Int? = nil) -> WalkOutlook? {
+        WalkAdvisor.advice(
+            currentFeelsLikeC: feelsLikeC,
+            upcoming: slots,
+            now: Date(timeIntervalSince1970: TimeInterval(t0)),
+            sunsetEpoch: sunsetIn.map { t0 + $0 }
+        )?.outlook
+    }
+
+    func testAWalkNowSaysWhenStormsArrive() {
+        let slots = [
+            slot("3 PM", 20, rain: 0, epoch: t0),
+            slot("4 PM", 20, rain: 10, epoch: t0 + 3600),
+            slot("5 PM", 20, rain: 80, epoch: t0 + 7200, icon: "11d"),
+        ]
+        XCTAssertEqual(outlook(slots), .until(time: "5 PM", change: .storms))
+    }
+
+    func testAModestChanceOfRainIsMaybeAndSnowIsSnow() {
+        XCTAssertEqual(
+            outlook([slot("3 PM", 20, rain: 0, epoch: t0), slot("4 PM", 20, rain: 40, epoch: t0 + 3600, icon: "10d")]),
+            .until(time: "4 PM", change: .maybeRain)
+        )
+        XCTAssertEqual(
+            outlook([slot("3 PM", 5, rain: 0, epoch: t0), slot("4 PM", 5, rain: 70, epoch: t0 + 3600, icon: "13d")], feelsLikeC: 5),
+            .until(time: "4 PM", change: .snow)
+        )
+    }
+
+    func testANearGaleEndsTheWindowAndRulesAnHourOut() {
+        let calm = slot("3 PM", 20, rain: 0, epoch: t0)
+        let gale = slot("4 PM", 20, rain: 0, epoch: t0 + 3600, wind: 15) // force 7, about 34 mph
+        XCTAssertEqual(outlook([calm, gale]), .until(time: "4 PM", change: .wind))
+        let windyNow = [slot("3 PM", 20, rain: 0, wind: 15), slot("4 PM", 20, rain: 0)]
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: windyNow), WalkAdvice(rating: .okay, bestTimeLabel: "4 PM"))
+    }
+
+    func testHeatHotPavementColdAndBadAirLaterEndTheWindow() {
+        let now = slot("3 PM", 20, rain: 0, epoch: t0)
+        XCTAssertEqual(outlook([now, slot("4 PM", 29, rain: 0, epoch: t0 + 3600)]), .until(time: "4 PM", change: .heat))
+        XCTAssertEqual(outlook([now, slot("4 PM", 22, rain: 0, pavement: 48, epoch: t0 + 3600)]), .until(time: "4 PM", change: .hotPavement))
+        XCTAssertEqual(outlook([now, slot("4 PM", 1, rain: 0, epoch: t0 + 3600)]), .until(time: "4 PM", change: .cold))
+        XCTAssertEqual(outlook([now, slot("4 PM", 20, rain: 0, epoch: t0 + 3600, airBand: 3)]), .until(time: "4 PM", change: .badAir))
+    }
+
+    func testAChangeMoreThanSixHoursAwayIsNotNews() {
+        let slots = [slot("9 AM", 20, rain: 0, epoch: t0), slot("4 PM", 20, rain: 90, epoch: t0 + 7 * 3600, icon: "11d")]
+        XCTAssertNil(outlook(slots))
+    }
+
+    func testTheEndOfTheWalkingHoursFallsBackToSunset() {
+        let slots = [slot("7 PM", 20, rain: 0, epoch: t0), slot("9 PM", 20, rain: 0, epoch: t0 + 7200)]
+        XCTAssertNil(outlook(slots))
+        XCTAssertEqual(outlook(slots, sunsetIn: 2 * 3600), .darkIn(hours: 2))
+    }
+
+    func testSunsetSoonIsMentionedAndRoundedToTheHour() {
+        let slots = [slot("5 PM", 20, rain: 0, epoch: t0)]
+        XCTAssertEqual(outlook(slots, sunsetIn: 50 * 60), .darkIn(hours: 1))
+        XCTAssertEqual(outlook(slots, sunsetIn: 20 * 60), .darkIn(hours: 0))
+        XCTAssertNil(outlook(slots, sunsetIn: 4 * 3600))
+        XCTAssertNil(outlook(slots, sunsetIn: -600))
+    }
+
+    func testWeatherOutranksSoSoAirWhichOutranksSunset() {
+        let soSoAir = slot("3 PM", 20, rain: 0, epoch: t0, airBand: 2)
+        XCTAssertEqual(outlook([soSoAir], sunsetIn: 3600), .moderateAir)
+        let storm = slot("4 PM", 20, rain: 80, epoch: t0 + 3600, icon: "11d")
+        XCTAssertEqual(outlook([soSoAir, storm], sunsetIn: 3600), .until(time: "4 PM", change: .storms))
+        XCTAssertNil(outlook([slot("3 PM", 20, rain: 0, epoch: t0, airBand: 1)]))
+    }
+
+    func testOnlyAWalkNowHasAnOutlook() {
+        let slots = [slot("3 PM", 20, rain: 80, epoch: t0), slot("4 PM", 20, rain: 0, epoch: t0 + 3600)]
+        XCTAssertNil(outlook(slots, sunsetIn: 3600))
+    }
+
+    func testTheCardSaysWhatComesNext() {
+        XCTAssertEqual(WalkCard.outlookLine(.until(time: "5 PM", change: .storms)), "Good until 5 PM, then storms.")
+        XCTAssertEqual(WalkCard.outlookLine(.until(time: "5 PM", change: .maybeRain)), "Good until 5 PM, then maybe rain.")
+        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 0)), "Getting dark soon.")
+        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 1)), "Gets dark in about an hour.")
+        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 3)), "Gets dark in about 3 hours.")
+    }
+
     private func slot(
         _ label: String,
         _ temp: Double,
@@ -364,7 +454,8 @@ final class WalkAdvisorTests: XCTestCase {
         epoch: Int? = nil,
         icon: String = "01d",
         feelsLike: Double? = nil,
-        airBand: Int? = nil
+        airBand: Int? = nil,
+        wind: Double = 1
     ) -> HourlySlot {
         var slot = HourlySlot(
             timeLabel: label,
@@ -372,7 +463,7 @@ final class WalkAdvisorTests: XCTestCase {
             description: "clear",
             temperature: temp,
             feelsLike: feelsLike ?? temp,
-            windSpeed: 1,
+            windSpeed: wind,
             windDeg: 0,
             humidity: 50,
             pressure: 1013,
