@@ -547,33 +547,36 @@ private struct CurrentWeatherContent: View {
                 PetScene(mood: mood, moonPhase: MoonPhase(at: now), decorations: seasonalTheme?.decorations ?? [])
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
+                // Medium weight on the small lines so they hold up on the brighter hero colours.
                 Text(weather.description)
+                    .fontWeight(.medium)
                 if location != nil {
                     Text(weather.cityName)
-                        .font(.brand(.title2))
+                        .font(.brand(.title2, size: 24))
                         .padding(.top, 4)
                 }
                 Text(WeatherFormatting.temperature(weather.temperature, units: weather.units))
-                    .font(.brand(.largeTitle, weight: .bold))
+                    .font(.brand(.largeTitle, size: 56, weight: .bold))
                     // Baloo 2 reserves a lot of empty space above its digits; pull the number up
                     // into it so it sits close under the city name.
-                    .padding(.top, -10)
+                    .padding(.top, -16)
                 // Today's high and low in whole degrees: "H 64° · L 61°".
                 let highLow = TodayDetails.highLow(current: weather, today: todayForecast)
                 let high = Int(highLow.high.rounded())
                 let low = Int(highLow.low.rounded())
                 Text("H \(high)° · L \(low)°")
+                    .fontWeight(.medium)
                     // "H 64°" would be read as the letter H.
                     .accessibilityLabel("High \(high)°, low \(low)°")
                 Text(heroCaption)
-                    .font(.brand(.headline))
+                    .font(.brand(.title3))
                     .multilineTextAlignment(.center)
-                    .padding(.top, 10)
+                    .padding(.top, 8)
             }
             .foregroundStyle(seasonalTheme?.heroInk(night: mood == .night) ?? mood.ink)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
             .background(
                 seasonalTheme?.heroBackground(night: mood == .night) ?? mood.skyColor,
                 in: RoundedRectangle(cornerRadius: 12)

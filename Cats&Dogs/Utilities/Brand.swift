@@ -48,9 +48,10 @@ struct AccentButtonStyle: ButtonStyle {
 /// - OnAccent: text on accent-filled buttons (`onPrimary`)
 extension Font {
     /// Baloo 2, the rounded face that echoes the "Sunny & Misty" wordmark. Used for display and title
-    /// text only; body copy stays on the system font. Scales with Dynamic Type via `style`.
-    static func brand(_ style: Font.TextStyle, weight: BrandWeight = .semibold) -> Font {
-        .custom(weight.postScriptName, size: BrandWeight.pointSize(for: style), relativeTo: style)
+    /// text only; body copy stays on the system font. Scales with Dynamic Type via `style`; `size`
+    /// overrides the style's default size.
+    static func brand(_ style: Font.TextStyle, size: CGFloat? = nil, weight: BrandWeight = .semibold) -> Font {
+        .custom(weight.postScriptName, size: size ?? BrandWeight.pointSize(for: style), relativeTo: style)
     }
 
     enum BrandWeight {
