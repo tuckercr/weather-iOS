@@ -7,7 +7,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 | Field | Value |
 |---|---|
 | Name (26/30) | Sunny & Misty: Pet Weather |
-| Subtitle (28/30) | Best walk times & live radar |
+| Subtitle (27/30) | Dog walk times & paw safety |
 | Primary category | Weather |
 | Secondary category | Lifestyle |
 | Bundle ID | com.fangjet.weather |
@@ -46,9 +46,9 @@ Copy each field into App Store Connect. Character counts are checked against App
 >
 > Weather data by OpenWeather and Open-Meteo.com. Radar by RainViewer. Maps © OpenStreetMap contributors.
 
-**Keywords** (92/100, comma-separated, no spaces; the name and subtitle are already indexed)
+**Keywords** (99/100, comma-separated, no spaces; the name and subtitle are already indexed, and Apple combines words across all three, so "dog" + "walker" also matches "dog walker")
 
-> dog,cat,puppy,kitten,forecast,radar,rain,paws,pavement,heat,umbrella,hourly,leash,sunrise,uv
+> cat,puppy,kitten,pavement,asphalt,sidewalk,heat,leash,walker,aqi,air,quality,radar,forecast,rain,uv
 
 **URLs**
 
