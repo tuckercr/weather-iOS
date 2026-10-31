@@ -113,7 +113,7 @@ private enum Palette {
     static let mouth = Color(hex: 0x412402)
     static let tongueSoft = Color(hex: 0xED93B1)
     static let shine = Color.white
-    static let dogFur = Color(hex: 0xEF9F27)
+    static let dogFur = Color(hex: 0xE9B158)
     static let dogFace = Color(hex: 0xFAC775)
     static let dogEar = Color(hex: 0xBA7517)
     static let outline = Color(hex: 0x10324A)
