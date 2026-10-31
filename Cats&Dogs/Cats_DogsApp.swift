@@ -23,6 +23,7 @@ struct Cats_DogsApp: App {
         _ = RemoteConfigRepository.shared
         // Set before launch finishes, so a tap on the iOS Settings link that opened the app arrives.
         UNUserNotificationCenter.current().delegate = NotificationSettingsLink.shared
+        UNUserNotificationCenter.current().setNotificationCategories(WeatherNotificationScheduler.categories)
         Task { await WeatherNotificationScheduler.shared.refreshAuthorizationOptions() }
         #if DEBUG
         // xcrun simctl launch <device> com.fangjet.weather -sendSampleNotifications
