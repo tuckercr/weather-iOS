@@ -77,6 +77,7 @@ Finished items move to Done at the bottom.
 - [ ] Mac: the iPad app isn't offered on Apple silicon Macs. Try it on a Mac, then tick Mac
       availability in Pricing and Availability. (10-31)
 - [ ] Store screenshot captions in the pets' voice. (10-26)
+- [ ] Plan for supporting the app after launch. (10-31)
 - [ ] Website store buttons need the real App Store and Play links on launch day, ideally the
       official badges. (10-27)
 - Debug builds can show either update prompt: launch iOS with `-updatePrompt required` (or
