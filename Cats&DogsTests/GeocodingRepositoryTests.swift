@@ -24,6 +24,21 @@ final class GeocodingRepositoryTests: XCTestCase {
         XCTAssertEqual(suggestions.last?.label, "London, GB")
     }
 
+    func testAPlaceListedTwiceIsSuggestedOnceAtItsFirstMatch() async {
+        let api = FakeGeocodingAPI(
+            response: [
+                GeocodingDirectDTO(name: "Amsterdam", lat: 52.3728, lon: 4.8936, country: "NL", state: "North Holland"),
+                GeocodingDirectDTO(name: "Amsterdam", lat: 52.3676, lon: 4.9041, country: "NL", state: "North Holland"),
+                GeocodingDirectDTO(name: "Amsterdam", lat: 42.9387, lon: -74.1882, country: "US", state: "New York"),
+            ]
+        )
+
+        let suggestions = try! await GeocodingRepository(client: api).searchCities(query: "Amsterdam").get()
+
+        XCTAssertEqual(suggestions.map(\.label), ["Amsterdam, North Holland, NL", "Amsterdam, New York, US"])
+        XCTAssertEqual(suggestions.first?.weatherLon ?? 0, 4.8936, accuracy: 0.0001)
+    }
+
     func testSearchCitiesReturnsEmptyResultForShortQueryWithoutCallingAPI() async {
         let api = FakeGeocodingAPI()
         let repository = GeocodingRepository(client: api)
