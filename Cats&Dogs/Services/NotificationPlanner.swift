@@ -115,6 +115,8 @@ enum NotificationPlanner {
                     date: date,
                     title: "Time for a walk",
                     body: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName). Sunny's waiting by the door."
+                        + (badAirPhrase(after: briefing, slots: slots, thresholds: thresholds, calendar: calendar)
+                            .map { " \($0), so a short one." } ?? "")
                 ))
             }
         }
@@ -161,12 +163,15 @@ enum NotificationPlanner {
         }
         body += "."
         if hasDog {
+            // Bad-air hours are left out of the walk silently, so the briefing says why.
+            let air = badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
             if let best = bestWalkSlot(after: date, slots: slots, thresholds: thresholds, calendar: calendar), let start = best.date {
                 body += start <= date
                     ? " Sunny says now's a great time for a walk."
                     : " Sunny's picked \(best.timeLabel) for a walk."
+                if let air { body += " \(air), so keep it short." }
             } else {
-                body += " Not a good day for walkies."
+                body += air.map { " \($0), so potty breaks only." } ?? " Not a good day for walkies."
             }
         }
         return (title, body)
@@ -184,6 +189,29 @@ enum NotificationPlanner {
             return start.addingTimeInterval(60 * 60) > date
                 && calendar.isDate(start, inSameDayAs: date)
                 && WalkAdvisor.isWalkable(slot, thresholds)
+        }
+    }
+
+    /// "Smoky air today" when bad air rules out walking hours from the one under way at `date` to the
+    /// end of that day, named by the worst hour's main pollutant: particles read as smoke, ozone by
+    /// name, anything else as poor air. Nil on a clean day.
+    static func badAirPhrase(
+        after date: Date,
+        slots: [HourlySlot],
+        thresholds: PetWeatherThresholds,
+        calendar: Calendar
+    ) -> String? {
+        let worst = slots.filter { slot in
+            guard let start = slot.date else { return false }
+            return start.addingTimeInterval(60 * 60) > date
+                && calendar.isDate(start, inSameDayAs: date)
+                && WalkAdvisor.hasBadAirForWalking(slot, thresholds)
+        }.max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
+        guard let worst else { return nil }
+        return switch worst.airQuality?.mainPollutant {
+        case .fineParticles, .coarseParticles: "Smoky air today"
+        case .ozone: "High ozone today"
+        default: "Poor air today"
         }
     }
 
