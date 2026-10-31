@@ -212,5 +212,6 @@ final class RemoteConfigRepository {
 }
 
 private extension String {
-    var nilIfBlank: String? { isEmpty ? nil : self }
+    /// Nonisolated, as the forecast fetch reads the OpenWeather key off the main actor.
+    nonisolated var nilIfBlank: String? { isEmpty ? nil : self }
 }
