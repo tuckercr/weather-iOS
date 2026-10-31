@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Today's details as a grid of tiles: feels like, wind, humidity, pavement and air quality in pairs, then
-/// daylight (with the UV index) and the sky across the full width. Each tile has a plain fact under its number; only the
+/// Today's details as a grid of tiles: feels like, wind, humidity, pavement and air quality in pairs (an odd one
+/// out takes the full width), then daylight (with the UV index) and the sky across the full width. Each tile has a plain fact under its number; only the
 /// pavement and sky tiles speak for the pets. Same layout as Android's `TodayTiles`.
 struct TodayTiles: View {
     let weather: CurrentWeather
@@ -45,10 +45,16 @@ struct TodayTiles: View {
         let perRow = dynamicTypeSize.isAccessibilitySize ? 1 : 2
         VStack(spacing: Self.gap) {
             let tiles = smallTiles
+            // An odd tile out (usually Air quality, when Paw check is showing) takes the full width
+            // rather than leaving a gap beside it.
+            let paired = tiles.count.isMultiple(of: perRow) ? tiles.count : tiles.count - 1
             EqualTileGrid(columns: perRow, spacing: Self.gap) {
-                ForEach(tiles.indices, id: \.self) { index in
+                ForEach(0 ..< paired, id: \.self) { index in
                     tiles[index]
                 }
+            }
+            if paired < tiles.count {
+                tiles[paired]
             }
             if let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch {
                 daylight(sunrise: sunrise, sunset: sunset)

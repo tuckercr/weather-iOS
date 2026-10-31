@@ -221,6 +221,8 @@ struct CurrentWeatherView: View {
             .accentButtonStyle()
         }
         .padding(32)
+        // Fills the screen, so the background behind it does too rather than boxing the message.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var weatherContent: some View {
