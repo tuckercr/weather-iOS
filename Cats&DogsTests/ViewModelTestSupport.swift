@@ -135,16 +135,11 @@ final class StubAirQualityAPI: AirQualityAPI, @unchecked Sendable {
         self.error = error
     }
 
-    func current(latitude: Double, longitude: Double) async throws -> AirQualityResponse {
-        throw error ?? URLError(.notConnectedToInternet)
-    }
-
     func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse {
         if let error { throw error }
-        let times = hourlyIndices.keys.sorted()
         return AirQualityHourlyResponse(
             timezone: "America/New_York",
-            hourly: .init(time: times, usAqi: times.map { hourlyIndices[$0] }, europeanAqi: nil)
+            hours: hourlyIndices.keys.sorted().map { ($0, AirQualityReadings([.usAqi: hourlyIndices[$0]!])) }
         )
     }
 }

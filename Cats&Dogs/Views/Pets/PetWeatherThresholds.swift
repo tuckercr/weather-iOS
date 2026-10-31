@@ -18,6 +18,9 @@ struct PetWeatherThresholds: Equatable {
     var icyPavementC: Double = 0
     /// Pavement at or above this (about 135 F) is dangerously hot: worse than `hotPavementC`.
     var dangerousPavementC: Double = 57.2
+    /// Hours in this air quality band or worse aren't suggested for a walk: 3 is US "Unhealthy" and
+    /// Europe's "Poor" (`AirQuality.band`, 0 to 5).
+    var badAirBand: Int = 3
 
     static let standard = PetWeatherThresholds(
         hotPavementC: 52,
@@ -42,6 +45,8 @@ struct PetWeatherThresholds: Equatable {
     static let walkHourRange = 0 ... 23
     static let petHotRangeC = 20.0 ... 45.0
     static let petColdRangeC = -20.0 ... 10.0
+    /// 0 would rule out every hour, even in good air.
+    static let badAirBandRange = 1 ... 5
 
     /// Builds thresholds from raw Remote Config values. A value that's missing or out of range falls
     /// back to the standard one, and a pair that ends up inverted falls back as a pair, so a console
@@ -59,7 +64,8 @@ struct PetWeatherThresholds: Equatable {
         walkHoursStart: Int? = nil,
         walkHoursEnd: Int? = nil,
         petHotC: Double? = nil,
-        petColdC: Double? = nil
+        petColdC: Double? = nil,
+        badAirBand: Int? = nil
     ) -> PetWeatherThresholds {
         let standard = Self.standard
         let comfortMin = pick(comfortMinC, in: comfortMinRangeC, or: standard.comfortC.lowerBound)
@@ -80,7 +86,8 @@ struct PetWeatherThresholds: Equatable {
             petColdC: cold < hot ? cold : standard.petColdC,
             warmPavementC: warmPavement < hotPavement ? warmPavement : hotPavement - warmPavementGapC,
             icyPavementC: pick(icyPavementC, in: icyPavementRangeC, or: standard.icyPavementC),
-            dangerousPavementC: dangerousPavement > hotPavement ? dangerousPavement : hotPavement + dangerousPavementGapC
+            dangerousPavementC: dangerousPavement > hotPavement ? dangerousPavement : hotPavement + dangerousPavementGapC,
+            badAirBand: pick(badAirBand, in: badAirBandRange, or: standard.badAirBand)
         )
     }
 

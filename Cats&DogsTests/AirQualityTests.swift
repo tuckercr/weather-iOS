@@ -47,110 +47,33 @@ final class AirQualityTests: XCTestCase {
         XCTAssertEqual(AirQuality.Scale.forTimeZone(nil), .us)
     }
 
-    func testParsesTheIndexAndNamesTheBiggestPollutantForTheCitysScale() throws {
+    func testParsesEachHoursIndexAndNamesTheBiggestPollutantForTheCitysScale() throws {
         let json = """
-        {"timezone":"Europe/London","current":{"us_aqi":67,"us_aqi_pm2_5":67,"us_aqi_ozone":1,
-        "european_aqi":50,"european_aqi_pm2_5":45,"european_aqi_nitrogen_dioxide":50,"european_aqi_ozone":1}}
+        {"timezone":"Europe/London","hourly":{"time":[100,3700],"us_aqi":[67,40],"us_aqi_pm2_5":[67,40],
+        "european_aqi":[50,90],"european_aqi_pm2_5":[45,90],"european_aqi_nitrogen_dioxide":[50,10]}}
         """
-        let response = try JSONDecoder().decode(AirQualityResponse.self, from: Data(json.utf8))
+        let response = try JSONDecoder().decode(AirQualityHourlyResponse.self, from: Data(json.utf8))
 
-        let air = try XCTUnwrap(AirQuality.from(response))
-
-        XCTAssertEqual(air, AirQuality(index: 50, scale: .european, mainPollutant: .nitrogenDioxide))
-        XCTAssertEqual(air.pollutantLine, "Mostly nitrogen dioxide")
+        XCTAssertEqual(response.byHour, [
+            100: AirQuality(index: 50, scale: .european, mainPollutant: .nitrogenDioxide),
+            3700: AirQuality(index: 90, scale: .european, mainPollutant: .fineParticles),
+        ])
+        XCTAssertEqual(response.byHour[100]?.pollutantLine, "Mostly nitrogen dioxide")
     }
 
     func testATieGoesToTheFirstListedPollutant() throws {
         let json = """
-        {"timezone":"America/New_York","current":{"us_aqi":46,"us_aqi_pm2_5":46,"us_aqi_ozone":46}}
-        """
-        let response = try JSONDecoder().decode(AirQualityResponse.self, from: Data(json.utf8))
-
-        XCTAssertEqual(AirQuality.from(response)?.mainPollutant, .fineParticles)
-    }
-
-    func testHourlyBandsUseTheCitysScale() throws {
-        let json = """
-        {"timezone":"Europe/Paris","hourly":{"time":[100,3700],"us_aqi":[40,40],"european_aqi":[50,90]}}
+        {"timezone":"America/New_York","hourly":{"time":[100],"us_aqi":[46],"us_aqi_pm2_5":[46],"us_aqi_ozone":[46]}}
         """
         let response = try JSONDecoder().decode(AirQualityHourlyResponse.self, from: Data(json.utf8))
 
-        XCTAssertEqual(response.bandsByHour, [100: 2, 3700: 4])
+        XCTAssertEqual(response.byHour[100]?.mainPollutant, .fineParticles)
     }
 
-    func testNoIndexMeansNoReading() throws {
-        let json = #"{"timezone":"America/New_York","current":{"us_aqi":null}}"#
-        let response = try JSONDecoder().decode(AirQualityResponse.self, from: Data(json.utf8))
+    func testAnHourWithoutAnIndexHasNoReading() throws {
+        let json = #"{"timezone":"America/New_York","hourly":{"time":[100,3700],"us_aqi":[null,30]}}"#
+        let response = try JSONDecoder().decode(AirQualityHourlyResponse.self, from: Data(json.utf8))
 
-        XCTAssertNil(AirQuality.from(response))
+        XCTAssertEqual(response.byHour, [3700: AirQuality(index: 30, scale: .us, mainPollutant: nil)])
     }
-}
-
-@MainActor
-final class AirQualityViewModelTests: XCTestCase {
-    private let london = SavedLocation(label: "London", latitude: 51.51, longitude: -0.13)
-    private let response = AirQualityResponse(
-        timezone: "America/New_York",
-        current: try! JSONDecoder().decode(AirQualityResponse.Current.self, from: Data(#"{"us_aqi":42}"#.utf8))
-    )
-
-    func testLoadsAReadingPerCityAndDoesNotRefetchWhileFresh() async {
-        var clock = Date(timeIntervalSince1970: 0)
-        let calls = Counter()
-        let response = self.response
-        let viewModel = AirQualityViewModel(fetch: { _, _ in await calls.increment(); return response }, now: { clock }, isEnabled: { true })
-
-        viewModel.load(for: london)
-        await waitUntil { viewModel.reading(for: self.london) != nil }
-        viewModel.load(for: london)
-        await settle()
-
-        XCTAssertEqual(viewModel.reading(for: london)?.index, 42)
-        let afterFirst = await calls.value
-        XCTAssertEqual(afterFirst, 1)
-
-        clock = clock.addingTimeInterval(AirQualityViewModel.staleAfter)
-        viewModel.load(for: london)
-        await settle()
-        let afterStale = await calls.value
-        XCTAssertEqual(afterStale, 2)
-    }
-
-    func testCitiesWithoutCoordinatesAreNotFetched() async {
-        let calls = Counter()
-        let response = self.response
-        let viewModel = AirQualityViewModel(fetch: { _, _ in await calls.increment(); return response }, isEnabled: { true })
-
-        viewModel.load(for: SavedLocation(label: "London", latitude: nil, longitude: nil))
-        await settle()
-
-        let count = await calls.value
-        XCTAssertEqual(count, 0)
-    }
-
-    func testNothingIsFetchedWhileOpenMeteoIsSwitchedOff() async {
-        let calls = Counter()
-        let response = self.response
-        let viewModel = AirQualityViewModel(fetch: { _, _ in await calls.increment(); return response }, isEnabled: { false })
-
-        viewModel.load(for: london)
-        await settle()
-
-        let count = await calls.value
-        XCTAssertEqual(count, 0)
-    }
-
-    func testAFailedFetchLeavesNoReading() async {
-        let viewModel = AirQualityViewModel(fetch: { _, _ in throw URLError(.notConnectedToInternet) }, isEnabled: { true })
-
-        viewModel.load(for: london)
-        await settle()
-
-        XCTAssertNil(viewModel.reading(for: london))
-    }
-}
-
-private actor Counter {
-    private(set) var value = 0
-    func increment() { value += 1 }
 }

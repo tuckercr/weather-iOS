@@ -111,6 +111,20 @@ final class WalkAdvisorTests: XCTestCase {
         )
     }
 
+    func testRemoteConfigCanMoveTheBadAirBand() {
+        let stricter = PetWeatherThresholds.validated(badAirBand: 2)
+        XCTAssertEqual(
+            WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot("3 PM", 18, rain: 0, airBand: 2)], thresholds: stricter)?.rating,
+            .badAir
+        )
+    }
+
+    func testABadAirBandOutsideOneToFiveUsesTheDefault() {
+        XCTAssertEqual(PetWeatherThresholds.validated(badAirBand: 0).badAirBand, 3)
+        XCTAssertEqual(PetWeatherThresholds.validated(badAirBand: 6).badAirBand, 3)
+        XCTAssertEqual(PetWeatherThresholds.validated(badAirBand: 5).badAirBand, 5)
+    }
+
     func testHeatOutranksBadAir() {
         XCTAssertEqual(
             WalkAdvisor.advice(currentFeelsLikeC: 33, upcoming: [slot("3 PM", 33, rain: 0, airBand: 5)])?.rating,
@@ -368,7 +382,10 @@ final class WalkAdvisorTests: XCTestCase {
             localHour: hour ?? Self.hourOf(label),
             epochSeconds: epoch
         )
-        slot.airQualityBand = airBand
+        // The lowest US index in the band.
+        slot.airQuality = airBand.map {
+            AirQuality(index: Int(AirQuality.Scale.us.bandEdges[$0]) + ($0 == 0 ? 0 : 1), scale: .us, mainPollutant: nil)
+        }
         return slot
     }
 

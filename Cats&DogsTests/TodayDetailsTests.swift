@@ -130,4 +130,38 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.spokenCompassPoint(315), "northwest")
         XCTAssertEqual(TodayDetails.spokenCompassPoint(359), "north")
     }
+
+    private func today(low: Double, high: Double) -> DayForecast {
+        DayForecast(
+            dateLabel: "Fri, Oct 30", conditionMain: "Clear", description: "clear", iconCode: "01d",
+            temperature: 18, feelsLike: 18, tempMin: low, tempMax: high, units: .metric, hourlySlots: []
+        )
+    }
+
+    func testHighAndLowComeFromTodaysForecastNotTheCurrentReading() async {
+        let current = await makeCurrentWeather(temperature: 18)
+
+        let highLow = TodayDetails.highLow(current: current, today: today(low: 12, high: 23))
+
+        XCTAssertEqual(highLow.high, 23)
+        XCTAssertEqual(highLow.low, 12)
+    }
+
+    func testHighAndLowTakeInTheTemperatureNow() async {
+        let current = await makeCurrentWeather(temperature: 25)
+
+        let highLow = TodayDetails.highLow(current: current, today: today(low: 12, high: 23))
+
+        XCTAssertEqual(highLow.high, 25)
+        XCTAssertEqual(highLow.low, 12)
+    }
+
+    func testWithoutTodaysForecastTheCurrentReadingIsUsed() async {
+        let current = await makeCurrentWeather(temperature: 18)
+
+        let highLow = TodayDetails.highLow(current: current, today: nil)
+
+        XCTAssertEqual(highLow.high, current.tempMax)
+        XCTAssertEqual(highLow.low, current.tempMin)
+    }
 }

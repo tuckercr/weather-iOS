@@ -20,7 +20,6 @@ struct CurrentWeatherView: View {
     /// "Now" for the hourly strip, walk advice, captions and moon. Moved on when the app becomes
     /// active and every half hour while it stays open, so a screen left on overnight keeps up.
     @State private var now = Date()
-    @State private var airQualityViewModel = AirQualityViewModel()
     @State private var locationViewModel = LocationPermissionViewModel()
     /// Location access at the last check, to spot it being granted later in the Settings app.
     @State private var locationWasGranted: Bool?
@@ -267,7 +266,6 @@ struct CurrentWeatherView: View {
                         forecastState: weatherViewModel.forecast,
                         location: cityListViewModel.activeLocation,
                         showWalkCard: showWalkCard,
-                        airQuality: airQualityViewModel.reading(for: cityListViewModel.activeLocation),
                         now: now,
                         onDaySelected: { selectedDay = $0 },
                         onForecastRetry: refreshActiveLocation
@@ -324,7 +322,6 @@ struct CurrentWeatherView: View {
         guard let location = cityListViewModel.activeLocation else { return }
         weatherViewModel.refreshCurrent(location: location)
         weatherViewModel.refreshForecast(location: location)
-        airQualityViewModel.load(for: location)
     }
 
     /// Notification text is built from the cache, so reschedule once fresh data has landed. One
@@ -343,7 +340,6 @@ struct CurrentWeatherView: View {
         guard let location = cityListViewModel.activeLocation else { return }
         weatherViewModel.backgroundRefreshCurrent(location: location)
         weatherViewModel.backgroundRefreshForecast(location: location)
-        airQualityViewModel.load(for: location)
     }
 
     private func addCityFromSheet() {
@@ -368,7 +364,6 @@ private struct CurrentWeatherContent: View {
     let forecastState: LoadingState<[DayForecast]>
     let location: SavedLocation?
     let showWalkCard: Bool
-    let airQuality: AirQuality?
     let now: Date
     let onDaySelected: (DayForecast) -> Void
     let onForecastRetry: () -> Void
@@ -552,9 +547,12 @@ private struct CurrentWeatherContent: View {
                     // into it so it sits close under the city name.
                     .padding(.top, -10)
                 // Today's high and low in whole degrees: "H 64° · L 61°".
-                Text("H \(Int(weather.tempMax.rounded()))° · L \(Int(weather.tempMin.rounded()))°")
+                let highLow = TodayDetails.highLow(current: weather, today: todayForecast)
+                let high = Int(highLow.high.rounded())
+                let low = Int(highLow.low.rounded())
+                Text("H \(high)° · L \(low)°")
                     // "H 64°" would be read as the letter H.
-                    .accessibilityLabel("High \(Int(weather.tempMax.rounded()))°, low \(Int(weather.tempMin.rounded()))°")
+                    .accessibilityLabel("High \(high)°, low \(low)°")
                 Text(mood.caption(on: now, timeZone: weather.timeZone))
                     .font(.brand(.headline))
                     .multilineTextAlignment(.center)
@@ -580,7 +578,9 @@ private struct CurrentWeatherContent: View {
                 || WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
             // UV is always 0 after dark, so it only shows in the daytime (night icons end in "n").
             uvIndex: weather.iconCode.hasSuffix("n") ? nil : upcomingSlots.first?.uvIndex,
-            airQuality: airQuality,
+            // The forecast's hour in progress, so it shows offline too. A forecast cached before the
+            // switch went off can still have it, hence the check here as well.
+            airQuality: RemoteConfigRepository.airQualityEnabled ? upcomingSlots.first?.airQuality : nil,
             hasDog: showWalkCard,
             now: now,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,

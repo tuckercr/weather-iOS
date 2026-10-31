@@ -24,6 +24,21 @@ enum OpenMeteoForecast {
             isDay: hourly.time.indices.map { i in (hourly.isDay[ifPresent: i] ?? nil) == 1 }
         )
 
+        // Each day's high and low over all of its hours, including the ones before now that are
+        // dropped below, so today reads as the whole day's range rather than what's left of it.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        func dayStart(_ epoch: Int) -> Date {
+            calendar.startOfDay(for: Date(timeIntervalSince1970: TimeInterval(epoch)))
+        }
+        var dayRanges: [Date: (low: Double, high: Double)] = [:]
+        for i in hourly.time.indices {
+            guard let temperature = hourly.temperature[ifPresent: i] ?? nil else { continue }
+            let day = dayStart(hourly.time[i])
+            let range = dayRanges[day] ?? (temperature, temperature)
+            dayRanges[day] = (min(range.low, temperature), max(range.high, temperature))
+        }
+
         let slots = hourly.time.indices.compactMap { i -> ForecastAggregator.Slot? in
             let epoch = hourly.time[i]
             guard let temperature = hourly.temperature[ifPresent: i] ?? nil, epoch >= currentHourStart else {
@@ -31,10 +46,13 @@ enum OpenMeteoForecast {
             }
             let isDay = (hourly.isDay[ifPresent: i] ?? nil) == 1
             let condition = WmoWeatherCodes.condition((hourly.weatherCode[ifPresent: i] ?? nil) ?? 3, isDay: isDay)
+            let dayRange = dayRanges[dayStart(epoch)]
             return ForecastAggregator.Slot(
                 epochSeconds: epoch,
                 temperature: temperature,
                 feelsLike: (hourly.apparentTemperature[ifPresent: i] ?? nil) ?? temperature,
+                tempMin: dayRange?.low ?? 0,
+                tempMax: dayRange?.high ?? 0,
                 conditionMain: condition.main,
                 description: condition.description,
                 iconCode: condition.iconCode,

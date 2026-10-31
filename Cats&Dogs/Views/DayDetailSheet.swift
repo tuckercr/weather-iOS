@@ -25,7 +25,6 @@ struct DayDetailSheet: View {
                             }
                         }
                     } else {
-                        Divider()
                         ForEach(day.hourlySlots) { slot in
                             HourlySlotRow(slot: slot)
                             Divider()

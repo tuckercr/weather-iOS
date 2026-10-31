@@ -13,13 +13,17 @@ Firebase project and the same Remote Config keys, and new features ship on both.
 
 ## Screenshots
 
-| Pets, walk time & hourly | Today tiles & Paw check | Radar & rest of week | Day detail | Settings |
+| Pets, walk time & hourly | Today tiles & air quality | Radar & rest of week | Day detail | Settings |
 |---|---|---|---|---|
-| ![Sunny and Misty react to the weather, with best walk time and the hourly strip](./screenshots/current.png) | ![Today's tiles: feels like, wind, humidity, Paw check, daylight and sky](./screenshots/today.png) | ![Animated RainViewer radar and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with units, I have a dog and notifications](./screenshots/settings.png) |
+| ![Sunny and Misty react to the weather, with best walk time and the hourly strip](./screenshots/current.png) | ![Today's tiles: feels like, wind, humidity, Paw check, air quality across the full width, daylight and sky](./screenshots/today.png) | ![Animated RainViewer radar and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with units, I have a dog and notifications](./screenshots/settings.png) |
 
-On iPad and in landscape, the pets sit beside today's details and the week splits into two columns:
+On iPad and in landscape, the pets sit beside today's details and the week splits into two columns.
+Here Tokyo's air is "Unhealthy", so the walk card says "Bad air. Potty breaks only." and points
+to a cleaner hour:
 
-![iPad layout with the pets beside today's details](./screenshots/tablet.png)
+![iPad layout with the pets beside today's details, unhealthy air and the bad-air walk card](./screenshots/tablet.png)
+
+The App Store set is in [`screenshots/app-store/`](screenshots/app-store/); see [App Store](#app-store).
 
 ## How to run
 
@@ -53,7 +57,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 4. **Location onboarding**: use the device location, or **Enter a city manually**.
 5. **Current weather**: the main screen for the active city:
    - Hero card: Sunny and Misty act out one of 8 weather moods (sunny, cloudy, rain, storm, snow, hot,
-     cold, night) on a mood-coloured card, with the city, temperature, min/max and a caption in the
+     cold, night) on a mood-coloured card, with the city, temperature, today's high and low (from
+     the forecast, over the whole day and taking in the temperature now) and a caption in the
      pets' voice ("Sunny wants puddles. Misty wants a towel."). One caption is picked per day; at
      night it follows the city's time of night (evening, late night, before dawn). The moon shows
      its real phase, lit from the other side in the southern hemisphere. Tap the card for today's
@@ -65,6 +70,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      (113 °F), and when it is raining now, now never counts, whatever the hourly forecast says. The
      paw is tinted by the rating, and a caption explains hot pavement (estimated 52 °C / 125 °F,
      even on a mild day, and named only when it is the reason) or freezing weather.
+     Hours with unhealthy air (US AQI above 150, or Europe's "Poor" and worse; the band is
+     `walk_bad_air_band` in Remote Config) are never suggested, and when the air is bad now the card
+     says "Bad air. Potty breaks only." Heat still outranks it.
      It can be turned off in Settings.
    - **Next rain**: one line under the top card, only when rain or snow is due in the next 2 hours:
      "Rain starting around 3:15 PM", "Rain stopping around 4:30 PM" or "Rain for the next 2 hours",
@@ -79,6 +87,15 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
      and UK), and reads "Clear" at OpenWeather's 10 km cap.
+   - **Air quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
+     for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
+     "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar
+     and a line about walks with a dog ("Fine for most walks") or about people without one. VoiceOver
+     also reads the main pollutant ("Mostly ozone"). It comes with the forecast, in the same request
+     the walk planner uses, so it's cached and shows offline. `air_quality_enabled` in Remote Config
+     turns it off.
+   - The small tiles sit in pairs; when there's an odd one out (Air quality, with Paw check showing)
+     it takes the full width.
    - **Radar**: RainViewer's recent radar frames animated over an OpenStreetMap base map, with the
      frame time, a Light→Heavy legend, play/pause and a scrubber. A caption under the map credits
      OpenStreetMap and RainViewer. Frames are refetched once they are 10 minutes old (checked every
@@ -96,9 +113,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      (unless `foreground_refresh_min_minutes` says that city was fetched recently), every 30 minutes
      while the app stays open, and periodically in the background. Each refresh also moves the
      clock on, so hours that have passed drop off and a screen left open overnight keeps up.
-   - The walk card and the radar can each be switched off from Remote Config.
+   - The walk card, the radar and air quality can each be switched off from Remote Config.
 6. **Add city** (＋): search with geocoding suggestions; choosing a suggestion pins exact coordinates.
-   A name added without choosing a suggestion appears straight away and is geocoded in the background.
+   **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
+   added as typed and geocoded again at launch, on returning to the app, and when another city is added.
 7. **Settings** (gear), top to bottom:
    - **Units**: system, metric, or imperial.
    - **My Pets**: *I have a dog* turns on the walk card, the Paw check tile, the briefing's walk
@@ -122,6 +140,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **About**: OpenWeather and Open-Meteo attribution, the
      [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0",
      with "· Debug build" in debug builds).
+8. **Update prompts**, from Remote Config: below `ios_min_supported_version` the app shows only
+   "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
+   the update, and *Not now* hides it for a week. Debug builds can show either with the launch
+   argument `-updatePrompt required` or `-updatePrompt recommended`.
 
 ### Where the data comes from
 
@@ -130,6 +152,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 | Current conditions, city search | OpenWeatherMap (needs the API key) |
 | Forecast for cities with coordinates | [Open-Meteo](https://open-meteo.com): true hourly data, UV index, and solar radiation for the pavement estimate. Free, no key. |
 | Forecast for name-only cities | OpenWeatherMap's 3-hourly `/forecast`, as a fallback |
+| Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly US and European indices per pollutant, fetched alongside the Open-Meteo forecast. Free, no key. |
 | Radar | [RainViewer](https://www.rainviewer.com/api.html) frames (free, no key) at zoom 7, the highest it serves |
 | Base map | OpenStreetMap tiles |
 
@@ -372,7 +395,9 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_comfort_min_c` / `walk_comfort_max_c` | 3 (−20–20) / 27 (15–40) | Comfortable walking temperatures (feels-like) |
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
+| `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which hours aren't suggested for a walk and the walk card says "Bad air". 3 is US "Unhealthy" and Europe's "Poor" |
 | `open_meteo_enabled` | true | Off sends forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo |
+| `air_quality_enabled` | true | Off stops fetching air quality: no Air quality tile, and the walk planner ignores the air |
 | `openweather_api_key` | "" | Replacement OpenWeather API key, used from the next launch; empty uses the key built into the app. Lets a leaked key be rotated without an update. Not secret: Remote Config values reach every device |
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |
 | `ios_min_recommended_version` | "" | Below this version a banner above the weather suggests updating; "Not now" hides it for a week. Empty never asks |
@@ -422,8 +447,21 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
 - [`docs/app-store/listing.md`](docs/app-store/listing.md) is the draft App Store Connect listing:
   name, subtitle, description, keywords and the rest.
 - [`screenshots/app-store/`](screenshots/app-store/) holds the 6.9-inch iPhone screenshots
-  (1320 × 2868), numbered 01 to 06, and the 13-inch iPad ones (2064 × 2752), `ipad-01` and
-  `ipad-02`. App Store Connect requires iPad screenshots because the app runs on iPad.
+  (1320 × 2868) and the 13-inch iPad ones (2064 × 2752). App Store Connect requires iPad
+  screenshots because the app runs on iPad. Taken on 10-30 with the status bar at 9:41:
+
+  | File | Shows |
+  |---|---|
+  | `01-welcome.png` | Onboarding: meet Sunny and Misty |
+  | `02-today.png` | San Francisco (My Location): the pets, "Now is a great time" and the hourly strip |
+  | `03-rain-walk.png` | Bogotá in the rain: the umbrella scene, "Rain stopping around 7:00 PM" and "Tomorrow around 7 AM" |
+  | `04-radar-week.png` | The animated radar and the rest of the week |
+  | `05-day-detail.png` | A day's hour-by-hour detail |
+  | `06-settings.png` | Settings: units, I have a dog, notifications |
+  | `ipad-01-amsterdam.png` | Amsterdam at night, with air quality on Europe's scale |
+  | `ipad-02-tokyo.png` | Tokyo with unhealthy air: "Bad air. Potty breaks only." |
+
+  Suggested upload order: 02, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
 - Release builds fail if `Cats&Dogs/Secrets.plist` is missing or has no OpenWeather key (the "Check
   OpenWeather API key" build phase), so an archive can't ship without one. Debug builds skip the
   check. Radar map tiles are requested with a `SunnyAndMisty/<version>` User-Agent and cached on
@@ -437,6 +475,11 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   question.
 - The app icons have no alpha channel, which App Store Connect requires.
 - The privacy policy is at [sunnyandmisty.com/privacy](https://sunnyandmisty.com/privacy), linked from Settings.
+- **TestFlight**: create the app record in App Store Connect (bundle ID `com.fangjet.weather`, SKU
+  and name from `listing.md`), archive `main` in Xcode (Product › Archive, signing with FangJet LLC,
+  team `3V3NR8HP58`), and upload from the Organizer. Bump the build number (`CURRENT_PROJECT_VERSION`)
+  for every upload. Internal testers must be users on the App Store Connect team; external testers
+  only need an email address, but the first build for them goes through Beta App Review.
 
 ## Credits
 
