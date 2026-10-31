@@ -59,6 +59,10 @@ final class RemoteConfigRepository {
     nonisolated static let keyTileUvEnabled = "tile_uv_enabled"
     nonisolated static let keyTileDaylightEnabled = "tile_daylight_enabled"
     nonisolated static let keyTileSkyEnabled = "tile_sky_enabled"
+    /// Seasonal themes (`SeasonalTheme`): a master switch, and the themes themselves as JSON, which
+    /// replaces the list shipped in the app when it's valid. Empty uses the shipped list.
+    nonisolated static let keySeasonalThemesEnabled = "seasonal_themes_enabled"
+    nonisolated static let keySeasonalThemes = "seasonal_themes"
     /// Off sends forecasts for cities with coordinates to OpenWeatherMap instead of Open-Meteo.
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
@@ -102,6 +106,8 @@ final class RemoteConfigRepository {
             Self.keyTileUvEnabled: NSNumber(value: false),
             Self.keyTileDaylightEnabled: NSNumber(value: true),
             Self.keyTileSkyEnabled: NSNumber(value: true),
+            Self.keySeasonalThemesEnabled: NSNumber(value: true),
+            Self.keySeasonalThemes: "" as NSString,
             Self.keyOpenWeatherApiKey: "" as NSString,
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
@@ -222,6 +228,26 @@ final class RemoteConfigRepository {
 
     /// Every flag defaults to on. A key with no value at all reads as false, so that counts as
     /// "not set" rather than "off".
+    /// The seasonal themes to choose from: Remote Config's list when it's valid, else the one shipped
+    /// in the app; none when they're switched off. Debug builds can force one with
+    /// `-seasonalTheme halloween`, whatever the date.
+    var seasonalThemes: [SeasonalTheme] {
+        #if DEBUG
+        if let forced = UserDefaults.standard.string(forKey: "seasonalTheme") {
+            return SeasonalThemes.builtIn.filter { $0.id == forced }.map(\.everyDay)
+        }
+        #endif
+        guard Self.flag(Self.keySeasonalThemesEnabled) else { return [] }
+        if FirebaseApp.app() != nil {
+            let json = RemoteConfig.remoteConfig()[Self.keySeasonalThemes].stringValue
+            if !json.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+               let themes = SeasonalThemes.parse(Data(json.utf8)) {
+                return themes
+            }
+        }
+        return SeasonalThemes.builtIn
+    }
+
     /// `fallback` is used without Firebase or a value, so a switch that starts off stays off.
     private nonisolated static func flag(_ key: String, fallback: Bool = true) -> Bool {
         guard FirebaseApp.app() != nil else { return fallback }

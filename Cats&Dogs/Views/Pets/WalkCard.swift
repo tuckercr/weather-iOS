@@ -5,7 +5,12 @@ import SwiftUI
 /// short caption says why when it's too hot or too cold, naming the pavement only when that's the reason.
 struct WalkCard: View {
     let advice: WalkAdvice
+    @Environment(\.seasonalTheme) private var seasonalTheme
     @Environment(\.colorScheme) private var colorScheme
+    /// Baloo 2 leaves about 9 points under its baseline, against 3 above the small title's
+    /// capitals, so when the headline is the last line the text sits high beside the paw. Lowered
+    /// by half the difference.
+    @ScaledMetric(relativeTo: .headline) private var headlineLastOffset: CGFloat = 3
 
     private var detail: String {
         if advice.rating == .great { return "Now is a great time" }
@@ -63,11 +68,12 @@ struct WalkCard: View {
                         .foregroundStyle(tint)
                 }
             }
+            .offset(y: caption == nil ? headlineLastOffset : 0)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.surfaceVariant, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.card(seasonalTheme), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
 }

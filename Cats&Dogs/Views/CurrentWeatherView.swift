@@ -425,6 +425,12 @@ private struct CurrentWeatherContent: View {
         Array(upcomingSlots.prefix(Self.hourlyStripCount))
     }
 
+    /// Today's seasonal theme by the city's own date, worked out again whenever `now` moves on, so
+    /// it ends by itself when its day does.
+    private var seasonalTheme: SeasonalTheme? {
+        SeasonalThemes.theme(on: now, timeZone: weather.timeZone, in: RemoteConfigRepository.shared.seasonalThemes)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if isWide {
@@ -448,6 +454,7 @@ private struct CurrentWeatherContent: View {
             }
             restOfWeek
         }
+        .environment(\.seasonalTheme, seasonalTheme)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
         } action: { width in
@@ -520,6 +527,14 @@ private struct CurrentWeatherContent: View {
         return false
     }
 
+    /// The theme's caption on its day, otherwise the weather's.
+    private var heroCaption: String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = weather.timeZone
+        return seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
+            ?? mood.caption(on: now, timeZone: weather.timeZone)
+    }
+
     private var heroCard: some View {
         Button {
             if let today = todayForecast {
@@ -528,7 +543,7 @@ private struct CurrentWeatherContent: View {
         } label: {
             VStack(spacing: 4) {
                 // Kept smaller than the card so the scene doesn't dominate, especially on wide screens.
-                PetScene(mood: mood, moonPhase: MoonPhase(at: now))
+                PetScene(mood: mood, moonPhase: MoonPhase(at: now), decorations: seasonalTheme?.decorations ?? [])
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
                 Text(weather.description)
@@ -553,16 +568,19 @@ private struct CurrentWeatherContent: View {
                 Text("H \(high)° · L \(low)°")
                     // "H 64°" would be read as the letter H.
                     .accessibilityLabel("High \(high)°, low \(low)°")
-                Text(mood.caption(on: now, timeZone: weather.timeZone))
+                Text(heroCaption)
                     .font(.brand(.headline))
                     .multilineTextAlignment(.center)
                     .padding(.top, 10)
             }
-            .foregroundStyle(mood.ink)
+            .foregroundStyle(seasonalTheme?.heroInk(night: mood == .night) ?? mood.ink)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(mood.skyColor, in: RoundedRectangle(cornerRadius: 12))
+            .background(
+                seasonalTheme?.heroBackground(night: mood == .night) ?? mood.skyColor,
+                in: RoundedRectangle(cornerRadius: 12)
+            )
         }
         .buttonStyle(.plain)
         .disabled(todayForecast == nil)
@@ -593,6 +611,7 @@ private struct CurrentWeatherContent: View {
 
 private struct SectionHeader: View {
     let title: String
+    @Environment(\.seasonalTheme) private var seasonalTheme
 
     init(_ title: String) {
         self.title = title
@@ -601,7 +620,7 @@ private struct SectionHeader: View {
     var body: some View {
         Text(title)
             .font(.caption)
-            .foregroundStyle(Color.secondaryText)
+            .foregroundStyle(seasonalTheme?.accent ?? Color.secondaryText)
             .padding(.top, 4)
             .accessibilityAddTraits(.isHeader)
     }
@@ -609,6 +628,7 @@ private struct SectionHeader: View {
 
 private struct HourlyStrip: View {
     let slots: [HourlySlot]
+    @Environment(\.seasonalTheme) private var seasonalTheme
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -630,7 +650,7 @@ private struct HourlyStrip: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
         }
-        .background(Color.surfaceVariant)
+        .background(Color.card(seasonalTheme))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
@@ -640,6 +660,7 @@ private struct HourlyStrip: View {
 private struct NextRainLine: View {
     let nextRain: NextRain
     let timeZone: TimeZone
+    @Environment(\.seasonalTheme) private var seasonalTheme
 
     var body: some View {
         HStack(spacing: 12) {
@@ -651,7 +672,7 @@ private struct NextRainLine: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.surfaceVariant, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.card(seasonalTheme), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 
