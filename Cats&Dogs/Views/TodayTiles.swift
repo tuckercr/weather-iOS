@@ -318,6 +318,7 @@ private struct EqualTileGrid: Layout {
 private struct Tile<Content: View>: View {
     let icon: String
     let label: String
+    @Environment(\.seasonalTheme) private var seasonalTheme
     /// Extra detail at the right of the label row, such as the UV index on the Daylight tile.
     var trailing: String?
     @ViewBuilder let content: Content
@@ -350,14 +351,14 @@ private struct Tile<Content: View>: View {
                         .foregroundStyle(Color.secondaryText)
                 }
             }
-            .foregroundStyle(Color.accent)
+            .foregroundStyle(seasonalTheme?.tileHeader ?? Color.accent)
             content
         }
         // Fills whatever height the grid gives it, so tiles side by side match.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .background(Color.surfaceVariant, in: RoundedRectangle(cornerRadius: 16))
+        .background(Color.card(seasonalTheme), in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .combine)
     }
 }

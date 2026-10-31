@@ -5,6 +5,7 @@ import SwiftUI
 /// short caption says why when it's too hot or too cold, naming the pavement only when that's the reason.
 struct WalkCard: View {
     let advice: WalkAdvice
+    @Environment(\.seasonalTheme) private var seasonalTheme
     @Environment(\.colorScheme) private var colorScheme
 
     private var detail: String {
@@ -67,7 +68,7 @@ struct WalkCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.surfaceVariant, in: RoundedRectangle(cornerRadius: 12))
+        .background(Color.card(seasonalTheme), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
     }
 }
