@@ -549,13 +549,9 @@ private struct CurrentWeatherContent: View {
                     .padding(.horizontal, 24)
                 Text(weather.description)
                 if location != nil {
-                    HStack(spacing: 4) {
-                        Image(systemName: "location.fill")
-                            .font(.caption)
-                        Text(weather.cityName)
-                            .font(.brand(.title2))
-                    }
-                    .padding(.top, 4)
+                    Text(weather.cityName)
+                        .font(.brand(.title2))
+                        .padding(.top, 4)
                 }
                 Text(WeatherFormatting.temperature(weather.temperature, units: weather.units))
                     .font(.brand(.largeTitle, weight: .bold))
