@@ -1,7 +1,7 @@
 import Foundation
 
 /// Which notification it is: each has its own Settings switch.
-enum NotificationKind: Equatable {
+enum NotificationKind: Equatable, CaseIterable {
     case morningBriefing, walkTime, rain
 }
 

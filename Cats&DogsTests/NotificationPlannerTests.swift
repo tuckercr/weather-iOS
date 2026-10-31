@@ -211,6 +211,18 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(WeatherNotificationScheduler.threadIdentifier(.rain), "rain_alerts")
     }
 
+    func testEachKindsStackSaysWhatItIsWithOneAndManyMore() {
+        XCTAssertEqual(Set(WeatherNotificationScheduler.categories.map(\.identifier)), ["morning_briefing", "walk_time", "rain_alerts"])
+        let bundle = Bundle(for: WeatherNotificationScheduler.self)
+        func summary(_ kind: NotificationKind, _ count: Int) -> String {
+            String(format: bundle.localizedString(forKey: WeatherNotificationScheduler.summaryFormat(kind), value: nil, table: nil), count)
+        }
+        XCTAssertEqual(summary(.morningBriefing, 1), "1 more briefing")
+        XCTAssertEqual(summary(.morningBriefing, 3), "3 more briefings")
+        XCTAssertEqual(summary(.walkTime, 1), "1 more walk reminder")
+        XCTAssertEqual(summary(.rain, 2), "2 more rain alerts")
+    }
+
     // MARK: - Rain alerts
 
     /// Dry, then rain from `startHours` after midnight, in 15-minute steps from 6 AM.
