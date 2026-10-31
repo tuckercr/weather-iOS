@@ -13,7 +13,10 @@ struct GeocodingRepository {
 
         do {
             let results = try await client.directSearch(query: trimmed, limit: 8)
-            return .success(results.map(mapSuggestion))
+            // The geocoder can list a place twice a few metres apart ("Amsterdam, North Holland, NL"),
+            // which looks broken and gives the list two rows with one id. The first is its best match.
+            var seen = Set<String>()
+            return .success(results.map(mapSuggestion).filter { seen.insert($0.label).inserted })
         } catch {
             return .failure(error)
         }

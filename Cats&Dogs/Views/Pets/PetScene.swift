@@ -107,6 +107,7 @@ struct PetSceneIcon: View {
 private enum Palette {
     static let catFur = Color(hex: 0x5F5E5A)
     static let catBelly = Color(hex: 0xF1EFE8)
+    static let catInnerEar = Color(hex: 0xED93B1)
     static let catNose = Color(hex: 0xE8849A)
     static let collar = Color(hex: 0x185FA5)
     static let shine = Color.white
@@ -220,8 +221,8 @@ private struct Painter {
         }
     }
 
-    /// A tuxedo cat, as on the app icon: grey with a white blaze down the face into white cheeks, a
-    /// small pink nose, a "w" mouth and whiskers.
+    /// A tuxedo cat, as on the app icon: grey with pink inner ears, a white blaze down the face
+    /// into white cheeks, a small pink nose, a "w" mouth and whiskers.
     func cat(_ mood: PetMood) {
         // A storm sends the cat low (hiding); otherwise it sits upright.
         let dy: CGFloat = mood == .storm ? 14 : 0
@@ -229,6 +230,8 @@ private struct Painter {
         circle(Palette.catFur, cx: 95, cy: 80 + dy, r: 20)
         poly(Palette.catFur, [(78, 68 + dy), (82, 50 + dy), (92, 64 + dy)])
         poly(Palette.catFur, [(98, 64 + dy), (108, 50 + dy), (112, 68 + dy)])
+        poly(Palette.catInnerEar, [(81, 64 + dy), (83.5, 55 + dy), (89, 62 + dy)])
+        poly(Palette.catInnerEar, [(101, 62 + dy), (106.5, 55 + dy), (109, 64 + dy)])
         poly(Palette.catBelly, [(93, 66 + dy), (97, 66 + dy), (101, 86 + dy), (89, 86 + dy)])
         oval(Palette.catBelly, cx: 90, cy: 90 + dy, rx: 7.5, ry: 6.5)
         oval(Palette.catBelly, cx: 100, cy: 90 + dy, rx: 7.5, ry: 6.5)

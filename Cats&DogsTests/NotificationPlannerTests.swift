@@ -13,8 +13,14 @@ final class NotificationPlannerTests: XCTestCase {
 
     private func at(_ hours: Double) -> Date { Date(timeIntervalSince1970: TimeInterval(dayStart) + hours * 3600) }
 
-    private func slot(_ hourOfDay: Int, day: Int = 0, rain: Int = 0, temp: Double = 15) -> HourlySlot {
-        HourlySlot(
+    private func slot(
+        _ hourOfDay: Int,
+        day: Int = 0,
+        rain: Int = 0,
+        temp: Double = 15,
+        air: AirQuality.Pollutant? = nil
+    ) -> HourlySlot {
+        var slot = HourlySlot(
             timeLabel: hourOfDay < 12 ? "\(hourOfDay) AM" : hourOfDay == 12 ? "12 PM" : "\(hourOfDay - 12) PM",
             iconCode: rain > 50 ? "10d" : "01d",
             description: rain > 50 ? "Light rain" : "Clear sky",
@@ -29,6 +35,9 @@ final class NotificationPlannerTests: XCTestCase {
             localHour: hourOfDay,
             epochSeconds: dayStart + day * 24 * hour + hourOfDay * hour
         )
+        // Unhealthy on the US index, the default bad-air band.
+        slot.airQuality = air.map { AirQuality(index: 160, scale: .us, mainPollutant: $0) }
+        return slot
     }
 
     private func day(_ slots: [HourlySlot], rainChance: Int = 0, quarters: [QuarterHour]? = nil) -> DayForecast {
@@ -109,6 +118,35 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(body(dry.map { slot($0, rain: 90) }), "High 18°, low 10°. Not a good day for walkies.")
     }
 
+    func testWithADogTheBriefingSaysWhenBadAirShortensTheWalk() {
+        let withDog = NotificationSettings(hasDog: true)
+        func body(_ slots: [HourlySlot]) -> String? {
+            plan([day(slots)], settings: withDog).first { $0.identifier == "briefing_0" }?.body
+        }
+
+        XCTAssertEqual(
+            body(dry.map { slot($0, air: $0 >= 12 ? .fineParticles : nil) }),
+            "High 18°, low 10°. Sunny says now's a great time for a walk. Smoky air today, so keep it short."
+        )
+        XCTAssertEqual(
+            body(dry.map { slot($0, air: $0 < 11 ? .ozone : nil) }),
+            "High 18°, low 10°. Sunny's picked 11 AM for a walk. High ozone today, so keep it short."
+        )
+        XCTAssertEqual(
+            body(dry.map { slot($0, air: .nitrogenDioxide) }),
+            "High 18°, low 10°. Poor air today, so potty breaks only."
+        )
+    }
+
+    func testBadAirAtNightOrOnAnotherDayIsNotMentioned() {
+        let withDog = NotificationSettings(hasDog: true)
+        let slots = dry.map { slot($0) } + [slot(23, air: .fineParticles), slot(10, day: 1, air: .fineParticles)]
+        XCTAssertEqual(
+            plan([day(slots)], settings: withDog).first { $0.identifier == "briefing_0" }?.body,
+            "High 18°, low 10°. Sunny says now's a great time for a walk."
+        )
+    }
+
     func testTheBriefingSwitchesQueueNoBriefings() {
         XCTAssertTrue(plan([day(dry.map { slot($0) })], settings: NotificationSettings(morningBriefing: false)).isEmpty)
         XCTAssertTrue(plan([day(dry.map { slot($0) })], settings: NotificationSettings(briefingRemotelyEnabled: false)).isEmpty)
@@ -125,6 +163,16 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(walks.map(\.date), [at(11)])
         XCTAssertEqual(walks.first?.title, "Time for a walk")
         XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door.")
+    }
+
+    func testOnABadAirDayTheWalkNudgeSaysToKeepItShort() {
+        let walks = plan(
+            [day(dry.map { slot($0, air: $0 < 11 ? .fineParticles : nil) })],
+            settings: NotificationSettings(walkTime: true, hasDog: true)
+        ).filter { $0.kind == .walkTime }
+
+        XCTAssertEqual(walks.map(\.date), [at(11)])
+        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Smoky air today, so a short one.")
     }
 
     func testWhenTheBriefingHourIsGoodTheBriefingSaysSoOrWithoutItTheNudgeGoesThen() {
@@ -161,6 +209,18 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(WeatherNotificationScheduler.threadIdentifier(.morningBriefing), "morning_briefing")
         XCTAssertEqual(WeatherNotificationScheduler.threadIdentifier(.walkTime), "walk_time")
         XCTAssertEqual(WeatherNotificationScheduler.threadIdentifier(.rain), "rain_alerts")
+    }
+
+    func testEachKindsStackSaysWhatItIsWithOneAndManyMore() {
+        XCTAssertEqual(Set(WeatherNotificationScheduler.categories.map(\.identifier)), ["morning_briefing", "walk_time", "rain_alerts"])
+        let bundle = Bundle(for: WeatherNotificationScheduler.self)
+        func summary(_ kind: NotificationKind, _ count: Int) -> String {
+            String(format: bundle.localizedString(forKey: WeatherNotificationScheduler.summaryFormat(kind), value: nil, table: nil), count)
+        }
+        XCTAssertEqual(summary(.morningBriefing, 1), "1 more briefing")
+        XCTAssertEqual(summary(.morningBriefing, 3), "3 more briefings")
+        XCTAssertEqual(summary(.walkTime, 1), "1 more walk reminder")
+        XCTAssertEqual(summary(.rain, 2), "2 more rain alerts")
     }
 
     // MARK: - Rain alerts

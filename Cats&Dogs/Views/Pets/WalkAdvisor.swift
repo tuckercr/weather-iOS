@@ -177,6 +177,11 @@ enum WalkAdvisor {
         (slot.airQuality?.band ?? 0) >= thresholds.badAirBand
     }
 
+    /// Bad air in a walking hour: an hour the walk advice would otherwise have weighed up.
+    static func hasBadAirForWalking(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
+        isDaytime(slot, thresholds) && hasBadAir(slot, thresholds)
+    }
+
     /// Feels-like rather than air temperature: humid heat and wind chill are what the dog feels.
     /// Pavement that's only getting hot already rules an hour out, so the suggested hour is a cooler one.
     static func isWalkable(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
