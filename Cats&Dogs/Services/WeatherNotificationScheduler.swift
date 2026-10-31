@@ -99,6 +99,8 @@ final class WeatherNotificationScheduler {
         content.sound = .default
         // Groups them by kind in Notification Center, like Android's channels.
         content.threadIdentifier = Self.threadIdentifier(planned.kind)
+        // The category gives a stack its own summary ("3 more briefings").
+        content.categoryIdentifier = Self.threadIdentifier(planned.kind)
         if let mood, let png = petsPicture(mood: mood, southernHemisphere: southernHemisphere),
            let attachment = Self.attachment(png, identifier: planned.identifier) {
             content.attachments = [attachment]
@@ -146,6 +148,31 @@ final class WeatherNotificationScheduler {
         }
     }
     #endif
+
+    /// One category per kind, so a stack of them reads "3 more briefings" rather than "3 more
+    /// notifications". The format is looked up when shown, so Localizable.stringsdict can pick
+    /// "1 more briefing".
+    nonisolated static var categories: Set<UNNotificationCategory> {
+        Set(NotificationKind.allCases.map { kind in
+            UNNotificationCategory(
+                identifier: threadIdentifier(kind),
+                actions: [],
+                intentIdentifiers: [],
+                hiddenPreviewsBodyPlaceholder: nil,
+                categorySummaryFormat: NSString.localizedUserNotificationString(forKey: summaryFormat(kind), arguments: nil),
+                options: []
+            )
+        })
+    }
+
+    /// The summary for a stack of `kind`; `%u` is how many more there are.
+    nonisolated static func summaryFormat(_ kind: NotificationKind) -> String {
+        switch kind {
+        case .morningBriefing: "%u more briefings"
+        case .walkTime: "%u more walk reminders"
+        case .rain: "%u more rain alerts"
+        }
+    }
 
     /// The same names as Android's notification channels.
     nonisolated static func threadIdentifier(_ kind: NotificationKind) -> String {
