@@ -21,13 +21,16 @@ Finished items move to Done at the bottom.
       card ("Storms from 4 PM, walk before 3"), and possibly the pets' hero line. Check that both
       forecast providers give thunderstorm codes hourly. Should storm hours also be dropped from
       suggested walks, like bad air? (10-30)
+- [ ] **Sunny and Misty in the hero card should look like the splash screen and app icon.** The
+      hero art is still the placeholder drawn in code (`PetScene`, both apps). (10-31)
+- [ ] **My Location: prefer the city name** over the neighbourhood OpenWeather reports
+      ("Horinouchi" for central Tokyo). Needs a reverse-geocoding choice (Apple and Android's own
+      geocoders, or OpenWeather's reverse lookup). (10-30)
 - [ ] **Android location: "Ask every time" never clears the permanently-denied flag**, so
       "Add My Location" stays hidden after a reset in system settings (review finding 3). (10-29)
 
 ## Air quality
 
-- [ ] The walk reminder and morning briefing just skip bad-air hours; they don't say why. Add a
-      line ("Smoky air today, so a short one")? (10-30)
 - [ ] Review the copy without a dog ("Fresh air all round" … "Stay indoors") and with one
       ("Good air for a long walk" … "Stay in. Potty breaks only"). (10-30)
 - [ ] The pollutant ("Mostly ozone") is only read out by VoiceOver and TalkBack: a fourth line made
@@ -38,18 +41,15 @@ Finished items move to Done at the bottom.
 
 ## More tiles to consider (10-30)
 
-- [ ] Pollen: free from Open-Meteo for Europe only. The US needs a paid provider (Google Pollen,
-      Tomorrow.io, Ambee).
-- [ ] A full UV tile (peak time, pale-nosed dogs). UV is only in the Daylight header now.
 - [ ] Wind gusts in the Wind tile; sunshine hours; snow depth feeding the paw check.
 - Decided: no Storm watch tile (mocked up 10-30). Storms go in the walk line instead (Do soon).
+- Decided: Pollen is a version 2 feature (see Version 2). (10-31)
 
 ## Notifications
 
 - [ ] Captions like "Perfect walkies weather!" still show without a dog. You said to leave the dog
       walking strings for now. (10-28)
-- [ ] Let people choose the morning briefing time (fixed at 8:30 today). (10-26)
-- [ ] iOS stack summary line ("3 more briefings") via `summaryArgument`. Probably not needed. (10-29)
+- Won't do: let people choose the morning briefing time; it stays at 8:30. (10-26, decided 10-31)
 
 ## Location
 
@@ -58,7 +58,6 @@ Finished items move to Done at the bottom.
 
 ## Walk planner and pet safety
 
-- [ ] Per-pet thresholds: small, short-haired and flat-faced dogs struggle sooner. (10-28)
 - [ ] Strong wind isn't considered for the night "stroll" caption. (10-26)
 - [ ] Retune the pavement heat model after an outdoor check of your own. (10-27)
 
@@ -86,11 +85,8 @@ Finished items move to Done at the bottom.
 
 ## Small fixes found while taking screenshots (10-30)
 
-- [ ] City search shows the same suggestion twice ("Amsterdam, North Holland, NL"). Drop duplicates.
 - [ ] On the day clocks fall back, the day detail lists "1 AM" twice. That's right, but the
       second could say so (for example "1 AM PST").
-- [ ] My Location shows the reverse-geocoded neighbourhood ("Horinouchi" for central Tokyo), not
-      the city. Prefer the city name?
 
 ## Testing
 
@@ -112,10 +108,21 @@ Finished items move to Done at the bottom.
 ## Ideas
 
 - [ ] Home screen widget: the pets reacting to the weather, plus the next walk time. (10-26)
-- [ ] Small touches: tap the pets (Sunny wags, Misty ignores you), seasonal scenes, a "Sunny's
-      take / Misty's take" line in the day detail. (10-26)
+- [ ] Small touches: tap the pets (Sunny wags, Misty ignores you), a "Sunny's take / Misty's
+      take" line in the day detail. (10-26)
+- [ ] **Seasonal scenes**, starting with Halloween: an orange card by day with a jack-o'-lantern,
+      Misty in a witch hat and Sunny in a pumpkin bandana; a purple card after dark with bats and
+      a glowing pumpkin ("Too many doorbells. Misty is under the bed."). Mocked up 10-31. Best
+      after the new hero art, and behind a Remote Config switch. (10-31)
 - [ ] Sunny's pronoun is still undecided; the copy avoids needing one. (10-26)
 - [ ] Kotlin Multiplatform, as a learning project. Low priority. (09-24)
+
+## Version 2
+
+- [x] Pollen: free from Open-Meteo for Europe only. The US needs a paid provider (Google Pollen,
+      Tomorrow.io, Ambee). Moved to version 2. (10-30, decided 10-31)
+- [x] Per-pet thresholds: small, short-haired and flat-faced dogs struggle sooner. Moved to
+      version 2. (10-28, decided 10-31)
 
 ## Outside the apps
 
@@ -127,6 +134,15 @@ Finished items move to Done at the bottom.
 
 ## Done
 
+- [x] UV tile: the index, today's peak while it's ahead ("Peak 8 at 1 PM"), then "Shade for pale
+      noses" on a high day with a dog. Every Today tile now has a Remote Config switch
+      (`tile_*_enabled`); UV starts off. (10-30, done 10-31)
+- [x] Notification stacks on iOS say "3 more briefings" (a category summary per kind). (10-29,
+      done 10-31)
+- [x] Bad air in the notifications: the briefing adds "Smoky air today, so keep it short." (or
+      "... so potty breaks only.") and the walk nudge "... so a short one."; ozone and other
+      pollutants read "High ozone" and "Poor air". (10-30, done 10-31)
+- [x] City search no longer shows a place twice. (10-30, done 10-31)
 - [x] First TestFlight build: 1.0 (1) uploaded from `main` with `xcodebuild`, internal group
       "Family". The next upload needs build 2. (10-31)
 - [x] App Store listing in App Store Connect: name "Sunny & Misty: Pet Weather", text, screenshots
