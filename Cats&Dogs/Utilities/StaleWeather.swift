@@ -1,7 +1,7 @@
 import Foundation
 
-/// Handling of cached weather that's on screen because a refresh failed. Same rules as Android's
-/// `util/StaleWeather.kt`.
+/// Handling of cached weather on screen, while a refresh is under way or after one fails. Same rules
+/// as Android's `util/StaleWeather.kt`.
 enum StaleWeather {
     /// How old cached current conditions can be and still be shown as "now" when a refresh fails.
     /// Older than this, the screen shows the cached forecast for the current hour instead.
@@ -18,6 +18,33 @@ enum StaleWeather {
         guard let observedAt = weather.observedAtEpoch else { return false }
         return now.timeIntervalSince1970 - TimeInterval(observedAt) > showAsNowFor
     }
+
+    /// A reading this old has its icon's day or night ending checked against the clock.
+    static let dayNightRecheckAfter: TimeInterval = 30 * 60
+
+    /// `weather.iconCode` with its day or night ending ("d" or "n") for `now` rather than for when the
+    /// reading was taken, from the city's sunrise and sunset by time of day. A reading cached before
+    /// sunset would otherwise put up the daytime hero after dark until the refresh lands. Readings
+    /// under half an hour old, and ones without sun times, keep OpenWeather's icon.
+    static func iconCode(_ weather: CurrentWeather, at now: Date) -> String {
+        let icon = weather.iconCode
+        guard let observedAt = weather.observedAtEpoch,
+              let sunrise = weather.sunriseEpoch,
+              let sunset = weather.sunsetEpoch,
+              now.timeIntervalSince1970 - TimeInterval(observedAt) >= dayNightRecheckAfter,
+              icon.hasSuffix("d") || icon.hasSuffix("n")
+        else { return icon }
+        let offset = weather.timeZone.secondsFromGMT(for: now)
+        func timeOfDay(_ epoch: Int) -> Int { ((epoch + offset) % secondsPerDay + secondsPerDay) % secondsPerDay }
+        let nowTime = timeOfDay(Int(now.timeIntervalSince1970))
+        let rise = timeOfDay(sunrise)
+        let set = timeOfDay(sunset)
+        // Polar day or night, where the times can wrap past midnight: leave it to OpenWeather.
+        guard rise < set else { return icon }
+        return String(icon.dropLast()) + (nowTime < rise || nowTime >= set ? "n" : "d")
+    }
+
+    private static let secondsPerDay = 24 * 60 * 60
 
     /// The cached forecast's slot in progress at `now`, as current conditions: temperature, conditions,
     /// wind and humidity from the forecast, today's high and low, and everything else (city, time zone,

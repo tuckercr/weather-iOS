@@ -75,12 +75,50 @@ final class StaleWeatherTests: XCTestCase {
 
     private func date(_ epoch: Int) -> Date { Date(timeIntervalSince1970: TimeInterval(epoch)) }
 
-    private func weather(observedAt: Int?) -> CurrentWeather {
+    func testADayReadingCachedBeforeSunsetShowsNightAfterIt() {
+        let reading = weather(observedAt: noon, sunrise: noon - 5 * hour, sunset: noon + 5 * hour)
+
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon + 4 * hour)), "01d")
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon + 7 * hour)), "01n")
+    }
+
+    func testANightReadingFromTheEveningBeforeShowsDayAfterSunrise() {
+        // Taken at 22:00 the day before, with that day's sunrise and sunset.
+        let reading = weather(observedAt: noon - 14 * hour, iconCode: "04n", sunrise: noon - 29 * hour, sunset: noon - 19 * hour)
+
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon - 6 * hour)), "04n")
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon)), "04d")
+    }
+
+    func testARecentReadingKeepsOpenWeathersIcon() {
+        let reading = weather(observedAt: noon + 5 * hour - 600, sunrise: noon - 5 * hour, sunset: noon + 5 * hour)
+
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon + 5 * hour + 600)), "01d")
+    }
+
+    func testWithoutSunTimesTheIconStands() {
+        XCTAssertEqual(StaleWeather.iconCode(weather(observedAt: noon), at: date(noon + 9 * hour)), "01d")
+    }
+
+    func testDayAndNightGoByTheCitysOwnClock() {
+        // UTC+10: sunrise 06:00 and sunset 18:00 local are 20:00 the day before and 08:00 UTC.
+        let reading = weather(observedAt: noon - 7 * hour, sunrise: noon - 16 * hour, sunset: noon - 4 * hour, offset: 10 * 3600)
+
+        XCTAssertEqual(StaleWeather.iconCode(reading, at: date(noon - 2 * hour)), "01n")
+    }
+
+    private func weather(
+        observedAt: Int?,
+        iconCode: String = "01d",
+        sunrise: Int? = nil,
+        sunset: Int? = nil,
+        offset: Int = 0
+    ) -> CurrentWeather {
         CurrentWeather(
             cityName: "Austin",
             conditionMain: "Clear",
             description: "Clear sky",
-            iconCode: "01d",
+            iconCode: iconCode,
             temperature: 20,
             feelsLike: 20,
             tempMin: 15,
@@ -92,9 +130,9 @@ final class StaleWeatherTests: XCTestCase {
             visibilityMeters: 10_000,
             cloudPercent: 10,
             units: .metric,
-            sunriseEpoch: nil,
-            sunsetEpoch: nil,
-            timezoneOffsetSeconds: 0,
+            sunriseEpoch: sunrise,
+            sunsetEpoch: sunset,
+            timezoneOffsetSeconds: offset,
             observedAtEpoch: observedAt
         )
     }

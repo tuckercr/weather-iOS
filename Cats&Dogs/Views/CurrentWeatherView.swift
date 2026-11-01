@@ -394,10 +394,13 @@ private struct CurrentWeatherContent: View {
 
     private var feelsLikeC: Double { weather.units.toCelsius(weather.feelsLike) }
 
+    /// Day or night by the clock, so a reading cached before sunset doesn't flash the daytime hero.
+    private var iconCodeNow: String { StaleWeather.iconCode(weather, at: now) }
+
     private var mood: PetMood {
         PetMood.forConditions(
             conditionMain: weather.conditionMain,
-            iconCode: weather.iconCode,
+            iconCode: iconCodeNow,
             feelsLikeC: feelsLikeC,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds
         )
@@ -596,7 +599,7 @@ private struct CurrentWeatherContent: View {
             groundWet: upcomingSlots.first?.groundWet == true
                 || WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
             // UV is always 0 after dark, so it only shows in the daytime (night icons end in "n").
-            uvIndex: weather.iconCode.hasSuffix("n") ? nil : upcomingSlots.first?.uvIndex,
+            uvIndex: iconCodeNow.hasSuffix("n") ? nil : upcomingSlots.first?.uvIndex,
             uvPeak: todayForecast?.hourlySlots.filter { $0.uvIndex != nil }.max { ($0.uvIndex ?? 0) < ($1.uvIndex ?? 0) },
             // The forecast's hour in progress, so it shows offline too. A forecast cached before the
             // switch went off can still have it, hence the check here as well.
