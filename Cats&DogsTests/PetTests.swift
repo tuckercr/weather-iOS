@@ -65,6 +65,28 @@ final class PetMoodTests: XCTestCase {
         }
     }
 
+    func testWithoutADogNoCaptionMentionsWalksOrPaws() {
+        for mood in PetMood.allCases {
+            for part in [NightPart.evening, .lateNight, .beforeDawn] {
+                let captions = mood.captions(nightPart: part, hasDog: false)
+                XCTAssertFalse(captions.isEmpty)
+                for caption in captions {
+                    XCTAssertNil(caption.range(of: "walk|stroll|paws|dog", options: [.regularExpression, .caseInsensitive]), caption)
+                }
+            }
+        }
+    }
+
+    func testTheDogWalkingSettingPicksTheCaptionList() {
+        XCTAssertTrue(PetMood.cloudy.captions().contains("No sun, no problem. Still time for a stroll."))
+        XCTAssertTrue(PetMood.cloudy.captions(hasDog: false).contains("No sun, no problem. The birds are still out, says Misty."))
+        // Storm has no walks, so it keeps its list.
+        XCTAssertEqual(PetMood.storm.captions(hasDog: false), PetMood.storm.captions())
+        let noon = Date(timeIntervalSince1970: TimeInterval(fixtureDayStart + 12 * 3600))
+        let caption = PetMood.cloudy.caption(on: noon, timeZone: TimeZone(identifier: "UTC")!, hasDog: false)
+        XCTAssertTrue(PetMood.cloudy.captions(hasDog: false).contains(caption))
+    }
+
     func testTheCaptionFollowsTheCitysTimeZoneNotTheDevices() {
         // 03:00 UTC is 12:00 in Tokyo: a night caption there is evening's, here it's late night's.
         let date = ISO8601DateFormatter().date(from: "2026-10-26T03:00:00Z")!
