@@ -255,11 +255,15 @@ enum NotificationPlanner {
         thresholds: PetWeatherThresholds,
         calendar: Calendar
     ) -> HourlySlot? {
-        slots.first { slot in
+        restOfDay(from: date, slots, calendar: calendar).first { WalkAdvisor.isWalkable($0, thresholds) }
+    }
+
+    /// The hours from the one under way at `date` to the end of that day: what the walk and the
+    /// bad-air phrase both look at.
+    private static func restOfDay(from date: Date, _ slots: [HourlySlot], calendar: Calendar) -> [HourlySlot] {
+        slots.filter { slot in
             guard let start = slot.date else { return false }
-            return start.addingTimeInterval(60 * 60) > date
-                && calendar.isDate(start, inSameDayAs: date)
-                && WalkAdvisor.isWalkable(slot, thresholds)
+            return start.addingTimeInterval(60 * 60) > date && calendar.isDate(start, inSameDayAs: date)
         }
     }
 
@@ -272,12 +276,9 @@ enum NotificationPlanner {
         thresholds: PetWeatherThresholds,
         calendar: Calendar
     ) -> String? {
-        let worst = slots.filter { slot in
-            guard let start = slot.date else { return false }
-            return start.addingTimeInterval(60 * 60) > date
-                && calendar.isDate(start, inSameDayAs: date)
-                && WalkAdvisor.hasBadAirForWalking(slot, thresholds)
-        }.max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
+        let worst = restOfDay(from: date, slots, calendar: calendar)
+            .filter { WalkAdvisor.hasBadAirForWalking($0, thresholds) }
+            .max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
         guard let worst else { return nil }
         return switch worst.airQuality?.mainPollutant {
         case .fineParticles, .coarseParticles: "Smoky air today"
