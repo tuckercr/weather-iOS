@@ -133,6 +133,35 @@ final class NotificationPlannerTests: XCTestCase {
         }
     }
 
+    func testTodaysForecastIsTheCitysDayNotTheDevicesForACityToTheWest() {
+        // The device is on UTC; the city is 6 hours behind, so its days run 06:00 to 06:00 UTC and
+        // the 8:30 briefing (02:30 there) falls on the city's day, not the one before it.
+        var weather = sampleWeather(timeZoneOffset: -6 * hour)
+        weather.observedAtEpoch = Int(at(6).timeIntervalSince1970)
+        let cityDays = (0 ..< 3).map { offset in
+            DayForecast(
+                dateLabel: "Day \(offset)",
+                conditionMain: "Clear",
+                description: "clear sky",
+                iconCode: "01d",
+                temperature: 15,
+                feelsLike: 15,
+                tempMin: Double(offset * 10),
+                tempMax: Double(offset * 10 + 5),
+                units: .metric,
+                hourlySlots: (0 ..< 24).map { slot($0 + 6, day: offset) },
+                precipitationChance: 0
+            )
+        }
+        let briefings = NotificationPlanner.plan(
+            weather: weather, forecast: cityDays, now: at(6), settings: NotificationSettings(), calendar: calendar
+        ).filter { $0.kind == .morningBriefing }
+
+        // Day 1's 8:30 is past a day after the fetch, so it gives the city's day 1 high and low.
+        XCTAssertEqual(briefings[1].title, "Today's forecast for London")
+        XCTAssertEqual(briefings[1].body, "High 15°, low 10°.")
+    }
+
     func testFreshnessCountsFromTheFetchNotFromThePlan() {
         // Replanned at 6:00 from a cache fetched at 6:00 the day before: 8:30 is past a day old.
         let first = plan(days(5), fetchedAt: at(-18)).first { $0.identifier == "briefing_0" }
@@ -221,13 +250,25 @@ final class NotificationPlannerTests: XCTestCase {
     }
 
     func testOnABadAirDayTheWalkNudgeSaysToKeepItShort() {
+        // Rain until 11:00, smoke from 14:00: the walk at 11:00 is told to keep it short.
+        let walks = plan(
+            [day(dry.map { slot($0, rain: $0 < 11 ? 90 : 0, air: $0 >= 14 ? .fineParticles : nil) })],
+            settings: NotificationSettings(walkTime: true, hasDog: true)
+        ).filter { $0.kind == .walkTime }
+
+        XCTAssertEqual(walks.map(\.date), [at(11)])
+        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Smoky air today, so a short one.")
+    }
+
+    func testSmokeThatClearsBeforeTheWalkIsNotMentioned() {
+        // Smoke until 11:00, as Android words it at the walk time: the hours from then on are clean.
         let walks = plan(
             [day(dry.map { slot($0, air: $0 < 11 ? .fineParticles : nil) })],
             settings: NotificationSettings(walkTime: true, hasDog: true)
         ).filter { $0.kind == .walkTime }
 
         XCTAssertEqual(walks.map(\.date), [at(11)])
-        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Smoky air today, so a short one.")
+        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door.")
     }
 
     func testWhenTheBriefingHourIsGoodTheBriefingSaysSoOrWithoutItTheNudgeGoesThen() {

@@ -110,7 +110,7 @@ enum NotificationPlanner {
                     content = hourly
                     mood = slot(at: date, in: slots).map { briefingMood($0, thresholds: thresholds) }
                 } else if let weather, age < dailyForecastTrustedFor {
-                    content = forecastBriefingContent(at: date, weather: weather, forecast: forecast, calendar: calendar)
+                    content = forecastBriefingContent(at: date, weather: weather, forecast: forecast)
                 }
                 let shown = content ?? fallbackBriefing
                 planned.append(PlannedNotification(
@@ -144,7 +144,8 @@ enum NotificationPlanner {
                     date: date,
                     title: "Time for a walk",
                     body: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName). Sunny's waiting by the door."
-                        + (badAirPhrase(after: briefing, slots: slots, thresholds: thresholds, calendar: calendar)
+                        // The air from the walk on, not from 8:30: smoke that cleared by then doesn't count.
+                        + (badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
                             .map { " \($0), so a short one." } ?? "")
                 ))
             }
@@ -216,11 +217,14 @@ enum NotificationPlanner {
     static func forecastBriefingContent(
         at date: Date,
         weather: CurrentWeather,
-        forecast: [DayForecast],
-        calendar: Calendar = .current
+        forecast: [DayForecast]
     ) -> (title: String, body: String)? {
+        // Forecast days are the city's, so "today" is the city's date at the briefing, not the
+        // device's: a city to the west would otherwise get its day before.
+        var cityCalendar = Calendar(identifier: .gregorian)
+        cityCalendar.timeZone = weather.timeZone
         guard let day = forecast.first(where: { day in
-            day.hourlySlots.contains { $0.date.map { calendar.isDate($0, inSameDayAs: date) } ?? false }
+            day.hourlySlots.contains { $0.date.map { cityCalendar.isDate($0, inSameDayAs: date) } ?? false }
         }) else { return nil }
         return ("Today's forecast for \(weather.cityName)", highLowLine(day))
     }
