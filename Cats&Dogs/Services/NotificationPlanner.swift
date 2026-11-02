@@ -15,6 +15,8 @@ struct PlannedNotification: Equatable {
     /// For a rain alert: when the rain starts, and whether it's snow.
     var rainStart: Int? = nil
     var snow = false
+    /// For a briefing that gives the hour's weather: the pets' mood then, for its picture.
+    var mood: PetMood? = nil
 }
 
 /// The rain alert last queued, so a shower isn't alerted twice once its alert has gone off.
@@ -49,6 +51,13 @@ enum NotificationPlanner {
     /// Briefings queued ahead. iOS gives no guaranteed background time, so the queue has to outlast
     /// the gaps between refreshes.
     static let daysQueued = 7
+    /// Queued notifications go off whether or not iOS has refreshed since, so what they say depends
+    /// on how long after the weather was fetched they go off. Up to a day: a briefing gives the
+    /// hour's weather and the walk, and walk nudges are queued.
+    static let hourlyForecastTrustedFor: TimeInterval = 24 * 60 * 60
+    /// Up to 3 days: a briefing gives only the day's forecast high and low, worded as a forecast.
+    /// Later ones just say to tap for today's weather.
+    static let dailyForecastTrustedFor: TimeInterval = 3 * 24 * 60 * 60
     /// Walk nudges are planned for today and tomorrow only: further out the forecast is too rough.
     static let walkDays = 2
     /// Below this, the day's rain chance isn't worth a mention in the briefing.
@@ -73,28 +82,39 @@ enum NotificationPlanner {
     ) -> [PlannedNotification] {
         let slots = forecast.flatMap(\.hourlySlots)
         let briefings = briefingDates(after: now, calendar: calendar)
+        // The reading's time stands for the fetch: a replan from Settings reuses the cache as it is.
+        let fetchedAt = weather?.observedAtEpoch.map { Date(timeIntervalSince1970: TimeInterval($0)) } ?? now
         var planned: [PlannedNotification] = []
 
         let briefingOn = settings.morningBriefing && settings.briefingRemotelyEnabled
         if briefingOn {
             for (day, date) in briefings.enumerated() {
-                let content = weather.flatMap {
-                    briefingContent(
-                        at: date,
-                        weather: $0,
-                        forecast: forecast,
-                        slots: slots,
-                        hasDog: settings.hasDog,
-                        thresholds: thresholds,
-                        calendar: calendar
-                    )
-                } ?? fallbackBriefing
+                let age = date.timeIntervalSince(fetchedAt)
+                var content: (title: String, body: String)?
+                var mood: PetMood?
+                if let weather, age < hourlyForecastTrustedFor,
+                   let hourly = briefingContent(
+                       at: date,
+                       weather: weather,
+                       forecast: forecast,
+                       slots: slots,
+                       hasDog: settings.hasDog,
+                       thresholds: thresholds,
+                       calendar: calendar
+                   ) {
+                    content = hourly
+                    mood = slot(at: date, in: slots).map { briefingMood($0, thresholds: thresholds) }
+                } else if let weather, age < dailyForecastTrustedFor {
+                    content = forecastBriefingContent(at: date, weather: weather, forecast: forecast, calendar: calendar)
+                }
+                let shown = content ?? fallbackBriefing
                 planned.append(PlannedNotification(
                     identifier: "briefing_\(day)",
                     kind: .morningBriefing,
                     date: date,
-                    title: content.title,
-                    body: content.body
+                    title: shown.title,
+                    body: shown.body,
+                    mood: mood
                 ))
             }
         }
@@ -108,7 +128,9 @@ enum NotificationPlanner {
                 let covers = start <= briefing
                 if covers, briefingOn { continue }
                 let date = max(start, briefing)
-                guard date > now else { continue }
+                // Not off a forecast more than a day old: unlike Android's, the nudge can't check the
+                // weather again when it goes off.
+                guard date > now, date.timeIntervalSince(fetchedAt) < hourlyForecastTrustedFor else { continue }
                 planned.append(PlannedNotification(
                     identifier: "walk_\(day)",
                     kind: .walkTime,
@@ -157,11 +179,7 @@ enum NotificationPlanner {
         guard let slot = slot(at: date, in: slots),
               let day = forecast.first(where: { $0.hourlySlots.contains(slot) }) else { return nil }
         let title = "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName)"
-        var body = "High \(Int(day.tempMax.rounded()))°, low \(Int(day.tempMin.rounded()))°"
-        if let chance = WeatherFormatting.rainChance(day.precipitationChance), chance >= briefingRainChance {
-            body += ", \(chance)% chance of rain"
-        }
-        body += "."
+        var body = highLowLine(day)
         if hasDog {
             // Bad-air hours are left out of the walk silently, so the briefing says why.
             let air = badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
@@ -175,6 +193,40 @@ enum NotificationPlanner {
             }
         }
         return (title, body)
+    }
+
+    /// "Today's forecast for Knoxville" / "High 70°, low 45°, 60% chance of rain." from the day's
+    /// forecast alone, for a briefing too long after the fetch to give the hour's weather as if it
+    /// were current. Nil beyond the forecast.
+    static func forecastBriefingContent(
+        at date: Date,
+        weather: CurrentWeather,
+        forecast: [DayForecast],
+        calendar: Calendar = .current
+    ) -> (title: String, body: String)? {
+        guard let day = forecast.first(where: { day in
+            day.hourlySlots.contains { $0.date.map { calendar.isDate($0, inSameDayAs: date) } ?? false }
+        }) else { return nil }
+        return ("Today's forecast for \(weather.cityName)", highLowLine(day))
+    }
+
+    /// "High 70°, low 45°, 60% chance of rain.", the rain only from `briefingRainChance`.
+    private static func highLowLine(_ day: DayForecast) -> String {
+        var line = "High \(Int(day.tempMax.rounded()))°, low \(Int(day.tempMin.rounded()))°"
+        if let chance = WeatherFormatting.rainChance(day.precipitationChance), chance >= briefingRainChance {
+            line += ", \(chance)% chance of rain"
+        }
+        return line + "."
+    }
+
+    /// The pets' mood in the forecast hour `slot`, for a briefing's picture.
+    static func briefingMood(_ slot: HourlySlot, thresholds: PetWeatherThresholds) -> PetMood {
+        PetMood.forConditions(
+            conditionMain: StaleWeather.conditionMain(forIcon: slot.iconCode),
+            iconCode: slot.iconCode,
+            feelsLikeC: slot.units.toCelsius(slot.feelsLike),
+            thresholds: thresholds
+        )
     }
 
     /// The first walkable hour from the one under way at `date` to the end of that day.
