@@ -27,6 +27,9 @@ final class RemoteConfigRepository {
     nonisolated static let keyDailyWeatherNotificationsEnabled = "daily_weather_notifications_enabled"
     nonisolated static let keyWalkTimeNotificationsEnabled = "walk_time_notifications_enabled"
     nonisolated static let keyRainNotificationsEnabled = "rain_notifications_enabled"
+    /// Off for the first release: an alert is only queued if a background refresh happens to run in
+    /// the two hours before the rain, which iOS makes hit or miss (NOTES.md).
+    nonisolated static let defaultRainNotificationsEnabled = false
 
     /// Skips the silent refresh on returning to the foreground if the city was fetched this recently.
     nonisolated static let keyForegroundRefreshMinMinutes = "foreground_refresh_min_minutes"
@@ -95,7 +98,7 @@ final class RemoteConfigRepository {
             Self.keyWalkCardEnabled: NSNumber(value: true),
             Self.keyDailyWeatherNotificationsEnabled: NSNumber(value: true),
             Self.keyWalkTimeNotificationsEnabled: NSNumber(value: true),
-            Self.keyRainNotificationsEnabled: NSNumber(value: true),
+            Self.keyRainNotificationsEnabled: NSNumber(value: Self.defaultRainNotificationsEnabled),
             Self.keyForegroundRefreshMinMinutes: NSNumber(value: Self.defaultForegroundRefreshMinMinutes),
             Self.keyOpenMeteoEnabled: NSNumber(value: true),
             Self.keyAirQualityEnabled: NSNumber(value: true),
@@ -171,7 +174,9 @@ final class RemoteConfigRepository {
 
     var dailyWeatherNotificationsEnabled: Bool { Self.flag(Self.keyDailyWeatherNotificationsEnabled) }
     var walkTimeNotificationsEnabled: Bool { Self.flag(Self.keyWalkTimeNotificationsEnabled) }
-    var rainNotificationsEnabled: Bool { Self.flag(Self.keyRainNotificationsEnabled) }
+    var rainNotificationsEnabled: Bool {
+        Self.flag(Self.keyRainNotificationsEnabled, fallback: Self.defaultRainNotificationsEnabled)
+    }
 
     /// Each kind of notification can be switched off for everyone; Settings then hides its switch.
     func notificationsEnabled(_ kind: NotificationKind) -> Bool {
