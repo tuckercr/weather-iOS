@@ -70,6 +70,15 @@ final class SeasonalThemeTests: XCTestCase {
         XCTAssertEqual(SeasonalThemes.builtIn.first?.colors.tileHeaderDark?.rgb, 0xF5A94E)
     }
 
+    func testAThemeWithCaptionsForOnlyTheDayOrTheNightStillParses() throws {
+        let dayOnly = halloweenJSON.replacingOccurrences(of: #""night": ["Night"]"#, with: #""other": []"#)
+        let theme = try XCTUnwrap(SeasonalThemes.parse(Data(dayOnly.utf8))?.first)
+        XCTAssertEqual(theme.captions, SeasonalTheme.Captions(day: ["Day"], night: []))
+
+        let nightOnly = halloweenJSON.replacingOccurrences(of: #""day": ["Day"], "#, with: "")
+        XCTAssertEqual(try XCTUnwrap(SeasonalThemes.parse(Data(nightOnly.utf8))?.first).captions.night, ["Night"])
+    }
+
     func testBadJSONIsRejectedSoTheShippedListStays() {
         XCTAssertNil(SeasonalThemes.parse(Data("{\"id\": 1}".utf8)))
         XCTAssertNil(SeasonalThemes.parse(Data(halloweenJSON.replacingOccurrences(of: "#F5A94E", with: "orange").utf8)))

@@ -36,6 +36,21 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
     struct Captions: Decodable, Equatable {
         let day: [String]
         let night: [String]
+
+        init(day: [String], night: [String]) {
+            self.day = day
+            self.night = night
+        }
+
+        /// Either list can be left out, as on Android: a theme with captions for only the day (or
+        /// only the night) mustn't make the whole Remote Config list unreadable.
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            day = try c.decodeIfPresent([String].self, forKey: .day) ?? []
+            night = try c.decodeIfPresent([String].self, forKey: .night) ?? []
+        }
+
+        private enum CodingKeys: String, CodingKey { case day, night }
     }
 
     /// When a theme applies, in the city's own calendar. JSON: `{"type": "fixed", "month": 10,
