@@ -231,8 +231,6 @@ final class RemoteConfigRepository {
         return key?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
     }
 
-    /// Every flag defaults to on. A key with no value at all reads as false, so that counts as
-    /// "not set" rather than "off".
     /// The seasonal themes to choose from: Remote Config's list when it's valid, else the one shipped
     /// in the app; none when they're switched off. Debug builds can force one with
     /// `-seasonalTheme halloween`, whatever the date.
@@ -253,7 +251,8 @@ final class RemoteConfigRepository {
         return SeasonalThemes.builtIn
     }
 
-    /// `fallback` is used without Firebase or a value, so a switch that starts off stays off.
+    /// A key with no value at all reads as false, so that counts as "not set" rather than "off":
+    /// `fallback` is used then, and without Firebase, so a switch that starts off stays off.
     private nonisolated static func flag(_ key: String, fallback: Bool = true) -> Bool {
         guard FirebaseApp.app() != nil else { return fallback }
         let value = RemoteConfig.remoteConfig()[key]

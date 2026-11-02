@@ -37,7 +37,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 > - An hourly strip with rain chance, and a 7-day forecast with hour-by-hour detail for each day
 > - Animated precipitation radar
 > - Save as many cities as you like, or use your current location, each shown in its own time zone
-> - A morning briefing at 8:30, a nudge at the best walk time, and a heads-up before rain, each optional
+> - A morning briefing at 8:30 and a nudge at the best walk time, both optional
 > - Celsius or Fahrenheit, or follow your device setting
 > - Designed for iPhone and iPad, in portrait and landscape
 >

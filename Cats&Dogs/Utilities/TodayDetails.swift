@@ -1,7 +1,5 @@
 import Foundation
 
-/// The rules behind the Today tiles, kept out of the views so they can be tested. Same rules as
-/// Android's `util/TodayDetails.kt`.
 /// Which Today tiles show, from Remote Config. UV starts off.
 struct TodayTileSwitches: Equatable {
     var feelsLike = true
@@ -13,6 +11,8 @@ struct TodayTileSwitches: Equatable {
     var sky = true
 }
 
+/// The rules behind the Today tiles, kept out of the views so they can be tested. Same rules as
+/// Android's `util/TodayDetails.kt`.
 enum TodayDetails {
     /// The UV tile's line: today's peak while it's still ahead ("Peak 8 at 1 PM"); from the peak hour
     /// on, shade for pale-nosed dogs on a high day (6 and up) with a dog, otherwise "At today's peak"
