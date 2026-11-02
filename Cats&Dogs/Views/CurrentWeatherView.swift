@@ -406,17 +406,23 @@ private struct CurrentWeatherContent: View {
         )
     }
 
+    /// The reading with today's sunrise and sunset, for one cached on an earlier day, so the Daylight
+    /// tile and the walk card follow the clock as the hero does.
+    private var weatherToday: CurrentWeather { StaleWeather.withSunTimesToday(weather, at: now) }
+
     /// Nil while the forecast is loading or failed, which hides the card rather than giving advice
     /// with nothing to base it on.
     private var walkAdvice: WalkAdvice? {
-        WalkAdvisor.advice(
+        let weatherToday = weatherToday
+        return WalkAdvisor.advice(
             currentFeelsLikeC: feelsLikeC,
             upcoming: upcomingSlots,
             now: now,
             timeZone: weather.timeZone,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
             precipitatingNow: WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
-            sunsetEpoch: weather.sunsetEpoch
+            sunsetEpoch: weatherToday.sunsetEpoch,
+            darkNow: StaleWeather.isDark(weatherToday, at: now)
         )
     }
 
@@ -592,7 +598,7 @@ private struct CurrentWeatherContent: View {
 
     private var detailsCard: some View {
         TodayTiles(
-            weather: weather,
+            weather: weatherToday,
             showingForecast: showingForecast,
             // Paw check goes with the walk card: Settings' Dog walking switch hides both.
             pavementNow: showWalkCard ? upcomingSlots.first?.pavementTemperature : nil,
