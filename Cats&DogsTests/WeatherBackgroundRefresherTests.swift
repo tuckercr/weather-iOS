@@ -47,19 +47,41 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         XCTAssertEqual(scheduled, 0)
     }
 
-    func testRefreshOnlyTouchesTheNotificationCityNotTheActiveTab() async {
+    func testRefreshAlsoUpdatesTheTabLastViewedWhenItsAnotherCity() async {
         // London is the tab on screen, but with no My Location saved notifications follow the first city.
         preferences.setSavedLocations([nameOnly, london])
         preferences.setActiveLocationIndex(1)
         let api = FakeOpenWeatherAPI()
-        let refresher = makeRefresher(api: api)
+        var scheduled = 0
+        let refresher = makeRefresher(api: api, onSchedule: { scheduled += 1 })
 
         await refresher.performRefresh()
 
-        XCTAssertEqual(api.lastCurrentCityQuery, "Paris")
-        XCTAssertNil(api.lastCurrentLatitude)
+        XCTAssertEqual(api.currentWeatherCallCount, 2)
         XCTAssertNotNil(preferences.cachedWeather(for: nameOnly.cacheKey))
-        XCTAssertNil(preferences.cachedWeather(for: london.cacheKey))
+        XCTAssertNotNil(preferences.cachedWeather(for: london.cacheKey))
+        XCTAssertNotNil(preferences.cachedForecast(for: london.cacheKey))
+        XCTAssertEqual(scheduled, 1, "replanned once, for the notification city")
+    }
+
+    func testTheNotificationCityIsFetchedOnceWhenItsAlsoTheTabLastViewed() async {
+        preferences.setSavedLocations([london, nameOnly])
+        preferences.setActiveLocationIndex(0)
+        let api = FakeOpenWeatherAPI()
+
+        await makeRefresher(api: api).performRefresh()
+
+        XCTAssertEqual(api.currentWeatherCallCount, 1)
+        XCTAssertNil(preferences.cachedWeather(for: nameOnly.cacheKey))
+    }
+
+    func testAFailedNotificationCityStillRetriesWhenAnotherTabWasViewed() async {
+        preferences.setSavedLocations([london, nameOnly])
+        preferences.setActiveLocationIndex(1)
+
+        let result = await makeRefresher(api: FakeOpenWeatherAPI(currentError: URLError(.notConnectedToInternet))).performRefresh()
+
+        XCTAssertEqual(result, .retry)
     }
 
     func testFailedFetchKeepsExistingCacheAndRetriesSooner() async {

@@ -189,9 +189,11 @@ background time it:
 
 1. fetches current weather and the forecast for that notification city,
 2. writes them to the per-city cache, so the app opens with fresh data,
-3. replans the queued notifications from it, and
-4. requests the next run after `weather_refresh_interval_minutes` (default 30, as on Android), or 15
-   minutes after a failed fetch.
+3. replans the queued notifications from it,
+4. does the same fetch and cache for the city tab last viewed, when that's another city, so the app
+   opens on fresh data there too, and
+5. requests the next run after `weather_refresh_interval_minutes` (default 30, as on Android), or 15
+   minutes after a failed fetch of the notification city.
 
 The notifications themselves are on calendar triggers, so they always arrive on time. A week of
 briefings is queued, none repeating; each carries that day's forecast, and those beyond it say

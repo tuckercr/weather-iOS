@@ -112,6 +112,39 @@ final class WeatherBackgroundRefresher {
         if refreshed || replan {
             await scheduleNotifications()
         }
+        // The city tab last viewed, which the app opens to, when it's another one: so that doesn't
+        // open on an old cache either. After the notifications, which matter more if time runs out,
+        // and not part of the result. Same as Android's background refresh.
+        let activeIndex = preferences.activeLocationIndex
+        if locations.indices.contains(activeIndex), locations[activeIndex].cacheKey != cacheKey {
+            await refreshCache(for: locations[activeIndex])
+        }
         return result
+    }
+
+    /// Fetches `location`'s weather and forecast and caches whatever comes back, as the foreground
+    /// refresh does.
+    private func refreshCache(for location: SavedLocation) async {
+        let units = WeatherUnitsResolver.resolve(override: preferences.unitOverride)
+        let cityQuery = location.latitude == nil || location.longitude == nil ? location.label : nil
+        let weather = await weatherRepository.fetchCurrentWeather(
+            units: units,
+            locationLabel: location.isCurrentLocation ? "" : location.label,
+            cityQuery: cityQuery,
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+        if case .success(let weather) = weather {
+            preferences.setCachedWeather(weather, for: location.cacheKey)
+        }
+        let forecast = await weatherRepository.fetchForecast(
+            units: units,
+            cityQuery: cityQuery,
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+        if case .success(let days) = forecast {
+            preferences.setCachedForecast(days, for: location.cacheKey)
+        }
     }
 }
