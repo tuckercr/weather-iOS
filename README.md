@@ -177,7 +177,9 @@ in Settings:
 - **Walk time** (only with a dog): at the first good walk hour today and tomorrow. When that hour has
   already started at 8:30 the briefing says "now's a great time" instead, unless the briefing is off.
 - **Rain alerts** (off): up to an hour before rain or snow starts, from the 15-minute forecast,
-  between 7 AM and 9 PM city time, once per shower.
+  between 7 AM and 9 PM city time, once per shower. Switched off for everyone in the first release
+  (`rain_notifications_enabled`), since they depend on a background refresh landing in the two
+  hours before the rain.
 
 Android works these out at the time (`WeatherNotificationWorker` at 8:30, a one-off `WalkTimeWorker`,
 and the periodic refresh for rain). iOS cannot run code at a fixed time of day, so
@@ -385,7 +387,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_card_enabled` | true | Hides the "Best walk time" card for everyone; users can also turn it off in Settings |
 | `daily_weather_notifications_enabled` | true | The morning briefing; off removes the queued ones and hides its switch in Settings |
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
-| `rain_notifications_enabled` | true | Rain alerts; off removes the queued one and hides its switch in Settings |
+| `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |
 | `foreground_refresh_min_minutes` | 0 (0–1440) | Skips the silent refresh on returning to the app if that city was fetched this recently. Pull-to-refresh and city changes are never skipped |
 | `walk_hot_pavement_c` | 52 (40–70) | Pavement temperature that triggers the hot-paws warning |
 | `walk_warm_pavement_c` | 45 (30–65, below `walk_hot_pavement_c`, otherwise 7 below it) | Pavement temperature at which the Today Paw check tile says "Getting hot" and that hour isn't suggested for a walk (a walk now rates "okay") |
@@ -402,6 +404,10 @@ Remote Config parameters are defined and deployed from the Android repo
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |
 | `ios_min_recommended_version` | "" | Below this version a banner above the weather suggests updating; "Not now" hides it for a week. Empty never asks |
 | `ios_app_store_url` | "" | The App Store link behind the Update buttons; empty hides them until the App Store record exists |
+| `tile_feels_like_enabled`, `tile_wind_enabled`, `tile_humidity_enabled`, `tile_paw_check_enabled`, `tile_daylight_enabled`, `tile_sky_enabled` | true | One switch per Today tile; false hides that tile for everyone |
+| `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
+| `seasonal_themes_enabled` | true | Seasonal themes (Halloween and so on); false switches them all off |
+| `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
 
 Walk and pet temperatures are Celsius whatever units the user picked. An out-of-range value falls
 back to its default, and if a pair ends up inverted (minimum not below maximum), both fall back to
