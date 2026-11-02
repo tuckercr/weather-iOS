@@ -78,6 +78,7 @@ enum NotificationPlanner {
         settings: NotificationSettings,
         thresholds: PetWeatherThresholds = .standard,
         lastRainAlert: RainAlertRecord? = nil,
+        walkNudgesGoneOff: [Date] = [],
         calendar: Calendar = .current
     ) -> [PlannedNotification] {
         let slots = forecast.flatMap(\.hourlySlots)
@@ -120,7 +121,9 @@ enum NotificationPlanner {
         }
 
         if settings.walkTime, settings.hasDog, settings.walkTimeRemotelyEnabled, let weather {
-            for (day, briefing) in briefings.prefix(walkDays).enumerated() {
+            for (day, briefing) in walkDates(on: now, calendar: calendar).enumerated() {
+                // One a day: none again on a day one has already gone off.
+                if walkNudgesGoneOff.contains(where: { calendar.isDate($0, inSameDayAs: briefing) }) { continue }
                 guard let slot = bestWalkSlot(after: briefing, slots: slots, thresholds: thresholds, calendar: calendar),
                       let start = slot.date else { continue }
                 // The slot under way at 8:30 is "now": the briefing says so (it mentions the walk with
@@ -153,6 +156,14 @@ enum NotificationPlanner {
             planned.append(alert)
         }
         return planned.sorted { $0.date < $1.date }
+    }
+
+    /// The 8:30s walk nudges are planned from, on the device's clock: today's, even once it has
+    /// passed, so a replan later in the morning keeps today's nudge, then the next `walkDays - 1`.
+    static func walkDates(on now: Date, calendar: Calendar = .current) -> [Date] {
+        guard let today = calendar.date(bySettingHour: briefingHour, minute: briefingMinute, second: 0, of: now)
+        else { return [] }
+        return (0 ..< walkDays).compactMap { calendar.date(byAdding: .day, value: $0, to: today) }
     }
 
     /// The next `daysQueued` 8:30s after `now`, on the device's clock.

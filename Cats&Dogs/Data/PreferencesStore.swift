@@ -22,6 +22,7 @@ final class PreferencesStore {
     private let notifyRainKey = "notify_rain"
     private let rainAlertStartKey = "rain_alert_start"
     private let rainAlertFireKey = "rain_alert_fire"
+    private let walkNudgeDatesKey = "walk_nudge_dates"
     private let updateBannerDismissedKey = "update_banner_dismissed_at"
 
     private let encoder = JSONEncoder()
@@ -129,6 +130,16 @@ final class PreferencesStore {
     func setLastRainAlert(_ record: RainAlertRecord) {
         defaults.set(record.rainStart, forKey: rainAlertStartKey)
         defaults.set(record.fireDate.timeIntervalSince1970, forKey: rainAlertFireKey)
+    }
+
+    /// When the queued walk nudges go off, plus any that went off earlier today, so a replan after
+    /// one has gone off doesn't send a second that day.
+    var walkNudgeDates: [Date] {
+        (defaults.array(forKey: walkNudgeDatesKey) as? [Double] ?? []).map { Date(timeIntervalSince1970: $0) }
+    }
+
+    func setWalkNudgeDates(_ dates: [Date]) {
+        defaults.set(dates.map(\.timeIntervalSince1970), forKey: walkNudgeDatesKey)
     }
 
     /// When "Not now" was last tapped on the update banner.

@@ -61,17 +61,25 @@ final class WeatherNotificationScheduler {
             walkTimeRemotelyEnabled: RemoteConfigRepository.shared.walkTimeNotificationsEnabled,
             rainRemotelyEnabled: RemoteConfigRepository.shared.rainNotificationsEnabled
         )
+        let now = Date()
+        let calendar = Calendar.current
+        let walkNudgesGoneOff = preferences.walkNudgeDates.filter { $0 <= now }
         let plan = NotificationPlanner.plan(
             weather: weather,
             forecast: preferences.cachedForecast(for: location.cacheKey) ?? [],
-            now: Date(),
+            now: now,
             settings: settings,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            lastRainAlert: preferences.lastRainAlert
+            lastRainAlert: preferences.lastRainAlert,
+            walkNudgesGoneOff: walkNudgesGoneOff
+        )
+        // Today's that have gone off stay on record, so a later replan doesn't send a second.
+        preferences.setWalkNudgeDates(
+            walkNudgesGoneOff.filter { calendar.isDate($0, inSameDayAs: now) }
+                + plan.filter { $0.kind == .walkTime }.map(\.date)
         )
 
         let southern = (location.latitude ?? 0) < 0
-        let calendar = Calendar.current
         for planned in plan {
             let trigger = UNCalendarNotificationTrigger(
                 dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: planned.date),
