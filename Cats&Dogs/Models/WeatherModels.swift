@@ -16,8 +16,8 @@ struct CurrentWeather: Codable, Equatable {
     let visibilityMeters: Int?
     let cloudPercent: Int
     let units: WeatherUnits
-    let sunriseEpoch: Int?
-    let sunsetEpoch: Int?
+    var sunriseEpoch: Int?
+    var sunsetEpoch: Int?
     /// The city's offset from UTC, so sunrise and sunset can be shown in its local time.
     var timezoneOffsetSeconds: Int? = nil
     /// When OpenWeather took this reading, in epoch seconds; nil in data cached before it was recorded.
