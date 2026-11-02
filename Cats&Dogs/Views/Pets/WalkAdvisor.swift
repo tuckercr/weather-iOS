@@ -58,7 +58,9 @@ enum WalkAdvisor {
     ///
     /// `precipitatingNow` is the current observation. The hourly forecast can say the hour in
     /// progress is dry while it's raining, so when it's raining now, now is never the walk time.
-    /// `sunsetEpoch` is today's sunset, for the "gets dark" line.
+    /// `sunsetEpoch` is today's sunset, for the "gets dark" line. `darkNow` is the clock's word on
+    /// darkness: the hour in progress keeps its daytime icon for the whole hour the sun sets in, so
+    /// without it now could be "a great time" for up to an hour after dark.
     static func advice(
         currentFeelsLikeC: Double,
         upcoming: [HourlySlot],
@@ -66,13 +68,15 @@ enum WalkAdvisor {
         timeZone: TimeZone = .current,
         thresholds: PetWeatherThresholds = .standard,
         precipitatingNow: Bool = false,
-        sunsetEpoch: Int? = nil
+        sunsetEpoch: Int? = nil,
+        darkNow: Bool = false
     ) -> WalkAdvice? {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
         guard let first = slots.first else { return nil }
-        let nowWalkable = !precipitatingNow && isWalkable(first, thresholds)
-        let firstGood = (precipitatingNow ? Array(slots.dropFirst()) : slots).first { isWalkable($0, thresholds) }
+        let notNow = precipitatingNow || darkNow
+        let nowWalkable = !notNow && isWalkable(first, thresholds)
+        let firstGood = (notNow ? Array(slots.dropFirst()) : slots).first { isWalkable($0, thresholds) }
         let pawsHotNow = (pavementC(first) ?? 0) >= thresholds.hotPavementC
         let rating: WalkRating = if currentFeelsLikeC >= thresholds.petHotC || pawsHotNow {
             .pawsHot
@@ -127,8 +131,9 @@ enum WalkAdvisor {
         return nil
     }
 
-    /// Why `slot` isn't walkable, as something worth saying. Nil for darkness and the end of the
-    /// walking hours, which the sunset line covers.
+    /// Why `slot` isn't walkable, as something worth saying; nil when it is. Also nil for darkness and
+    /// the end of the walking hours, which the sunset line covers. `isWalkable` is built on this, so
+    /// every walk rule lives here.
     private static func change(at slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> WalkChange? {
         guard isDaytime(slot, thresholds) else { return nil }
         if slot.precipitationChance >= thresholds.maxRainChance {
@@ -143,8 +148,9 @@ enum WalkAdvisor {
         if hasBadAir(slot, thresholds) { return .badAir }
         if (pavementC(slot) ?? 0) >= thresholds.warmPavementC { return .hotPavement }
         let feelsLikeC = slot.units.toCelsius(slot.feelsLike)
-        if feelsLikeC > thresholds.comfortC.upperBound { return .heat }
-        if feelsLikeC < thresholds.comfortC.lowerBound { return .cold }
+        if !thresholds.comfortC.contains(feelsLikeC) {
+            return feelsLikeC > thresholds.comfortC.upperBound ? .heat : .cold
+        }
         return nil
     }
 
@@ -185,11 +191,6 @@ enum WalkAdvisor {
     /// Feels-like rather than air temperature: humid heat and wind chill are what the dog feels.
     /// Pavement that's only getting hot already rules an hour out, so the suggested hour is a cooler one.
     static func isWalkable(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        isDaytime(slot, thresholds)
-            && !hasBadAir(slot, thresholds)
-            && !isTooWindy(slot, thresholds)
-            && (pavementC(slot) ?? 0) < thresholds.warmPavementC
-            && slot.precipitationChance < thresholds.maxRainChance
-            && thresholds.comfortC.contains(slot.units.toCelsius(slot.feelsLike))
+        isDaytime(slot, thresholds) && change(at: slot, thresholds) == nil
     }
 }
