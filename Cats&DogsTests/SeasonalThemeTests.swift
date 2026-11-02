@@ -4,6 +4,9 @@ import XCTest
 final class SeasonalThemeTests: XCTestCase {
     private func date(_ text: String, _ zone: String = "UTC") -> Date {
         let formatter = DateFormatter()
+        // Fixed, so the test reads the same on a device set to another calendar or locale.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
         formatter.timeZone = TimeZone(identifier: zone)
         return formatter.date(from: text)!
@@ -77,6 +80,17 @@ final class SeasonalThemeTests: XCTestCase {
 
         let nightOnly = halloweenJSON.replacingOccurrences(of: #""day": ["Day"], "#, with: "")
         XCTAssertEqual(try XCTUnwrap(SeasonalThemes.parse(Data(nightOnly.utf8))?.first).captions.night, ["Night"])
+    }
+
+    func testAThemeThisVersionCantReadIsSkippedAndTheOthersKept() throws {
+        let easter = halloweenJSON
+            .replacingOccurrences(of: "\"halloween\"", with: "\"easter\"")
+            .replacingOccurrences(of: "\"fixed\"", with: "\"easterSunday\"")
+            .dropFirst().dropLast()
+        let list = "[\(easter), \(halloweenJSON.dropFirst().dropLast())]"
+
+        XCTAssertEqual(try XCTUnwrap(SeasonalThemes.parse(Data(list.utf8))).map(\.id), ["halloween"])
+        XCTAssertEqual(SeasonalThemes.parse(Data("[]".utf8)), [])
     }
 
     func testBadJSONIsRejectedSoTheShippedListStays() {

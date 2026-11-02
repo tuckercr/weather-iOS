@@ -196,15 +196,9 @@ struct HexColor: Decodable, Equatable {
     var color: Color { Color(hex: rgb) }
 
     static func adaptive(light: HexColor, dark: HexColor) -> Color {
-        Color(UIColor { traits in
-            let rgb = traits.userInterfaceStyle == .dark ? dark.rgb : light.rgb
-            return UIColor(
-                red: CGFloat((rgb >> 16) & 0xFF) / 255,
-                green: CGFloat((rgb >> 8) & 0xFF) / 255,
-                blue: CGFloat(rgb & 0xFF) / 255,
-                alpha: 1
-            )
-        })
+        let lightColor = UIColor(light.color)
+        let darkColor = UIColor(dark.color)
+        return Color(UIColor { $0.userInterfaceStyle == .dark ? darkColor : lightColor })
     }
 }
 
@@ -216,10 +210,23 @@ enum SeasonalThemes {
         return parse(data) ?? []
     }()
 
-    /// Nil when the JSON isn't a list of themes, so a bad Remote Config value falls back to the
-    /// built-in list rather than switching every theme off.
+    /// The themes this version can read: one with a date rule, colour or field it doesn't know is
+    /// skipped, so a theme written for a newer version doesn't take the others with it. Nil when the
+    /// JSON isn't a list, or none of its themes can be read, so a bad Remote Config value falls back
+    /// to the built-in list rather than switching every theme off. Same rule as Android's.
     static func parse(_ data: Data) -> [SeasonalTheme]? {
-        try? JSONDecoder().decode([SeasonalTheme].self, from: data)
+        guard let entries = try? JSONDecoder().decode([Entry].self, from: data) else { return nil }
+        let themes = entries.compactMap(\.theme)
+        return themes.isEmpty && !entries.isEmpty ? nil : themes
+    }
+
+    /// One theme in the list, or nil when this version can't read it.
+    private struct Entry: Decodable {
+        let theme: SeasonalTheme?
+
+        init(from decoder: Decoder) throws {
+            theme = try? SeasonalTheme(from: decoder)
+        }
     }
 
     /// Today's theme in the city's own calendar; nil on an ordinary day. When two cover the same
