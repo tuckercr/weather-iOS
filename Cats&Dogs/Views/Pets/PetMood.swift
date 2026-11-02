@@ -47,8 +47,10 @@ enum PetMood: CaseIterable {
 
     /// Captions in the pets' voice. One is picked per day so it varies without changing on refresh.
     /// Night has a set for each part of it, so a 3 AM caption doesn't suggest an evening stroll.
-    func captions(nightPart: NightPart = .evening) -> [String] {
-        switch self {
+    /// Without a dog (Settings' Dog walking off), the captions leave out walks.
+    func captions(nightPart: NightPart = .evening, hasDog: Bool = true) -> [String] {
+        if !hasDog, let noDog = noDogCaptions(nightPart: nightPart) { return noDog }
+        return switch self {
         case .sunny: [
             "Perfect walkies weather! Off we go.",
             "Misty has claimed the sunniest windowsill.",
@@ -98,12 +100,59 @@ enum PetMood: CaseIterable {
         }
     }
 
+    /// The captions above with the walks and paw care swapped for things Misty would do. Nil for
+    /// storm and late night, which have no walks and keep their own.
+    private func noDogCaptions(nightPart: NightPart) -> [String]? {
+        switch self {
+        case .sunny: [
+            "Lovely day out. Misty will supervise from the window.",
+            "Misty has claimed the sunniest windowsill.",
+            "Sunshine and tail wags all round.",
+        ]
+        case .cloudy: [
+            "A bit grey. Misty says it's a blanket sort of day.",
+            "Nap weather, says Misty.",
+            "No sun, no problem. The birds are still out, says Misty.",
+        ]
+        case .rain: [
+            "Rain on the window. Misty is watching every drop.",
+            "Grab a raincoat. Misty is NOT going out in this.",
+            "Wet out there. Misty has found the warmest lap in the house.",
+        ]
+        case .storm: nil
+        case .snow: [
+            "Snow zoomies, then straight back to the blanket.",
+            "Misty is watching the snow from somewhere warm.",
+        ]
+        case .hot: [
+            "Too hot to move, says Misty. She's found the cool tiles.",
+            "Fresh water bowls today. It is a scorcher.",
+        ]
+        case .cold: [
+            "Brrr. Warm blankets all round.",
+            "Coat weather today. Misty is staying by the radiator.",
+        ]
+        case .night:
+            switch nightPart {
+            case .evening: [
+                "Quiet night. Misty is doing her evening rounds.",
+                "Evening zoomies, courtesy of Misty.",
+            ]
+            case .lateNight: nil
+            case .beforeDawn: [
+                "Still dark out. Misty wants breakfast anyway.",
+                "Too dark to get up, says Misty. She's pretending to be asleep.",
+            ]
+            }
+        }
+    }
+
     /// Today's caption, chosen by the city's own date and (at night) hour, not the device's.
-    func caption(on date: Date = Date(), timeZone: TimeZone = .current) -> String {
+    func caption(on date: Date = Date(), timeZone: TimeZone = .current, hasDog: Bool = true) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
-        let options = captions(nightPart: NightPart(hour: calendar.component(.hour, from: date)))
+        let options = captions(nightPart: NightPart(hour: calendar.component(.hour, from: date)), hasDog: hasDog)
         return options[dayOfYear % options.count]
     }
 }

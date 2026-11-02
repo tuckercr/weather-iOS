@@ -533,7 +533,7 @@ private struct CurrentWeatherContent: View {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = weather.timeZone
         return seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
-            ?? mood.caption(on: now, timeZone: weather.timeZone)
+            ?? mood.caption(on: now, timeZone: weather.timeZone, hasDog: showWalkCard)
     }
 
     private var heroCard: some View {
