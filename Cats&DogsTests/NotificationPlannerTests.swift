@@ -62,7 +62,8 @@ final class NotificationPlannerTests: XCTestCase {
         now: Date? = nil,
         fetchedAt: Date? = nil,
         settings: NotificationSettings = NotificationSettings(),
-        lastRainAlert: RainAlertRecord? = nil
+        lastRainAlert: RainAlertRecord? = nil,
+        walkNudgesGoneOff: [Date] = []
     ) -> [PlannedNotification] {
         var weather = sampleWeather()
         weather.observedAtEpoch = fetchedAt.map { Int($0.timeIntervalSince1970) }
@@ -72,6 +73,7 @@ final class NotificationPlannerTests: XCTestCase {
             now: now ?? at(6),
             settings: settings,
             lastRainAlert: lastRainAlert,
+            walkNudgesGoneOff: walkNudgesGoneOff,
             calendar: calendar
         )
     }
@@ -234,6 +236,34 @@ final class NotificationPlannerTests: XCTestCase {
         )
         // From a cache fetched the day before, neither.
         XCTAssertTrue(plan(twoDays, fetchedAt: at(-20), settings: settings).filter { $0.kind == .walkTime }.isEmpty)
+    }
+
+    func testAReplanLaterInTheMorningKeepsTodaysNudge() {
+        // Opening the app after the 8:30 briefing replans: today's 11:00 nudge must survive it.
+        let laterGood = [day(dry.map { slot($0, rain: $0 < 11 ? 90 : 0) })]
+        let settings = NotificationSettings(walkTime: true, hasDog: true)
+
+        for hour in [8.75, 9.5, 10.9] {
+            XCTAssertEqual(plan(laterGood, now: at(hour), settings: settings).filter { $0.kind == .walkTime }.map(\.date), [at(11)])
+        }
+        // Once it has gone by, there's nothing left to queue today.
+        XCTAssertTrue(plan(laterGood, now: at(11.5), settings: settings).filter { $0.kind == .walkTime }.isEmpty)
+    }
+
+    func testNoSecondNudgeOnADayOneHasAlreadyGoneOff() {
+        // Fetched at noon, so the morning's hours are gone: rain until 15:00, then good. The 11:00
+        // nudge already went off, so the afternoon's good hour doesn't get another.
+        let afternoon = [day((12 ... 20).map { slot($0, rain: $0 < 15 ? 90 : 0) })]
+        let settings = NotificationSettings(walkTime: true, hasDog: true)
+
+        XCTAssertEqual(plan(afternoon, now: at(12.5), settings: settings).filter { $0.kind == .walkTime }.map(\.date), [at(15)])
+        XCTAssertTrue(plan(afternoon, now: at(12.5), settings: settings, walkNudgesGoneOff: [at(11)])
+            .filter { $0.kind == .walkTime }.isEmpty)
+        // Yesterday's nudge doesn't count against today.
+        XCTAssertEqual(
+            plan(afternoon, now: at(12.5), settings: settings, walkNudgesGoneOff: [at(-13)]).filter { $0.kind == .walkTime }.map(\.date),
+            [at(15)]
+        )
     }
 
     func testWithoutADogThereIsNoWalkNudgeEvenWithItsSwitchOn() {

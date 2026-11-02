@@ -29,6 +29,15 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertNil(reopened.cachedWeather(for: denver.cacheKey))
     }
 
+    func testWalkNudgeDatesRoundTrip() {
+        let dates = [Date(timeIntervalSince1970: 1_793_550_600), Date(timeIntervalSince1970: 1_793_637_000)]
+        XCTAssertEqual(preferences.store.walkNudgeDates, [])
+
+        preferences.store.setWalkNudgeDates(dates)
+
+        XCTAssertEqual(preferences.reopened().walkNudgeDates, dates)
+    }
+
     func testRemovingACityEvictsItsCacheButKeepsTheOthers() async {
         preferences.store.setSavedLocations([austin, denver])
         preferences.store.setCachedWeather(await makeCurrentWeather(cityName: "Austin"), for: austin.cacheKey)
