@@ -415,6 +415,18 @@ final class WalkAdvisorTests: XCTestCase {
         XCTAssertEqual(outlook(slots, sunsetIn: 2 * 3600), .darkIn(hours: 2))
     }
 
+    func testAfterSunsetNowIsntAGreatTimeEvenIfTheHoursIconStillSaysDay() {
+        // 4:35 PM: the 4 PM hour is still "01d", but the sun set at 4:31.
+        let slots = [slot("4 PM", 20, rain: 0, epoch: t0), slot("5 PM", 20, rain: 0, epoch: t0 + 3600, icon: "01n")]
+        let now = Date(timeIntervalSince1970: TimeInterval(t0))
+        let light = WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: slots, now: now)
+        XCTAssertEqual(light?.rating, .great)
+
+        let dark = WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: slots, now: now, darkNow: true)
+        XCTAssertNotEqual(dark?.rating, .great)
+        XCTAssertNil(dark?.outlook)
+    }
+
     func testSunsetSoonIsMentionedAndRoundedToTheHour() {
         let slots = [slot("5 PM", 20, rain: 0, epoch: t0)]
         XCTAssertEqual(outlook(slots, sunsetIn: 50 * 60), .darkIn(hours: 1))

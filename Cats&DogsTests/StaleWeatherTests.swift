@@ -167,4 +167,40 @@ final class StaleWeatherTests: XCTestCase {
             epochSeconds: epoch
         )
     }
+
+    // MARK: - Today's sun
+
+    /// Midnight UTC; these readings are in UTC.
+    private let dayStart = fixtureDayStart
+
+    func testSunTimesFromAnEarlierDayMoveOntoToday() {
+        // Cached yesterday evening with yesterday's sun (07:00 and 16:30, UTC), shown at 10:00 today.
+        let day = 86_400
+        let reading = weather(observedAt: dayStart - 3 * 3600, iconCode: "01n", sunrise: dayStart - day + 7 * 3600,
+                              sunset: dayStart - day + 16 * 3600 + 1800)
+        let moved = StaleWeather.withSunTimesToday(reading, at: date(dayStart + 10 * 3600))
+
+        XCTAssertEqual(moved.sunriseEpoch, dayStart + 7 * 3600)
+        XCTAssertEqual(moved.sunsetEpoch, dayStart + 16 * 3600 + 1800)
+        XCTAssertFalse(StaleWeather.isDark(moved, at: date(dayStart + 10 * 3600)))
+        // Left as it was, yesterday's sunset would say it's dark at 10 AM.
+        XCTAssertTrue(StaleWeather.isDark(reading, at: date(dayStart + 10 * 3600)))
+    }
+
+    func testTodaysOrTomorrowsSunTimesAreLeftAlone() {
+        let today = weather(observedAt: dayStart + 9 * 3600, sunrise: dayStart + 7 * 3600, sunset: dayStart + 16 * 3600)
+        XCTAssertEqual(StaleWeather.withSunTimesToday(today, at: date(dayStart + 21 * 3600)), today)
+        let tomorrows = weather(observedAt: dayStart + 21 * 3600, sunrise: dayStart + 86_400 + 7 * 3600,
+                                sunset: dayStart + 86_400 + 16 * 3600)
+        XCTAssertEqual(StaleWeather.withSunTimesToday(tomorrows, at: date(dayStart + 21 * 3600)), tomorrows)
+    }
+
+    func testItsDarkBeforeSunriseAndFromSunsetByTheClock() {
+        let reading = weather(observedAt: dayStart + 9 * 3600, sunrise: dayStart + 7 * 3600, sunset: dayStart + 16 * 3600)
+        XCTAssertTrue(StaleWeather.isDark(reading, at: date(dayStart + 6 * 3600)))
+        XCTAssertFalse(StaleWeather.isDark(reading, at: date(dayStart + 12 * 3600)))
+        XCTAssertTrue(StaleWeather.isDark(reading, at: date(dayStart + 16 * 3600 + 300)))
+        // Without sun times it's left to the forecast.
+        XCTAssertFalse(StaleWeather.isDark(weather(observedAt: dayStart), at: date(dayStart + 23 * 3600)))
+    }
 }

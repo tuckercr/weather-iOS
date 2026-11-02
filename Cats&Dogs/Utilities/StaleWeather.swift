@@ -44,6 +44,30 @@ enum StaleWeather {
         return String(icon.dropLast()) + (nowTime < rise || nowTime >= set ? "n" : "d")
     }
 
+    /// `weather` with its sunrise and sunset moved onto today in the city when they're from an
+    /// earlier day (a reading cached yesterday), so the Daylight tile and the walk card go by today's
+    /// sun, as the hero does. Whole days are added, so the times can be a minute or two out. Sun
+    /// times from today, or from tomorrow, are left alone.
+    static func withSunTimesToday(_ weather: CurrentWeather, at now: Date) -> CurrentWeather {
+        guard let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch else { return weather }
+        let offset = weather.timeZone.secondsFromGMT(for: now)
+        func cityDay(_ epoch: Int) -> Int { Int((Double(epoch + offset) / Double(secondsPerDay)).rounded(.down)) }
+        let days = cityDay(Int(now.timeIntervalSince1970)) - cityDay(sunrise)
+        guard days > 0 else { return weather }
+        var moved = weather
+        moved.sunriseEpoch = sunrise + days * secondsPerDay
+        moved.sunsetEpoch = sunset + days * secondsPerDay
+        return moved
+    }
+
+    /// Whether it's dark in the city at `now` by `weather`'s sun times. False without them, or when
+    /// they don't make a day (polar day or night), leaving it to the forecast's icons.
+    static func isDark(_ weather: CurrentWeather, at now: Date) -> Bool {
+        guard let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch, sunrise < sunset else { return false }
+        let nowEpoch = Int(now.timeIntervalSince1970)
+        return nowEpoch < sunrise || nowEpoch >= sunset
+    }
+
     private static let secondsPerDay = 24 * 60 * 60
 
     /// The cached forecast's slot in progress at `now`, as current conditions: temperature, conditions,

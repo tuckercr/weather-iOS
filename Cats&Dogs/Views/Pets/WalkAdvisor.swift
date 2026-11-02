@@ -58,7 +58,9 @@ enum WalkAdvisor {
     ///
     /// `precipitatingNow` is the current observation. The hourly forecast can say the hour in
     /// progress is dry while it's raining, so when it's raining now, now is never the walk time.
-    /// `sunsetEpoch` is today's sunset, for the "gets dark" line.
+    /// `sunsetEpoch` is today's sunset, for the "gets dark" line. `darkNow` is the clock's word on
+    /// darkness: the hour in progress keeps its daytime icon for the whole hour the sun sets in, so
+    /// without it now could be "a great time" for up to an hour after dark.
     static func advice(
         currentFeelsLikeC: Double,
         upcoming: [HourlySlot],
@@ -66,13 +68,15 @@ enum WalkAdvisor {
         timeZone: TimeZone = .current,
         thresholds: PetWeatherThresholds = .standard,
         precipitatingNow: Bool = false,
-        sunsetEpoch: Int? = nil
+        sunsetEpoch: Int? = nil,
+        darkNow: Bool = false
     ) -> WalkAdvice? {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
         guard let first = slots.first else { return nil }
-        let nowWalkable = !precipitatingNow && isWalkable(first, thresholds)
-        let firstGood = (precipitatingNow ? Array(slots.dropFirst()) : slots).first { isWalkable($0, thresholds) }
+        let notNow = precipitatingNow || darkNow
+        let nowWalkable = !notNow && isWalkable(first, thresholds)
+        let firstGood = (notNow ? Array(slots.dropFirst()) : slots).first { isWalkable($0, thresholds) }
         let pawsHotNow = (pavementC(first) ?? 0) >= thresholds.hotPavementC
         let rating: WalkRating = if currentFeelsLikeC >= thresholds.petHotC || pawsHotNow {
             .pawsHot
