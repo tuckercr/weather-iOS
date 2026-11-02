@@ -63,7 +63,8 @@ final class NotificationPlannerTests: XCTestCase {
         fetchedAt: Date? = nil,
         settings: NotificationSettings = NotificationSettings(),
         lastRainAlert: RainAlertRecord? = nil,
-        walkNudgesGoneOff: [Date] = []
+        walkNudgesGoneOff: [Date] = [],
+        forecastFetchedAt: Date? = nil
     ) -> [PlannedNotification] {
         var weather = sampleWeather()
         weather.observedAtEpoch = fetchedAt.map { Int($0.timeIntervalSince1970) }
@@ -74,6 +75,7 @@ final class NotificationPlannerTests: XCTestCase {
             settings: settings,
             lastRainAlert: lastRainAlert,
             walkNudgesGoneOff: walkNudgesGoneOff,
+            forecastFetchedAt: forecastFetchedAt,
             calendar: calendar
         )
     }
@@ -136,6 +138,19 @@ final class NotificationPlannerTests: XCTestCase {
         let first = plan(days(5), fetchedAt: at(-18)).first { $0.identifier == "briefing_0" }
 
         XCTAssertEqual(first?.title, "Today's forecast for London")
+    }
+
+    func testFreshnessCountsFromTheForecastsFetchNotTheReading() {
+        // A fresh reading with a forecast left from 3 days ago (its fetch failed since): no weather.
+        let stale = plan(days(5), now: at(6), fetchedAt: at(6), forecastFetchedAt: at(-66)).first { $0.identifier == "briefing_0" }
+        XCTAssertEqual(stale?.title, NotificationPlanner.fallbackBriefing.title)
+
+        // Refreshed at 8:32 after the briefing, with OpenWeather's reading from 8:24: tomorrow's
+        // 8:30 is under a day after the fetch, so it still gives the hour's weather.
+        let tomorrow = plan(days(5), now: at(8.55), fetchedAt: at(8.4), forecastFetchedAt: at(8.53))
+            .first { $0.identifier == "briefing_0" }
+        XCTAssertEqual(tomorrow?.date, at(32.5))
+        XCTAssertEqual(tomorrow?.title, "15° and clear in London")
     }
 
     func testTheBriefingPictureIsTheForecastAt830NotTheWeatherWhenPlanned() {

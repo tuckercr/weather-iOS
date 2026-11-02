@@ -71,7 +71,8 @@ final class WeatherNotificationScheduler {
             settings: settings,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
             lastRainAlert: preferences.lastRainAlert,
-            walkNudgesGoneOff: walkNudgesGoneOff
+            walkNudgesGoneOff: walkNudgesGoneOff,
+            forecastFetchedAt: preferences.cachedForecastFetchedAt(for: location.cacheKey)
         )
         // Today's that have gone off stay on record, so a later replan doesn't send a second.
         preferences.setWalkNudgeDates(
