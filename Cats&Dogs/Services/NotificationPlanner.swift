@@ -79,12 +79,16 @@ enum NotificationPlanner {
         thresholds: PetWeatherThresholds = .standard,
         lastRainAlert: RainAlertRecord? = nil,
         walkNudgesGoneOff: [Date] = [],
+        forecastFetchedAt: Date? = nil,
         calendar: Calendar = .current
     ) -> [PlannedNotification] {
         let slots = forecast.flatMap(\.hourlySlots)
         let briefings = briefingDates(after: now, calendar: calendar)
-        // The reading's time stands for the fetch: a replan from Settings reuses the cache as it is.
-        let fetchedAt = weather?.observedAtEpoch.map { Date(timeIntervalSince1970: TimeInterval($0)) } ?? now
+        // How old the forecast is, since it's what they say: when it was fetched, or for a forecast
+        // cached before that was kept, the current reading's time.
+        let fetchedAt = forecastFetchedAt
+            ?? weather?.observedAtEpoch.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+            ?? now
         var planned: [PlannedNotification] = []
 
         let briefingOn = settings.morningBriefing && settings.briefingRemotelyEnabled

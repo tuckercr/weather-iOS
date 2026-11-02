@@ -14,6 +14,7 @@ final class PreferencesStore {
     private let activeLocationIndexKey = "active_location_index"
     private let weatherCacheKey = "weather_cache"
     private let forecastCacheKey = "forecast_cache"
+    private let forecastFetchedAtKey = "forecast_fetched_at"
     private let unitOverrideKey = "unit_override"
     private let shareUsageStatisticsKey = "share_usage_statistics"
     private let showWalkCardKey = "show_walk_card"
@@ -199,15 +200,24 @@ final class PreferencesStore {
         loadCache([DayForecast].self, forKey: forecastCacheKey)[locationKey]
     }
 
-    func setCachedForecast(_ forecast: [DayForecast], for locationKey: String) {
+    func setCachedForecast(_ forecast: [DayForecast], for locationKey: String, fetchedAt: Date = Date()) {
         var cache = loadCache([DayForecast].self, forKey: forecastCacheKey)
         cache[locationKey] = forecast
         saveCache(cache, forKey: forecastCacheKey)
+        var times = loadCache(Double.self, forKey: forecastFetchedAtKey)
+        times[locationKey] = fetchedAt.timeIntervalSince1970
+        saveCache(times, forKey: forecastFetchedAtKey)
+    }
+
+    /// When the cached forecast was fetched; nil for one cached before this was kept.
+    func cachedForecastFetchedAt(for locationKey: String) -> Date? {
+        loadCache(Double.self, forKey: forecastFetchedAtKey)[locationKey].map { Date(timeIntervalSince1970: $0) }
     }
 
     func clearCache() {
         defaults.removeObject(forKey: weatherCacheKey)
         defaults.removeObject(forKey: forecastCacheKey)
+        defaults.removeObject(forKey: forecastFetchedAtKey)
     }
 
     /// Drops cache entries for cities that are no longer saved, so removed cities (and every spot
@@ -216,6 +226,7 @@ final class PreferencesStore {
         let keys = Set(locations.map(\.cacheKey))
         prune(CurrentWeather.self, forKey: weatherCacheKey, keeping: keys)
         prune([DayForecast].self, forKey: forecastCacheKey, keeping: keys)
+        prune(Double.self, forKey: forecastFetchedAtKey, keeping: keys)
     }
 
     private func prune<Value: Codable>(_ type: Value.Type, forKey key: String, keeping keys: Set<String>) {
