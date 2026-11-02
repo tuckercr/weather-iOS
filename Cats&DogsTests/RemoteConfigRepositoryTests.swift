@@ -65,7 +65,8 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkTimeNotificationsEnabled)
-        XCTAssertTrue(RemoteConfigRepository.shared.rainNotificationsEnabled)
+        // Off for the first release.
+        XCTAssertFalse(RemoteConfigRepository.shared.rainNotificationsEnabled)
         XCTAssertEqual(RemoteConfigRepository.shared.foregroundRefreshMinInterval, 0)
         XCTAssertEqual(RemoteConfigRepository.shared.petWeatherThresholds, .standard)
     }
