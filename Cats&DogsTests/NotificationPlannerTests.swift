@@ -60,11 +60,14 @@ final class NotificationPlannerTests: XCTestCase {
     private func plan(
         _ forecast: [DayForecast],
         now: Date? = nil,
+        fetchedAt: Date? = nil,
         settings: NotificationSettings = NotificationSettings(),
         lastRainAlert: RainAlertRecord? = nil
     ) -> [PlannedNotification] {
-        NotificationPlanner.plan(
-            weather: sampleWeather(),
+        var weather = sampleWeather()
+        weather.observedAtEpoch = fetchedAt.map { Int($0.timeIntervalSince1970) }
+        return NotificationPlanner.plan(
+            weather: weather,
             forecast: forecast,
             now: now ?? at(6),
             settings: settings,
@@ -105,6 +108,41 @@ final class NotificationPlannerTests: XCTestCase {
 
         XCTAssertEqual(later?.title, NotificationPlanner.fallbackBriefing.title)
         XCTAssertEqual(later?.body, NotificationPlanner.fallbackBriefing.body)
+    }
+
+    private func days(_ count: Int, rain: Int = 0) -> [DayForecast] {
+        (0 ..< count).map { offset in day(dry.map { slot($0, day: offset, rain: rain) }) }
+    }
+
+    func testABriefingADayAfterTheFetchGivesOnlyTheDaysForecastAndAfter3DaysNoWeather() {
+        // Fetched at 6:00 on day 0, with a forecast to day 4.
+        let briefings = plan(days(5)).filter { $0.kind == .morningBriefing }
+
+        XCTAssertEqual(briefings[0].title, "15° and clear in London")
+        for later in briefings[1 ... 2] {
+            XCTAssertEqual(later.title, "Today's forecast for London")
+            XCTAssertEqual(later.body, "High 18°, low 10°.")
+        }
+        for later in briefings[3...] {
+            XCTAssertEqual(later.title, NotificationPlanner.fallbackBriefing.title)
+            XCTAssertEqual(later.body, NotificationPlanner.fallbackBriefing.body)
+        }
+    }
+
+    func testFreshnessCountsFromTheFetchNotFromThePlan() {
+        // Replanned at 6:00 from a cache fetched at 6:00 the day before: 8:30 is past a day old.
+        let first = plan(days(5), fetchedAt: at(-18)).first { $0.identifier == "briefing_0" }
+
+        XCTAssertEqual(first?.title, "Today's forecast for London")
+    }
+
+    func testTheBriefingPictureIsTheForecastAt830NotTheWeatherWhenPlanned() {
+        // The weather when planned is clear; 8:00 to 9:00 is forecast rain.
+        let briefings = plan(days(2, rain: 90)).filter { $0.kind == .morningBriefing }
+
+        XCTAssertEqual(briefings[0].mood, .rain)
+        // Only the briefing that gives the hour's weather has a picture.
+        XCTAssertNil(briefings[1].mood)
     }
 
     func testWithADogTheBriefingSaysWhenToWalk() {
@@ -181,6 +219,21 @@ final class NotificationPlannerTests: XCTestCase {
 
         let walks = plan(good, settings: NotificationSettings(morningBriefing: false, walkTime: true, hasDog: true))
         XCTAssertEqual(walks.map(\.date), [at(8.5)])
+    }
+
+    func testNoWalkNudgeOffAForecastMoreThanADayOld() {
+        // A good hour at 11:00 on both days: tomorrow's is 29 hours after the 6:00 fetch.
+        let twoDays = (0 ..< 2).map { offset in day(dry.map { slot($0, day: offset, rain: $0 < 11 ? 90 : 0) }) }
+        let settings = NotificationSettings(walkTime: true, hasDog: true)
+
+        XCTAssertEqual(plan(twoDays, settings: settings).filter { $0.kind == .walkTime }.map(\.date), [at(11)])
+        // Planned at 21:00 from a fetch then, tomorrow's is 14 hours on.
+        XCTAssertEqual(
+            plan(twoDays, now: at(21), settings: settings).filter { $0.kind == .walkTime }.map(\.date),
+            [at(35)]
+        )
+        // From a cache fetched the day before, neither.
+        XCTAssertTrue(plan(twoDays, fetchedAt: at(-20), settings: settings).filter { $0.kind == .walkTime }.isEmpty)
     }
 
     func testWithoutADogThereIsNoWalkNudgeEvenWithItsSwitchOn() {

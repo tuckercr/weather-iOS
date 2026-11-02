@@ -77,10 +77,10 @@ final class WeatherNotificationScheduler {
                 dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: planned.date),
                 repeats: false
             )
-            // The brand look: the pets, in today's mood for the next briefing, out for a walk, or
-            // under the umbrella.
+            // The brand look: the pets, in the forecast's mood at 8:30 for a briefing that gives the
+            // hour's weather, out for a walk, or under the umbrella.
             let mood: PetMood? = switch planned.kind {
-            case .morningBriefing: planned.identifier == "briefing_0" ? weather.map(currentMood) : nil
+            case .morningBriefing: planned.mood
             case .walkTime: .sunny
             case .rain: planned.snow ? .snow : .rain
             }
@@ -181,15 +181,6 @@ final class WeatherNotificationScheduler {
         case .walkTime: "walk_time"
         case .rain: "rain_alerts"
         }
-    }
-
-    private func currentMood(_ weather: CurrentWeather) -> PetMood {
-        PetMood.forConditions(
-            conditionMain: weather.conditionMain,
-            iconCode: weather.iconCode,
-            feelsLikeC: weather.units.toCelsius(weather.feelsLike),
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds
-        )
     }
 
     /// A PNG of the pets in `mood`.
