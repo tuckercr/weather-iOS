@@ -102,13 +102,13 @@ final class RemoteConfigRepository {
             Self.keyForegroundRefreshMinMinutes: NSNumber(value: Self.defaultForegroundRefreshMinMinutes),
             Self.keyOpenMeteoEnabled: NSNumber(value: true),
             Self.keyAirQualityEnabled: NSNumber(value: true),
-            Self.keyTileFeelsLikeEnabled: NSNumber(value: true),
-            Self.keyTileWindEnabled: NSNumber(value: true),
-            Self.keyTileHumidityEnabled: NSNumber(value: true),
-            Self.keyTilePawCheckEnabled: NSNumber(value: true),
-            Self.keyTileUvEnabled: NSNumber(value: false),
-            Self.keyTileDaylightEnabled: NSNumber(value: true),
-            Self.keyTileSkyEnabled: NSNumber(value: true),
+            Self.keyTileFeelsLikeEnabled: NSNumber(value: Self.defaultTiles.feelsLike),
+            Self.keyTileWindEnabled: NSNumber(value: Self.defaultTiles.wind),
+            Self.keyTileHumidityEnabled: NSNumber(value: Self.defaultTiles.humidity),
+            Self.keyTilePawCheckEnabled: NSNumber(value: Self.defaultTiles.pawCheck),
+            Self.keyTileUvEnabled: NSNumber(value: Self.defaultTiles.uv),
+            Self.keyTileDaylightEnabled: NSNumber(value: Self.defaultTiles.daylight),
+            Self.keyTileSkyEnabled: NSNumber(value: Self.defaultTiles.sky),
             Self.keySeasonalThemesEnabled: NSNumber(value: true),
             Self.keySeasonalThemes: "" as NSString,
             Self.keyOpenWeatherApiKey: "" as NSString,
@@ -210,16 +210,21 @@ final class RemoteConfigRepository {
 
     /// Which Today tiles show. Air quality has its own switch above, as it also stops the fetch.
     var todayTiles: TodayTileSwitches {
-        TodayTileSwitches(
-            feelsLike: Self.flag(Self.keyTileFeelsLikeEnabled),
-            wind: Self.flag(Self.keyTileWindEnabled),
-            humidity: Self.flag(Self.keyTileHumidityEnabled),
-            pawCheck: Self.flag(Self.keyTilePawCheckEnabled),
-            uv: Self.flag(Self.keyTileUvEnabled, fallback: false),
-            daylight: Self.flag(Self.keyTileDaylightEnabled),
-            sky: Self.flag(Self.keyTileSkyEnabled)
+        let defaults = Self.defaultTiles
+        return TodayTileSwitches(
+            feelsLike: Self.flag(Self.keyTileFeelsLikeEnabled, fallback: defaults.feelsLike),
+            wind: Self.flag(Self.keyTileWindEnabled, fallback: defaults.wind),
+            humidity: Self.flag(Self.keyTileHumidityEnabled, fallback: defaults.humidity),
+            pawCheck: Self.flag(Self.keyTilePawCheckEnabled, fallback: defaults.pawCheck),
+            uv: Self.flag(Self.keyTileUvEnabled, fallback: defaults.uv),
+            daylight: Self.flag(Self.keyTileDaylightEnabled, fallback: defaults.daylight),
+            sky: Self.flag(Self.keyTileSkyEnabled, fallback: defaults.sky)
         )
     }
+
+    /// Each tile's switch with no Remote Config value: `TodayTileSwitches`' own defaults, so they're
+    /// written in one place.
+    private static let defaultTiles = TodayTileSwitches()
 
     /// Nil when unset or blank, so the key built into the app is used. Not a secret: Remote Config
     /// values reach every device.
@@ -231,8 +236,6 @@ final class RemoteConfigRepository {
         return key?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank
     }
 
-    /// Every flag defaults to on. A key with no value at all reads as false, so that counts as
-    /// "not set" rather than "off".
     /// The seasonal themes to choose from: Remote Config's list when it's valid, else the one shipped
     /// in the app; none when they're switched off. Debug builds can force one with
     /// `-seasonalTheme halloween`, whatever the date.
@@ -243,17 +246,21 @@ final class RemoteConfigRepository {
         }
         #endif
         guard Self.flag(Self.keySeasonalThemesEnabled) else { return [] }
-        if FirebaseApp.app() != nil {
-            let json = RemoteConfig.remoteConfig()[Self.keySeasonalThemes].stringValue
-            if !json.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-               let themes = SeasonalThemes.parse(Data(json.utf8)) {
-                return themes
-            }
-        }
-        return SeasonalThemes.builtIn
+        return string(Self.keySeasonalThemes).flatMap(themes(fromJSON:)) ?? SeasonalThemes.builtIn
     }
 
-    /// `fallback` is used without Firebase or a value, so a switch that starts off stays off.
+    /// The last theme list parsed, so a screen update doesn't decode the JSON again each time.
+    private var lastThemes: (json: String, themes: [SeasonalTheme]?)?
+
+    private func themes(fromJSON json: String) -> [SeasonalTheme]? {
+        if let lastThemes, lastThemes.json == json { return lastThemes.themes }
+        let themes = SeasonalThemes.parse(Data(json.utf8))
+        lastThemes = (json, themes)
+        return themes
+    }
+
+    /// A key with no value at all reads as false, so that counts as "not set" rather than "off":
+    /// `fallback` is used then, and without Firebase, so a switch that starts off stays off.
     private nonisolated static func flag(_ key: String, fallback: Bool = true) -> Bool {
         guard FirebaseApp.app() != nil else { return fallback }
         let value = RemoteConfig.remoteConfig()[key]
