@@ -714,6 +714,10 @@ struct PrecipChance: View {
 private struct UpcomingDayRow: View {
     let day: DayForecast
     let onTap: () -> Void
+    /// Wide enough for "H 85° · L 76°", so the icons line up down the list.
+    @ScaledMetric(relativeTo: .body) private var temperaturesWidth: CGFloat = 112
+    /// The day's description ("Overcast"), 2 points up from the caption size.
+    @ScaledMetric(relativeTo: .caption) private var descriptionSize: CGFloat = 14
 
     var body: some View {
         VStack(spacing: 0) {
@@ -726,20 +730,24 @@ private struct UpcomingDayRow: View {
     private var dayButton: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                WeatherIconView(iconCode: day.iconCode, size: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(day.dateLabel)
                         .fontWeight(.medium)
                     Text(day.description)
-                        .font(.caption)
+                        .font(.system(size: descriptionSize))
                         .foregroundStyle(Color.secondaryText)
                     PrecipChance(percent: day.precipitationChance)
                 }
-                Spacer()
-                Text(WeatherFormatting.temperature(day.tempMax, units: day.units))
-                    .fontWeight(.semibold)
-                Text(WeatherFormatting.temperature(day.tempMin, units: day.units))
-                    .foregroundStyle(Color.secondaryText)
+                Spacer(minLength: 0)
+                WeatherIconView(iconCode: day.iconCode, size: 36)
+                // The high and low as the hero has them, "H 85° · L 76°", with the high stronger.
+                let high = Int(day.tempMax.rounded())
+                let low = Int(day.tempMin.rounded())
+                (Text("H \(high)°").fontWeight(.semibold)
+                    + Text(" · L \(low)°").foregroundStyle(Color.secondaryText))
+                    .frame(minWidth: temperaturesWidth, alignment: .trailing)
+                    // "H 85°" would be read as the letter H.
+                    .accessibilityLabel("High \(high)°, low \(low)°")
             }
             .padding(.vertical, 10)
             .contentShape(Rectangle())
