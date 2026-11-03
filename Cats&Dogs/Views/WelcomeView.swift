@@ -4,8 +4,6 @@ import SwiftUI
 struct WelcomeView: View {
     let onGetStarted: () -> Void
 
-    @ScaledMetric(relativeTo: .largeTitle) private var titleSize: CGFloat = 34
-
     var body: some View {
         OnboardingLayout {
             PetScene(mood: .sunny)
@@ -36,13 +34,12 @@ struct WelcomeView: View {
         }
     }
 
-    /// One line when it fits. Otherwise it breaks after "Meet", keeping the two names together, with
-    /// the lines pulled in: Baloo 2's lines are 1.6 times the font size, too far apart for a title.
-    /// The largest text sizes wrap wherever they must.
+    /// One line when it fits. Otherwise it breaks after "Meet", keeping the two names together. The
+    /// largest text sizes wrap wherever they must.
     private var title: some View {
         ViewThatFits(in: .horizontal) {
             titleText("Meet Sunny & Misty")
-            VStack(spacing: -0.45 * titleSize) {
+            VStack(spacing: 0) {
                 titleText("Meet")
                 titleText("Sunny & Misty")
             }
