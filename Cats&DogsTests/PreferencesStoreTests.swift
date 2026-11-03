@@ -78,6 +78,26 @@ final class PreferencesStoreTests: XCTestCase {
         XCTAssertNotNil(preferences.store.cachedWeather(for: denver.cacheKey))
     }
 
+    /// Builds before the Rain outlook cached hourly slots without the hour's rain amount.
+    func testAForecastCachedWithoutRainAmountsStillLoads() throws {
+        let day = """
+        {"dateLabel":"Mon, Jan 1","conditionMain":"Rain","description":"Light rain","iconCode":"10d",
+        "temperature":15,"feelsLike":14,"tempMin":10,"tempMax":16,"units":"metric","precipitationChance":60,
+        "hourlySlots":[{"timeLabel":"3 PM","iconCode":"10d","description":"Light rain","temperature":15,
+        "feelsLike":14,"windSpeed":3,"windDeg":180,"humidity":80,"pressure":1012,"units":"metric",
+        "precipitationChance":60,"localHour":15,"epochSeconds":1704121200,"groundWet":true}]}
+        """
+        let suite = ThrowawayDefaults()
+        defer { suite.destroy() }
+        let cache = [austin.cacheKey: [try JSONSerialization.jsonObject(with: Data(day.utf8))]]
+        suite.defaults.set(try JSONSerialization.data(withJSONObject: cache), forKey: "forecast_cache")
+
+        let slot = try XCTUnwrap(PreferencesStore(defaults: suite.defaults).cachedForecast(for: austin.cacheKey)?.first?.hourlySlots.first)
+
+        XCTAssertEqual(slot.precipitationChance, 60)
+        XCTAssertNil(slot.precipitationMm)
+    }
+
     /// Builds before this change stored each entry as a JSON string inside the map.
     func testCacheWrittenInTheOlderFormatIsIgnoredAndThenReplaced() async throws {
         let suite = ThrowawayDefaults()

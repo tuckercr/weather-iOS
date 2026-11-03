@@ -53,6 +53,43 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.foregroundRefreshMinInterval(minutes: 1441), 0)
     }
 
+    func testRainOutlookHoursDefaultsToTen() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(nil), 10)
+    }
+
+    func testRainOutlookHoursUsesAWholeNumberFromSixToTwelve() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(6), 6)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(8), 8)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(12), 12)
+    }
+
+    func testOutOfRangeOrFractionalRainOutlookHoursFallBackToTen() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(5), 10)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(13), 10)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(0), 10)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(-8), 10)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(7.5), 10)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(.nan), 10)
+    }
+
+    func testRainOutlookMinChanceDefaultsToTwenty() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(nil), 20)
+    }
+
+    func testRainOutlookMinChanceUsesAWholeNumberFromOneToAHundred() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(1), 1)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(35), 35)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(100), 100)
+    }
+
+    func testOutOfRangeOrFractionalRainOutlookMinChanceFallsBackToTwenty() {
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(0), 20)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(101), 20)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(-5), 20)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(30.5), 20)
+        XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(.infinity), 20)
+    }
+
     @MainActor
     func testWithoutFirebaseTheDefaultsApply() {
         XCTAssertFalse(FirebaseSetup.isConfigured)
@@ -64,6 +101,9 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertTrue(RemoteConfigRepository.shared.hourlyForecastEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.nextRainEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.weekForecastEnabled)
+        XCTAssertTrue(RemoteConfigRepository.shared.rainOutlookEnabled)
+        XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookHours, 10)
+        XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookMinChance, 20)
         XCTAssertTrue(RemoteConfigRepository.openMeteoEnabled)
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)

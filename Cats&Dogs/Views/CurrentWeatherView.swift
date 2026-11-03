@@ -439,6 +439,26 @@ private struct CurrentWeatherContent: View {
         Array(upcomingSlots.prefix(Self.hourlyStripCount))
     }
 
+    /// "Rain starting around 3:15 PM", only when rain or snow is due in the next 2 hours.
+    private var nextRain: NextRain? {
+        guard RemoteConfigRepository.shared.nextRainEnabled else { return nil }
+        return NextRain.from(forecastDays.first?.quarterHours ?? [], now: now)
+    }
+
+    /// The chance of rain over the next few hours, when one of them reaches Remote Config's chance.
+    /// It takes over the next-rain line, whose text becomes its headline.
+    private var rainOutlook: RainOutlook? {
+        let config = RemoteConfigRepository.shared
+        return RainOutlook.from(
+            upcomingSlots,
+            enabled: config.rainOutlookEnabled,
+            hours: config.rainOutlookHours,
+            minChance: config.rainOutlookMinChance,
+            units: weather.units,
+            nextRainLine: nextRain?.line(timeZone: weather.timeZone)
+        )
+    }
+
     /// Today's seasonal theme by the city's own date, worked out again whenever `now` moves on, so
     /// it ends by itself when its day does.
     private var seasonalTheme: SeasonalTheme? {
@@ -446,18 +466,24 @@ private struct CurrentWeatherContent: View {
     }
 
     var body: some View {
+        let outlook = rainOutlook
         VStack(alignment: .leading, spacing: 12) {
             if isWide {
                 HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) { heroSection }
+                    VStack(alignment: .leading, spacing: 12) { heroSection(showNextRain: outlook == nil) }
                     VStack(alignment: .leading, spacing: 12) { todaySection }
                 }
             } else {
-                heroSection
+                heroSection(showNextRain: outlook == nil)
             }
             if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
                 SectionHeader("HOURLY")
                 HourlyStrip(slots: hourlySlots)
+            }
+            // After the hourly strip in either layout: on wide screens Today is already up top.
+            if let outlook {
+                SectionHeader("RAIN OUTLOOK")
+                RainOutlookCard(outlook: outlook)
             }
             if !isWide {
                 todaySection
@@ -476,12 +502,11 @@ private struct CurrentWeatherContent: View {
         }
     }
 
+    /// `showNextRain` is false while the Rain outlook card shows, as its headline says the same.
     @ViewBuilder
-    private var heroSection: some View {
+    private func heroSection(showNextRain: Bool) -> some View {
         heroCard
-        // "Rain starting around 3:15 PM", only when rain or snow is due in the next 2 hours.
-        if RemoteConfigRepository.shared.nextRainEnabled,
-           let nextRain = NextRain.from(forecastDays.first?.quarterHours ?? [], now: now) {
+        if showNextRain, let nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
         if showWalkCard, RemoteConfigRepository.shared.walkCardEnabled, let walkAdvice {

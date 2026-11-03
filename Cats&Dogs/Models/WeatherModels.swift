@@ -44,6 +44,9 @@ struct HourlySlot: Codable, Equatable, Identifiable {
     let units: WeatherUnits
     /// Probability of precipitation as a percentage, 0...100.
     var precipitationChance: Int = 0
+    /// The hour's forecast rain and snow, in mm of water. Nil when the source doesn't say (the
+    /// OpenWeather 3-hourly fallback), or in a forecast cached before it was recorded.
+    var precipitationMm: Double? = nil
     /// UV index (0...11+); nil when the source doesn't provide it.
     var uvIndex: Double? = nil
     /// Estimated sun-baked pavement temperature in `units`; nil when unknown.

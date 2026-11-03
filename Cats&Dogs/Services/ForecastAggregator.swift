@@ -16,6 +16,8 @@ enum ForecastAggregator {
         let pressure: Int
         /// Probability of precipitation, 0.0...1.0.
         let pop: Double
+        /// Rain and snow in mm of water, for the same hour as `pop`; nil when unknown.
+        let precipitationMm: Double?
         let uvIndex: Double?
         let pavementTemperature: Double?
         let groundWet: Bool
@@ -34,6 +36,7 @@ enum ForecastAggregator {
             humidity: Int = 0,
             pressure: Int = 0,
             pop: Double = 0,
+            precipitationMm: Double? = nil,
             uvIndex: Double? = nil,
             pavementTemperature: Double? = nil,
             groundWet: Bool = false
@@ -51,6 +54,7 @@ enum ForecastAggregator {
             self.humidity = humidity
             self.pressure = pressure
             self.pop = pop
+            self.precipitationMm = precipitationMm
             self.uvIndex = uvIndex
             self.pavementTemperature = pavementTemperature
             self.groundWet = groundWet
@@ -113,6 +117,7 @@ enum ForecastAggregator {
                         pressure: slot.pressure,
                         units: units,
                         precipitationChance: percent(slot.pop),
+                        precipitationMm: slot.precipitationMm,
                         uvIndex: slot.uvIndex,
                         pavementTemperature: slot.pavementTemperature,
                         localHour: calendar.component(.hour, from: date),

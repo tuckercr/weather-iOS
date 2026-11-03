@@ -180,6 +180,22 @@ final class OpenMeteoForecastTests: XCTestCase {
         XCTAssertFalse(OpenMeteoForecast.groundWet(openMeteoResponse(hours: 24).hourly, at: 10))
     }
 
+    func testEachHourCarriesTheRainAmountFromTheSameHourAsItsChance() {
+        var hourly = openMeteoResponse(hours: 4).hourly
+        hourly.precipitationProbability = [10, 40, 80, 30]
+        hourly.precipitation = [0, 0.4, 2.5, nil]
+        let response = OpenMeteoResponse(utcOffsetSeconds: 0, timezone: nil, hourly: hourly)
+
+        let slots = days(response).first?.hourlySlots
+        XCTAssertEqual(slots?.map(\.precipitationChance), [10, 40, 80, 30])
+        XCTAssertEqual(slots?.map(\.precipitationMm), [0, 0.4, 2.5, nil])
+
+        // Still in step once the hours before now are dropped.
+        let later = days(response, now: dayStart + 3600 + 600).first?.hourlySlots.first
+        XCTAssertEqual(later?.precipitationChance, 40)
+        XCTAssertEqual(later?.precipitationMm, 0.4)
+    }
+
     func testSlotsCarryWhetherTheGroundIsWet() {
         var hourly = openMeteoResponse(hours: 3).hourly
         hourly.precipitation = [0, 0, 1]
