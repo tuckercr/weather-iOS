@@ -77,8 +77,16 @@ struct TodayTiles: View {
 
     private var feelsLike: some View {
         Tile(icon: "thermometer.medium", label: "Feels like") {
-            TileValue(WeatherFormatting.temperature(weather.feelsLike, units: weather.units))
-            TileNote("Actual \(WeatherFormatting.temperature(weather.temperature, units: weather.units))")
+            // The tile's headline number: large, and centred in the space under the label.
+            VStack(spacing: 0) {
+                Text(TodayDetails.keepUnitsTogether(WeatherFormatting.temperature(weather.feelsLike, units: weather.units)))
+                    .font(.brand(.largeTitle, size: 36, weight: .bold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                TileNote("Actual \(WeatherFormatting.temperature(weather.temperature, units: weather.units))")
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
