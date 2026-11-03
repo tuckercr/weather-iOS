@@ -455,7 +455,7 @@ private struct CurrentWeatherContent: View {
             } else {
                 heroSection
             }
-            if !hourlySlots.isEmpty {
+            if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
                 SectionHeader("HOURLY")
                 HourlyStrip(slots: hourlySlots)
             }
@@ -480,7 +480,8 @@ private struct CurrentWeatherContent: View {
     private var heroSection: some View {
         heroCard
         // "Rain starting around 3:15 PM", only when rain or snow is due in the next 2 hours.
-        if let nextRain = NextRain.from(forecastDays.first?.quarterHours ?? [], now: now) {
+        if RemoteConfigRepository.shared.nextRainEnabled,
+           let nextRain = NextRain.from(forecastDays.first?.quarterHours ?? [], now: now) {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
         if showWalkCard, RemoteConfigRepository.shared.walkCardEnabled, let walkAdvice {
@@ -496,7 +497,8 @@ private struct CurrentWeatherContent: View {
 
     @ViewBuilder
     private var restOfWeek: some View {
-        if !upcomingDays.isEmpty || forecastState == .loading || isForecastError {
+        if RemoteConfigRepository.shared.weekForecastEnabled,
+           !upcomingDays.isEmpty || forecastState == .loading || isForecastError {
             SectionHeader("REST OF WEEK")
 
             if !upcomingDays.isEmpty {

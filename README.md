@@ -113,7 +113,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      (unless `foreground_refresh_min_minutes` says that city was fetched recently), every 30 minutes
      while the app stays open, and periodically in the background. Each refresh also moves the
      clock on, so hours that have passed drop off and a screen left open overnight keeps up.
-   - The walk card, the radar and air quality can each be switched off from Remote Config.
+   - The hourly strip, the next-rain line, the walk card, the radar, air quality and the rest of
+     the week can each be switched off from Remote Config.
 6. **Add city** (＋): search with geocoding suggestions; choosing a suggestion pins exact coordinates.
    **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
    added as typed and geocoded again at launch, on returning to the app, and when another city is added.
@@ -396,6 +397,9 @@ Remote Config parameters are defined and deployed from the Android repo
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |
 | `walk_card_enabled` | true | Hides the "Best walk time" card for everyone; users can also turn it off in Settings |
+| `hourly_forecast_enabled` | true | Hides the HOURLY strip, header included, for everyone |
+| `next_rain_enabled` | true | Hides the "Rain starting around 3:15 PM" line (from the 15-minute forecast) for everyone |
+| `week_forecast_enabled` | true | Hides the rest of the week, header and day rows, for everyone |
 | `daily_weather_notifications_enabled` | true | The morning briefing; off removes the queued ones and hides its switch in Settings |
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
 | `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |
