@@ -138,7 +138,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Privacy**: *Share usage statistics* turns analytics on or off. It starts on, except in the EU,
      EEA, UK and Switzerland, where it starts off until the user turns it on.
    - **About**: OpenWeather and Open-Meteo attribution, the
-     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0",
+     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0.1" for build 2,
      with "· Debug build" in debug builds).
 8. **Update prompts**, from Remote Config: below `ios_min_supported_version` the app shows only
    "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
