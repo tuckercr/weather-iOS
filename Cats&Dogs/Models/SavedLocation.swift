@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 /// A city pinned by the user. Coordinates are nil for a name-only entry (typed without picking a
@@ -40,4 +41,30 @@ extension Array where Element == SavedLocation {
     var notificationIndex: Int? {
         firstIndex(where: \.isCurrentLocation) ?? indices.first
     }
+
+    /// The list with My Location moved to `latitude`, `longitude`. Nil when there's no My Location,
+    /// or it has moved less than `SavedLocation.myLocationMoveMeters`: that's GPS wobble, and new
+    /// coordinates would just miss the cache. Same as Android's `withMyLocationAt`.
+    func withMyLocation(atLatitude latitude: Double, longitude: Double) -> [SavedLocation]? {
+        guard let index = firstIndex(where: \.isCurrentLocation) else { return nil }
+        let current = self[index]
+        if let oldLatitude = current.latitude, let oldLongitude = current.longitude {
+            let moved = CLLocation(latitude: oldLatitude, longitude: oldLongitude)
+                .distance(from: CLLocation(latitude: latitude, longitude: longitude))
+            guard moved >= SavedLocation.myLocationMoveMeters else { return nil }
+        }
+        var updated = self
+        updated[index] = SavedLocation(
+            label: current.label,
+            latitude: latitude,
+            longitude: longitude,
+            isCurrentLocation: true
+        )
+        return updated
+    }
+}
+
+extension SavedLocation {
+    /// How far the device has to move before My Location follows it.
+    static let myLocationMoveMeters: CLLocationDistance = 1_000
 }

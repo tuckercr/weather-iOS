@@ -387,6 +387,7 @@
 				INFOPLIST_FILE = "Cats&Dogs/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sunny & Misty";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "With Follow my location on, Sunny & Misty uses your location to send weather for where you are, even when the app is closed.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sunny & Misty uses your location to show local weather for your area.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -436,6 +437,7 @@
 				INFOPLIST_FILE = "Cats&Dogs/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Sunny & Misty";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.weather";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "With Follow my location on, Sunny & Misty uses your location to send weather for where you are, even when the app is closed.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sunny & Misty uses your location to show local weather for your area.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

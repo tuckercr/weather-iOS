@@ -127,6 +127,13 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      - Then a switch for each kind: *Morning briefing*, *Walk time* and *Rain alerts*. Walk time only
        shows with a dog, and a kind switched off in Remote Config is hidden. A hidden switch keeps
        its value for when it comes back.
+     - With a My Location saved, *Follow my location* (off). With it on and "Always" location
+       allowed, iOS wakes the app after a significant move, even when it isn't running: My Location
+       moves there (by the usual 1 km rule), the weather is refreshed and the notifications are
+       replanned. The background refresh also moves it to the last position iOS has. Otherwise My
+       Location only moves while the app is open. Turning it on explains why, then shows iOS's one
+       "Change to Always Allow" prompt; after that it opens the iOS Settings app. It shows on only
+       while "Always" is allowed.
      - Debug builds add *Send sample notifications* (see [Trying notifications](#trying-notifications)).
      - iOS Settings › Notifications › Sunny & Misty links straight to this screen.
    - **Location**: permission status. Never asked: asked in-app; denied: links to the iOS Settings
