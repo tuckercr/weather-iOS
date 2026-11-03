@@ -135,4 +135,6 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 - Archive (Release, generic iOS, `-allowProvisioningUpdates`), then `xcodebuild -exportArchive` with
   an export options plist: method `app-store-connect`, destination `upload`, team `3V3NR8HP58`,
   automatic signing.
-- The internal TestFlight group is "Family". App Store Connect app: "Sunny & Misty: Weather".
+- App Store Connect app: "Sunny & Misty: Pet Weather". TestFlight has an internal and an external
+  group, both called "Family". Internal testers get each build automatically; the external group
+  holds the public link, and each build is added to it by hand and goes through Beta App Review.
