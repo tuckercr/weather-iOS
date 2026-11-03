@@ -106,6 +106,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      row for each hour's temperature and rain chance.
    - All times (hours, days, sunrise and sunset, radar frames and "today") are in the city's own
      time zone, not the device's.
+   - Temperatures are whole degrees with their unit ("89 °F"), except the hero's high and low, the
+     hourly strip, the walk card and notifications, which read "74°". `temperature_units_shown` in
+     Remote Config leaves the unit out everywhere ("89°").
    - On landscape phones and iPad the pets and walk card sit beside today's details, and the week
      splits into two columns.
    - City tabs appear under the title once two or more cities are saved.
@@ -344,7 +347,7 @@ iOS only:
 
 - `WeatherBackgroundRefresherTests`: background refresh caching, notification rescheduling and retry timing
 - `PreferencesStoreTests`: per-city cache round trip, eviction when a city is removed, older cache format
-- `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear"
+- `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear", temperatures with and without the unit
 - `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed and foreground-refresh limits
 
 View-model tests run against real repositories with scripted API fakes, and a `PreferencesStore` backed
@@ -419,6 +422,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
 | `seasonal_themes_enabled` | true | Seasonal themes (Halloween and so on); false switches them all off |
 | `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
+| `temperature_units_shown` | true | Off leaves the unit out of every temperature that shows one: "89°" rather than "89 °F", "About 81°" on the Paw check tile. Units and the Settings choice are unchanged; the high and low, the hourly strip and notifications have no unit either way |
 
 Walk and pet temperatures are Celsius whatever units the user picked. An out-of-range value falls
 back to its default, and if a pair ends up inverted (minimum not below maximum), both fall back to

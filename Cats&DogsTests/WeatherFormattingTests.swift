@@ -90,6 +90,33 @@ final class WeatherFormattingTests: XCTestCase {
         XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric), "-4 °C")
     }
 
+    func testTemperaturesShowTheUnitWhenSwitchedOn() {
+        XCTAssertEqual(WeatherFormatting.temperature(88.6, units: .imperial, showsUnit: true), "89 °F")
+        XCTAssertEqual(WeatherFormatting.temperature(31.4, units: .metric, showsUnit: true), "31 °C")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.4, units: .metric, showsUnit: true), "-3 °C")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .imperial, showsUnit: true), "-4 °F")
+    }
+
+    func testTemperaturesSwitchedOffKeepTheNumberAndDegreeSignButNotTheUnit() {
+        XCTAssertEqual(WeatherFormatting.temperature(88.6, units: .imperial, showsUnit: false), "89°")
+        XCTAssertEqual(WeatherFormatting.temperature(31.4, units: .metric, showsUnit: false), "31°")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.4, units: .metric, showsUnit: false), "-3°")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .imperial, showsUnit: false), "-4°")
+        // Rounding is unchanged: halves round away from zero, and nothing reads as "-0°".
+        XCTAssertEqual(WeatherFormatting.temperature(56.3, units: .imperial, showsUnit: false), "56°")
+        XCTAssertEqual(WeatherFormatting.temperature(56.5, units: .imperial, showsUnit: false), "57°")
+        XCTAssertEqual(WeatherFormatting.temperature(-0.4, units: .metric, showsUnit: false), "0°")
+    }
+
+    func testTemperaturesShowTheUnitByDefault() {
+        // Remote Config's default, which is all there is without Firebase.
+        XCTAssertEqual(
+            WeatherFormatting.temperature(88.6, units: .imperial),
+            WeatherFormatting.temperature(88.6, units: .imperial, showsUnit: true)
+        )
+        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric), "-4 °C")
+    }
+
     func testDistanceUnitsFollowTheChoiceOrTheMeasurementSystem() {
         let us = Locale(identifier: "en_US"), uk = Locale(identifier: "en_GB"), france = Locale(identifier: "fr_FR")
         XCTAssertTrue(WeatherFormatting.usesMiles(override: .system, locale: us))
