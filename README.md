@@ -132,8 +132,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
        moves there (by the usual 1 km rule), the weather is refreshed and the notifications are
        replanned. The background refresh also moves it to the last position iOS has. Otherwise My
        Location only moves while the app is open. Turning it on explains why, then shows iOS's one
-       "Change to Always Allow" prompt; after that it opens the iOS Settings app. It shows on only
-       while "Always" is allowed.
+       "Change to Always Allow" prompt; after that it opens the iOS Settings app. With "Always"
+       already allowed it just turns on. It shows on only while "Always" is allowed. Off, the app
+       stops watching for moves.
      - Debug builds add *Send sample notifications* (see [Trying notifications](#trying-notifications)).
      - iOS Settings › Notifications › Sunny & Misty links straight to this screen.
    - **Location**: permission status. Never asked: asked in-app; denied: links to the iOS Settings

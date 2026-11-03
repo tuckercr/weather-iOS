@@ -86,7 +86,7 @@ struct NotificationSettingsView: SettingsScreen {
 }
 
 /// Follow my location. It shows on only while it's set and "Always" is allowed. Turning it on
-/// explains first, then asks for "Always", which iOS only shows once; after that it opens the
+/// without that explains first, then asks for "Always", which iOS only shows once; after that it opens the
 /// Settings app. Same as Android's `FollowMyLocationRow`.
 private struct FollowMyLocationToggle: SettingsScreen {
     private let follower = MyLocationFollower.shared
@@ -99,7 +99,14 @@ private struct FollowMyLocationToggle: SettingsScreen {
             summary: "Notifications for wherever you are, even when the app is closed",
             isOn: follower.isFollowing,
             set: { turnOn in
-                if turnOn { explaining = true } else { follower.turnOff() }
+                if !turnOn {
+                    follower.turnOff()
+                } else if follower.authorization == .authorizedAlways {
+                    // Already "Always": nothing to ask, so nothing to explain.
+                    follower.turnOn {}
+                } else {
+                    explaining = true
+                }
             }
         )
         .alert("Follow your location?", isPresented: $explaining) {
