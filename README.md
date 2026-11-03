@@ -269,7 +269,7 @@ xcrun simctl location CatsDogs-Tests set 36.21,-83.29
 | Notifications | `UserNotifications` local calendar triggers |
 | Background work | `BackgroundTasks` (`BGAppRefreshTask`) via SwiftUI `.backgroundTask` |
 | APIs | OpenWeatherMap `/weather`, `/forecast` and Geocoding (free tier); Open-Meteo; RainViewer; OpenStreetMap tiles |
-| Fonts | Baloo 2 for display and title text (SIL OFL, licence bundled) |
+| Fonts | Baloo 2 for display and title text (SIL OFL, licence bundled), with its line height cut from 1.6 to 1.3 times the size by `scripts/tighten-baloo-line-height.py` |
 | Analytics and config | Firebase Analytics (`FirebaseAnalyticsCore`) and Remote Config via Swift Package Manager, both optional |
 | Dependencies | Firebase iOS SDK 12.x; everything else is Apple frameworks |
 

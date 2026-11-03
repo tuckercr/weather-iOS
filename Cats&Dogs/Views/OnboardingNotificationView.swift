@@ -32,7 +32,7 @@ struct OnboardingNotificationView: View {
                 .font(.body)
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
-
+        } actions: {
             Button {
                 Task {
                     _ = await WeatherNotificationScheduler.shared.requestAuthorization()
@@ -44,7 +44,6 @@ struct OnboardingNotificationView: View {
             }
             .accentButtonStyle()
             .controlSize(.large)
-            .padding(.top, 36)
 
             Button(action: onDone) {
                 Text("Not now").frame(maxWidth: .infinity)

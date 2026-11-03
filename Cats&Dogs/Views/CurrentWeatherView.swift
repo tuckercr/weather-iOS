@@ -375,6 +375,10 @@ private struct CurrentWeatherContent: View {
     private static let wideLayoutMinWidth: CGFloat = 600
 
     @State private var contentWidth: CGFloat = 0
+    /// How far the hero temperature is pulled into Baloo 2's empty space above and below its
+    /// digits. Scaled with the number, which follows the large title's text size.
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureTrimTop: CGFloat = 8
+    @ScaledMetric(relativeTo: .largeTitle) private var temperatureTrimBottom: CGFloat = 14
 
     private var isWide: Bool { contentWidth >= Self.wideLayoutMinWidth }
 
@@ -566,9 +570,11 @@ private struct CurrentWeatherContent: View {
                 }
                 Text(WeatherFormatting.temperature(weather.temperature, units: weather.units))
                     .font(.brand(.largeTitle, size: 56, weight: .bold))
-                    // Baloo 2 reserves a lot of empty space above its digits; pull the number up
-                    // into it so it sits close under the city name.
-                    .padding(.top, -16)
+                    // Baloo 2 keeps room above its digits for taller letters, and below them for
+                    // descenders. Digits need neither, so the number is pulled in to sit close
+                    // under the city name and over the high and low.
+                    .padding(.top, -temperatureTrimTop)
+                    .padding(.bottom, -temperatureTrimBottom)
                 // Today's high and low in whole degrees: "H 64° · L 61°".
                 let highLow = TodayDetails.highLow(current: weather, today: todayForecast)
                 let high = Int(highLow.high.rounded())
@@ -585,7 +591,8 @@ private struct CurrentWeatherContent: View {
             .foregroundStyle(seasonalTheme?.heroInk(night: mood == .night) ?? mood.ink)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
             .background(
                 seasonalTheme?.heroBackground(night: mood == .night) ?? mood.skyColor,
                 in: RoundedRectangle(cornerRadius: 12)

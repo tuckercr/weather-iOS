@@ -7,10 +7,10 @@ struct WalkCard: View {
     let advice: WalkAdvice
     @Environment(\.seasonalTheme) private var seasonalTheme
     @Environment(\.colorScheme) private var colorScheme
-    /// Baloo 2 leaves about 9 points under its baseline, against 3 above the small title's
+    /// Baloo 2 leaves about 6 points under its baseline, against 3 above the small title's
     /// capitals, so when the headline is the last line the text sits high beside the paw. Lowered
     /// by half the difference.
-    @ScaledMetric(relativeTo: .headline) private var headlineLastOffset: CGFloat = 3
+    @ScaledMetric(relativeTo: .headline) private var headlineLastOffset: CGFloat = 2
 
     private var detail: String {
         if advice.rating == .great { return "Now is a great time" }
