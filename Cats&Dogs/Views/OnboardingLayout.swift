@@ -2,8 +2,7 @@ import SwiftUI
 
 /// The frame shared by the onboarding screens: centred when everything fits. When it doesn't (large
 /// text sizes, small or landscape screens), the content scrolls from the top and the buttons stay
-/// pinned at the bottom, so the way on is always in sight. Android's `OnboardingLayout` scrolls the
-/// buttons with the content.
+/// pinned at the bottom, so the way on is always in sight. Same as Android's `OnboardingLayout`.
 struct OnboardingLayout<Content: View, Actions: View>: View {
     @ViewBuilder let content: Content
     @ViewBuilder let actions: Actions
