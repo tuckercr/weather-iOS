@@ -49,7 +49,8 @@ struct AccentButtonStyle: ButtonStyle {
 extension Font {
     /// Baloo 2, the rounded face that echoes the "Sunny & Misty" wordmark. Used for display and title
     /// text only; body copy stays on the system font. Scales with Dynamic Type via `style`; `size`
-    /// overrides the style's default size.
+    /// overrides the style's default size. The bundled font's lines are 1.3 times its size, not
+    /// the 1.6 it ships with (`scripts/tighten-baloo-line-height.py`).
     static func brand(_ style: Font.TextStyle, size: CGFloat? = nil, weight: BrandWeight = .semibold) -> Font {
         .custom(weight.postScriptName, size: size ?? BrandWeight.pointSize(for: style), relativeTo: style)
     }

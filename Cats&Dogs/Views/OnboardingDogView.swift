@@ -23,25 +23,22 @@ struct OnboardingDogView: View {
             Text("If there is, Sunny will suggest the best time for a walk. You can change this later in Settings.")
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
-
-            VStack(spacing: 12) {
-                Button {
-                    onAnswered(true)
-                } label: {
-                    Text("Yes").frame(maxWidth: .infinity)
-                }
-                .accentButtonStyle()
-                .controlSize(.large)
-
-                Button {
-                    onAnswered(false)
-                } label: {
-                    Text("No").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+        } actions: {
+            Button {
+                onAnswered(true)
+            } label: {
+                Text("Yes").frame(maxWidth: .infinity)
             }
-            .padding(.top, 20)
+            .accentButtonStyle()
+            .controlSize(.large)
+
+            Button {
+                onAnswered(false)
+            } label: {
+                Text("No").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
         }
     }
 }

@@ -40,6 +40,8 @@ final class SettingsViewModel {
     /// "Always" rather than "While Using the App".
     private(set) var locationAlways = false
     private(set) var notificationPermission: PermissionStatus = .notDetermined
+    /// Whether there's a My Location to follow: Follow my location only shows then.
+    private(set) var hasMyLocation: Bool
 
     private let preferences: PreferencesStore
     private let locationStatus: () -> CLAuthorizationStatus
@@ -80,6 +82,7 @@ final class SettingsViewModel {
         notifyMorningBriefing = preferences.notifyMorningBriefing
         notifyWalkTime = preferences.notifyWalkTime
         notifyRain = preferences.notifyRain
+        hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
     }
 
     func setUnitOverride(_ override: UnitOverride) {
@@ -145,6 +148,7 @@ final class SettingsViewModel {
         let location = locationStatus()
         locationPermission = PermissionStatus(location)
         locationAlways = location == .authorizedAlways
+        hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
         notificationPermission = PermissionStatus(await notificationStatus())
     }
 

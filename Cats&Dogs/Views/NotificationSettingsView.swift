@@ -3,7 +3,7 @@ import UIKit
 
 /// A switch for each notification, under Settings. Walk time only shows with a dog ("I have a dog"
 /// in Settings), any kind is hidden while Remote Config has it off, and hidden switches keep their
-/// values.
+/// values. Follow my location shows when there's a My Location.
 struct NotificationSettingsView: SettingsScreen {
     @Bindable var settingsViewModel: SettingsViewModel
     @Environment(\.scenePhase) private var scenePhase
@@ -53,6 +53,9 @@ struct NotificationSettingsView: SettingsScreen {
                             set: settingsViewModel.setNotifyRain
                         )
                     }
+                    if settingsViewModel.hasMyLocation {
+                        FollowMyLocationToggle()
+                    }
                 }
             }
 
@@ -78,6 +81,43 @@ struct NotificationSettingsView: SettingsScreen {
             if phase == .active {
                 Task { await settingsViewModel.refreshPermissions() }
             }
+        }
+    }
+}
+
+/// Follow my location. It shows on only while it's set and "Always" is allowed. Turning it on
+/// without that explains first, then asks for "Always", which iOS only shows once; after that it opens the
+/// Settings app. Same as Android's `FollowMyLocationRow`.
+private struct FollowMyLocationToggle: SettingsScreen {
+    private let follower = MyLocationFollower.shared
+    @State private var explaining = false
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        switchRow(
+            "Follow my location",
+            summary: "Notifications for wherever you are, even when the app is closed",
+            isOn: follower.isFollowing,
+            set: { turnOn in
+                if !turnOn {
+                    follower.turnOff()
+                } else if follower.authorization == .authorizedAlways {
+                    // Already "Always": nothing to ask, so nothing to explain.
+                    follower.turnOn {}
+                } else {
+                    explaining = true
+                }
+            }
+        )
+        .alert("Follow your location?", isPresented: $explaining) {
+            Button("Not now", role: .cancel) {}
+            Button("Continue") {
+                follower.turnOn {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+            }
+        } message: {
+            Text("Sunny & Misty uses your location to send weather for where you are, even when the app is closed or not in use. It's only used for the weather.")
         }
     }
 }

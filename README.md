@@ -129,6 +129,14 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      - Then a switch for each kind: *Morning briefing*, *Walk time* and *Rain alerts*. Walk time only
        shows with a dog, and a kind switched off in Remote Config is hidden. A hidden switch keeps
        its value for when it comes back.
+     - With a My Location saved, *Follow my location* (off). With it on and "Always" location
+       allowed, iOS wakes the app after a significant move, even when it isn't running: My Location
+       moves there (by the usual 1 km rule), the weather is refreshed and the notifications are
+       replanned. The background refresh also moves it to the last position iOS has. Otherwise My
+       Location only moves while the app is open. Turning it on explains why, then shows iOS's one
+       "Change to Always Allow" prompt; after that it opens the iOS Settings app. With "Always"
+       already allowed it just turns on. It shows on only while "Always" is allowed. Off, the app
+       stops watching for moves.
      - Debug builds add *Send sample notifications* (see [Trying notifications](#trying-notifications)).
      - iOS Settings › Notifications › Sunny & Misty links straight to this screen.
    - **Location**: permission status in iOS's words ("Location access: Always" or "While Using the
@@ -139,7 +147,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Privacy**: *Share usage statistics* turns analytics on or off. It starts on, except in the EU,
      EEA, UK and Switzerland, where it starts off until the user turns it on.
    - **About**: OpenWeather and Open-Meteo attribution, the
-     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0",
+     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0.1" for build 2,
      with "· Debug build" in debug builds).
 8. **Update prompts**, from Remote Config: below `ios_min_supported_version` the app shows only
    "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
@@ -262,7 +270,7 @@ xcrun simctl location CatsDogs-Tests set 36.21,-83.29
 | Notifications | `UserNotifications` local calendar triggers |
 | Background work | `BackgroundTasks` (`BGAppRefreshTask`) via SwiftUI `.backgroundTask` |
 | APIs | OpenWeatherMap `/weather`, `/forecast` and Geocoding (free tier); Open-Meteo; RainViewer; OpenStreetMap tiles |
-| Fonts | Baloo 2 for display and title text (SIL OFL, licence bundled) |
+| Fonts | Baloo 2 for display and title text (SIL OFL, licence bundled), with its line height cut from 1.6 to 1.3 times the size by `scripts/tighten-baloo-line-height.py` |
 | Analytics and config | Firebase Analytics (`FirebaseAnalyticsCore`) and Remote Config via Swift Package Manager, both optional |
 | Dependencies | Firebase iOS SDK 12.x; everything else is Apple frameworks |
 
