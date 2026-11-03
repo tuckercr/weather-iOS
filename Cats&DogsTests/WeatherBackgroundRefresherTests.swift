@@ -19,6 +19,19 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         suite.destroy()
     }
 
+    func testFollowMyLocationMovesItBeforeTheRefreshFetches() async {
+        let myLocation = SavedLocation(label: "My Location", latitude: 40.0, longitude: -83.0, isCurrentLocation: true)
+        preferences.setSavedLocations([myLocation])
+        let refresher = makeRefresher(onFollow: { [preferences] in
+            preferences?.moveMyLocation(latitude: 51.5074, longitude: -0.1278)
+        })
+
+        await refresher.performRefresh()
+
+        XCTAssertEqual(preferences.savedLocations.first?.latitude, 51.5074)
+        XCTAssertNotNil(preferences.cachedWeather(for: "51.5074,-0.1278"), "The new place's weather is fetched")
+    }
+
     func testRefreshCachesFreshDataAndReschedulesNotifications() async {
         preferences.setSavedLocations([london])
         let api = FakeOpenWeatherAPI()
@@ -148,7 +161,8 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         api: FakeOpenWeatherAPI? = nil,
         authorized: Bool = true,
         onSchedule: @escaping () -> Void = {},
-        onSubmit: @escaping (Date) -> Void = { _ in }
+        onSubmit: @escaping (Date) -> Void = { _ in },
+        onFollow: @escaping () -> Void = {}
     ) -> WeatherBackgroundRefresher {
         WeatherBackgroundRefresher(
             refreshInterval: { [refreshInterval] in refreshInterval },
@@ -162,7 +176,8 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
             ),
             notificationsAuthorized: { authorized },
             scheduleNotifications: { onSchedule() },
-            submitRefreshRequest: onSubmit
+            submitRefreshRequest: onSubmit,
+            followMyLocation: onFollow
         )
     }
 }

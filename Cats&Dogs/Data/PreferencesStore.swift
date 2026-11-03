@@ -25,6 +25,8 @@ final class PreferencesStore {
     private let rainAlertFireKey = "rain_alert_fire"
     private let walkNudgeDatesKey = "walk_nudge_dates"
     private let updateBannerDismissedKey = "update_banner_dismissed_at"
+    private let followMyLocationKey = "follow_my_location"
+    private let alwaysLocationAskedKey = "always_location_asked"
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -120,6 +122,26 @@ final class PreferencesStore {
         defaults.set(value, forKey: notifyRainKey)
     }
 
+    /// "Follow my location" in Notification settings: My Location moves in the background too. It
+    /// also needs "Always" location, which the switch asks for. Off until turned on.
+    var followMyLocation: Bool {
+        defaults.bool(forKey: followMyLocationKey)
+    }
+
+    func setFollowMyLocation(_ value: Bool) {
+        defaults.set(value, forKey: followMyLocationKey)
+    }
+
+    /// Whether iOS's one "Change to Always Allow" prompt has been asked for. After it, only the
+    /// Settings app can grant "Always".
+    var alwaysLocationAsked: Bool {
+        defaults.bool(forKey: alwaysLocationAskedKey)
+    }
+
+    func setAlwaysLocationAsked() {
+        defaults.set(true, forKey: alwaysLocationAskedKey)
+    }
+
     /// The last rain alert queued: when that rain starts and when the alert goes off, so the same
     /// shower isn't alerted twice once it has gone off.
     var lastRainAlert: RainAlertRecord? {
@@ -166,6 +188,15 @@ final class PreferencesStore {
 
     func setLastCity(_ cityName: String) {
         defaults.set(cityName, forKey: lastCityKey)
+    }
+
+    /// Moves My Location to `latitude`, `longitude` after a real move (`withMyLocation`). True when
+    /// it moved.
+    @discardableResult
+    func moveMyLocation(latitude: Double, longitude: Double) -> Bool {
+        guard let moved = savedLocations.withMyLocation(atLatitude: latitude, longitude: longitude) else { return false }
+        setSavedLocations(moved)
+        return true
     }
 
     func setSavedLocations(_ locations: [SavedLocation]) {

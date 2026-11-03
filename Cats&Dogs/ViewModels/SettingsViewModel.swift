@@ -38,6 +38,8 @@ final class SettingsViewModel {
     private(set) var notifyRain: Bool
     private(set) var locationPermission: PermissionStatus = .notDetermined
     private(set) var notificationPermission: PermissionStatus = .notDetermined
+    /// Whether there's a My Location to follow: Follow my location only shows then.
+    private(set) var hasMyLocation: Bool
 
     private let preferences: PreferencesStore
     private let locationStatus: () -> CLAuthorizationStatus
@@ -78,6 +80,7 @@ final class SettingsViewModel {
         notifyMorningBriefing = preferences.notifyMorningBriefing
         notifyWalkTime = preferences.notifyWalkTime
         notifyRain = preferences.notifyRain
+        hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
     }
 
     func setUnitOverride(_ override: UnitOverride) {
@@ -141,6 +144,7 @@ final class SettingsViewModel {
 
     func refreshPermissions() async {
         locationPermission = PermissionStatus(locationStatus())
+        hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
         notificationPermission = PermissionStatus(await notificationStatus())
     }
 

@@ -25,6 +25,9 @@ struct Cats_DogsApp: App {
         UNUserNotificationCenter.current().delegate = NotificationSettingsLink.shared
         UNUserNotificationCenter.current().setNotificationCategories(WeatherNotificationScheduler.categories)
         Task { await WeatherNotificationScheduler.shared.refreshAuthorizationOptions() }
+        // Follow my location: watching for moves has to restart at every launch, including the
+        // relaunch iOS makes to report one.
+        MyLocationFollower.shared.start()
         #if DEBUG
         // xcrun simctl launch <device> com.fangjet.weather -sendSampleNotifications
         if ProcessInfo.processInfo.arguments.contains("-sendSampleNotifications") {

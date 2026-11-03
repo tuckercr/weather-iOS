@@ -21,6 +21,7 @@ final class WeatherBackgroundRefresher {
     private let notificationsAuthorized: () async -> Bool
     private let scheduleNotifications: () async -> Void
     private let submitRefreshRequest: (_ earliestBegin: Date) -> Void
+    private let followMyLocation: () -> Void
 
     init(
         refreshInterval: (() -> TimeInterval)? = nil,
@@ -37,7 +38,8 @@ final class WeatherBackgroundRefresher {
             request.earliestBeginDate = earliestBegin
             // Fails on the simulator and when Background App Refresh is off; nothing to recover.
             try? BGTaskScheduler.shared.submit(request)
-        }
+        },
+        followMyLocation: (() -> Void)? = nil
     ) {
         self.refreshInterval = refreshInterval ?? { RemoteConfigRepository.shared.refreshInterval }
         self.preferences = preferences ?? .shared
@@ -45,6 +47,7 @@ final class WeatherBackgroundRefresher {
         self.notificationsAuthorized = notificationsAuthorized
         self.scheduleNotifications = scheduleNotifications
         self.submitRefreshRequest = submitRefreshRequest
+        self.followMyLocation = followMyLocation ?? { MyLocationFollower.shared.followLastKnownPosition() }
     }
 
     /// Asks iOS for the next refresh. A new request replaces any pending one.
@@ -65,6 +68,8 @@ final class WeatherBackgroundRefresher {
     /// when the notification city itself has changed and the old plan is wrong either way.
     @discardableResult
     func performRefresh(replan: Bool = false) async -> NotificationWorkerResult {
+        // With Follow my location on, My Location first moves to where the phone was last seen.
+        followMyLocation()
         let locations = preferences.savedLocations
         let notificationLocation = locations.notificationLocation
         let cacheKey = notificationLocation?.cacheKey
