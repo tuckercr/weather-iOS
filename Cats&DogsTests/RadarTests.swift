@@ -137,6 +137,70 @@ final class RadarTests: XCTestCase {
         await waitUntil { viewModel.timeline == .success(self.laterTimeline) }
     }
 
+    func testTheRecheckLeavesAStaleRadarAloneWhileItIsOutOfView() async {
+        let source = TimelineSource([sampleTimeline, laterTimeline])
+        var clock = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = RadarViewModel(fetchTimeline: { try await source.next() }, now: { clock })
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+        viewModel.setVisible(false)
+
+        clock += RadarViewModel.staleAfter
+        viewModel.recheck()
+        await settle()
+
+        XCTAssertEqual(viewModel.timeline, .success(sampleTimeline))
+        XCTAssertEqual(source.calls, 1)
+    }
+
+    func testTheRecheckRefreshesAStaleRadarInView() async {
+        let source = TimelineSource([sampleTimeline, laterTimeline])
+        var clock = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = RadarViewModel(fetchTimeline: { try await source.next() }, now: { clock })
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+        viewModel.setVisible(true)
+        await settle()
+        XCTAssertEqual(source.calls, 1, "Fresh frames aren't fetched again on coming into view")
+
+        clock += RadarViewModel.staleAfter
+        viewModel.recheck()
+
+        await waitUntil { viewModel.timeline == .success(self.laterTimeline) }
+        XCTAssertEqual(source.calls, 2)
+    }
+
+    func testScrollingAStaleRadarIntoViewRefreshesItStraightAway() async {
+        let source = TimelineSource([sampleTimeline, laterTimeline])
+        var clock = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = RadarViewModel(fetchTimeline: { try await source.next() }, now: { clock })
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+        viewModel.setVisible(false)
+
+        clock += RadarViewModel.staleAfter
+        viewModel.setVisible(true)
+
+        await waitUntil { viewModel.timeline == .success(self.laterTimeline) }
+        XCTAssertEqual(source.calls, 2)
+    }
+
+    func testTheRecheckRetriesAFailedLoadOnlyWhileInView() async {
+        let source = TimelineSource([nil, sampleTimeline])
+        let viewModel = RadarViewModel(fetchTimeline: { try await source.next() })
+        viewModel.load()
+        await waitUntil { viewModel.timeline != .loading }
+        XCTAssertEqual(viewModel.timeline, .error(errorKey: "radar_unavailable", canRetry: true))
+
+        viewModel.recheck()
+        await settle()
+        XCTAssertEqual(source.calls, 1)
+
+        viewModel.setVisible(true)
+        await waitUntil { viewModel.timeline == .success(self.sampleTimeline) }
+        XCTAssertEqual(source.calls, 2)
+    }
+
     func testAFailedLoadShowsARetryableErrorAndRetryRecovers() async {
         let shouldFail = Flag(true)
         let timeline = sampleTimeline
