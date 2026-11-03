@@ -3,7 +3,9 @@ import Observation
 
 /// Holds the RainViewer radar timeline. The frame list is global (not per city), so one shared
 /// instance holds it. `load()` fetches it the first time and again once it's stale, so an app that
-/// sat in the background for hours doesn't replay old frames labelled "Now".
+/// sat in the background for hours doesn't replay old frames labelled "Now". While the screen stays
+/// open, frames are only kept current while the radar is in view, so a radar scrolled out of sight
+/// doesn't keep fetching frames nobody watches.
 @MainActor
 @Observable
 final class RadarViewModel {
@@ -14,7 +16,7 @@ final class RadarViewModel {
 
     /// RainViewer publishes a new frame every 10 minutes, and keeps only about two hours of them.
     nonisolated static let staleAfter: TimeInterval = 10 * 60
-    /// How often the radar card checks for staleness while it's on screen.
+    /// How often the radar card checks for staleness while the screen is open.
     nonisolated static let recheckInterval: Duration = .seconds(60)
 
     private(set) var timeline: LoadingState<RadarTimeline> = .idle
@@ -23,6 +25,8 @@ final class RadarViewModel {
     private let now: () -> Date
     private var loadedAt: Date?
     private var isRefreshing = false
+    /// Whether any of the radar is inside the visible part of the screen.
+    @ObservationIgnored private var isVisible = false
 
     init(
         frameInterval: Duration? = nil,
@@ -56,6 +60,20 @@ final class RadarViewModel {
                 timeline = .error(errorKey: "radar_unavailable", canRetry: true)
             }
         }
+    }
+
+    /// Called as the radar scrolls into and out of view. Coming into view refreshes stale frames
+    /// straight away rather than waiting for the next re-check.
+    func setVisible(_ visible: Bool) {
+        let cameIntoView = visible && !isVisible
+        isVisible = visible
+        if cameIntoView { load() }
+    }
+
+    /// The timed re-check while the screen is open: refreshes stale frames, or retries a failed
+    /// load, only while the radar is in view.
+    func recheck() {
+        if isVisible { load() }
     }
 
     /// Keeps the old frames on screen until the new ones arrive. A failed refresh keeps them too;

@@ -120,18 +120,31 @@ private struct RadarMapView: View {
             }
             .padding(8)
         }
-        // Load now, then keep the frames current while the radar is on screen.
+        // While the screen stays open, keep the frames current, but only while the radar is in view.
         .task {
             while !Task.isCancelled {
-                radar.load()
                 try? await Task.sleep(for: RadarViewModel.recheckInterval)
+                guard !Task.isCancelled else { return }
+                radar.recheck()
             }
+        }
+        // The card starts below the fold on a phone, so watch whether any of it is inside the scroll
+        // view's visible area. Not reset when the screen goes away: the re-check above stops with it,
+        // and the geometry may not report again when the screen comes back.
+        .onGeometryChange(for: Bool.self) { proxy in
+            guard let visibleArea = proxy.bounds(of: .scrollView) else { return true }
+            return CGRect(origin: .zero, size: proxy.size).intersects(visibleArea)
+        } action: { visible in
+            radar.setVisible(visible)
         }
         // Coming back after hours in the background: refresh before anyone reads an old "Now".
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { radar.load() }
         }
+        // Opening the screen or switching city: fetch the frames if they're missing or stale,
+        // wherever the radar is on screen.
         .task(id: tileInfo) {
+            radar.load()
             let tile = tileInfo
             baseMap = nil
             let image = await MapTileLoader.stitchTiles(tileX: tile.tileX, tileY: tile.tileY) { x, y in
