@@ -118,9 +118,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
    added as typed and geocoded again at launch, on returning to the app, and when another city is added.
 7. **Settings** (gear), top to bottom:
-   - **Units**: system, metric, or imperial.
    - **My Pets**: *I have a dog* turns on the walk card, the Paw check tile, the briefing's walk
      sentence and the Walk time notification ("Walk times, pavement checks and walk reminders").
+   - **My Locations**: *Manage locations* to add, reorder and delete cities (swipe, or Edit). A bell
+     marks the city notifications are for: My Location, otherwise the top city. The city tabs on the
+     main screen choose which city it shows.
    - **Notifications**: a row showing how many are on ("2 on", or "Off"), which opens its own screen:
      - Asks for permission if it hasn't been given (in-app while never asked, since iOS has no
        Settings entry yet; a denied one links to this app's notification settings in iOS Settings).
@@ -129,11 +131,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
        its value for when it comes back.
      - Debug builds add *Send sample notifications* (see [Trying notifications](#trying-notifications)).
      - iOS Settings › Notifications › Sunny & Misty links straight to this screen.
-   - **Location**: permission status. Never asked: asked in-app; denied: links to the iOS Settings
-     app. Granting it here adds your current location as a city.
-   - **Locations**: *Manage locations* to add, reorder and delete cities (swipe, or Edit). A bell
-     marks the city notifications are for: My Location, otherwise the top city. The city tabs on the
-     main screen choose which city it shows.
+   - **Location**: permission status in iOS's words ("Location access: Always" or "While Using the
+     App"). Never asked: asked in-app; denied: links to the iOS Settings app. Granting it here adds
+     your current location as a city.
+   - **Units**: system, metric, or imperial.
    - **Cache**: clear cached weather.
    - **Privacy**: *Share usage statistics* turns analytics on or off. It starts on, except in the EU,
      EEA, UK and Switzerland, where it starts off until the user turns it on.

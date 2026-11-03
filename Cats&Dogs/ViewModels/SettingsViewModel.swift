@@ -37,6 +37,8 @@ final class SettingsViewModel {
     private(set) var notifyWalkTime: Bool
     private(set) var notifyRain: Bool
     private(set) var locationPermission: PermissionStatus = .notDetermined
+    /// "Always" rather than "While Using the App".
+    private(set) var locationAlways = false
     private(set) var notificationPermission: PermissionStatus = .notDetermined
 
     private let preferences: PreferencesStore
@@ -140,7 +142,9 @@ final class SettingsViewModel {
     }
 
     func refreshPermissions() async {
-        locationPermission = PermissionStatus(locationStatus())
+        let location = locationStatus()
+        locationPermission = PermissionStatus(location)
+        locationAlways = location == .authorizedAlways
         notificationPermission = PermissionStatus(await notificationStatus())
     }
 
