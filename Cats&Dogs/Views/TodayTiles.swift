@@ -76,17 +76,13 @@ struct TodayTiles: View {
     // MARK: Tiles
 
     private var feelsLike: some View {
-        Tile(icon: "thermometer.medium", label: "Feels like") {
+        Tile(icon: "thermometer.medium", label: "Feels Like") {
             // The tile's headline number: large, and centred in the space under the label.
-            VStack(spacing: 0) {
-                Text(TodayDetails.keepUnitsTogether(WeatherFormatting.temperature(weather.feelsLike, units: weather.units)))
-                    .font(.brand(.largeTitle, size: 36, weight: .bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                TileNote("Actual \(WeatherFormatting.temperature(weather.temperature, units: weather.units))")
-            }
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Text(TodayDetails.keepUnitsTogether(WeatherFormatting.temperature(weather.feelsLike, units: weather.units)))
+                .font(.brand(.largeTitle, size: 36, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
@@ -134,7 +130,7 @@ struct TodayTiles: View {
             feelsLikeC: weather.units.toCelsius(weather.feelsLike),
             thresholds: thresholds
         )
-        return Tile(icon: "pawprint.fill", label: "Paw check") {
+        return Tile(icon: "pawprint.fill", label: "Paw Check") {
             // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
             TileValue("About \(Int(pavement.rounded())) \(weather.units == .metric ? "°C" : "°F")")
             TileNote(band.line, color: pavementTint(band))
@@ -152,7 +148,7 @@ struct TodayTiles: View {
     }
 
     private func air(_ air: AirQuality) -> some View {
-        Tile(icon: "aqi.medium", label: "Air quality") {
+        Tile(icon: "aqi.medium", label: "Air Quality") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 TileValue("\(air.index)")
                 Text(air.bandName)
@@ -188,7 +184,7 @@ struct TodayTiles: View {
 
     private func uv(_ uv: Double) -> some View {
         let line = TodayDetails.uvLine(peak: uvPeak, now: now, hasDog: hasDog)
-        return Tile(icon: "sun.max.fill", label: "UV index") {
+        return Tile(icon: "sun.max.fill", label: "UV Index") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 TileValue("\(Int(uv.rounded()))")
                 Text(WeatherFormatting.uvLevel(uv))
