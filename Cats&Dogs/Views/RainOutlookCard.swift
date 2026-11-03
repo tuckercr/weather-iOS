@@ -37,7 +37,6 @@ private struct RainOutlookChart: View {
     let bars: [RainOutlook.Bar]
     @Binding var selected: Int?
     @State private var barsWidth: CGFloat = 0
-    @State private var rowWidth: CGFloat = 0
 
     private static let height: CGFloat = 110
     private static let gap: CGFloat = 4
@@ -80,28 +79,17 @@ private struct RainOutlookChart: View {
         Text(verbatim: " ")
             .font(.caption.weight(.semibold))
             .frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .leading) {
+            .overlay {
                 if let selected, bars.indices.contains(selected) {
-                    Text(bars[selected].label)
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .alignmentGuide(.leading) { dimensions in
-                            -labelLeading(for: selected, labelWidth: dimensions.width)
-                        }
+                    CentredInRow(centre: (barWidth + Self.gap) * CGFloat(selected) + barWidth / 2) {
+                        Text(bars[selected].label)
+                            .font(.caption.weight(.semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                    }
                 }
             }
-            .onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.size.width
-            } action: { width in
-                rowWidth = width
-            }
             .accessibilityHidden(true)
-    }
-
-    private func labelLeading(for index: Int, labelWidth: CGFloat) -> CGFloat {
-        let centre = (barWidth + Self.gap) * CGFloat(index) + barWidth / 2
-        return min(max(centre - labelWidth / 2, 0), max(rowWidth - labelWidth, 0))
     }
 
     private func column(_ index: Int) -> some View {
@@ -150,6 +138,25 @@ private struct RainOutlookChart: View {
         .frame(height: Self.height)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// Places its one subview centred on `centre`, moved in to stay inside the row at either end, like
+/// Android's `BarPositioned`. (An alignment guide in the overlay left the label at the leading edge.)
+private struct CentredInRow: Layout {
+    let centre: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        let height = subviews.first?.sizeThatFits(ProposedViewSize(width: width, height: nil)).height ?? 0
+        return CGSize(width: width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard let label = subviews.first else { return }
+        let size = label.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+        let x = min(max(centre - size.width / 2, 0), max(bounds.width - size.width, 0))
+        label.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY), proposal: ProposedViewSize(size))
     }
 }
 
