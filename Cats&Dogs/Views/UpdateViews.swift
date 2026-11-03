@@ -22,7 +22,7 @@ struct UpdateRequiredView: View {
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
                 .padding(.top, 8)
-
+        } actions: {
             if let storeURL {
                 Button {
                     openURL(storeURL)
@@ -31,11 +31,9 @@ struct UpdateRequiredView: View {
                 }
                 .accentButtonStyle()
                 .controlSize(.large)
-                .padding(.top, 20)
             } else {
                 Text("Update from the App Store.")
                     .font(.headline)
-                    .padding(.top, 20)
             }
         }
     }

@@ -4,24 +4,21 @@ import SwiftUI
 struct WelcomeView: View {
     let onGetStarted: () -> Void
 
+    @ScaledMetric(relativeTo: .largeTitle) private var titleSize: CGFloat = 34
+
     var body: some View {
         OnboardingLayout {
             PetScene(mood: .sunny)
                 .padding(.horizontal, 12)
-                .padding(.vertical, 16)
+                .padding(.vertical, 10)
                 .background(PetMood.sunny.skyColor, in: RoundedRectangle(cornerRadius: 24))
 
-            Text("Meet Sunny & Misty")
-                .font(.brand(.largeTitle, weight: .bold))
-                .multilineTextAlignment(.center)
-                .padding(.top, 12)
-                .accessibilityAddTraits(.isHeader)
+            title
 
             character(
                 name: "Sunny",
                 body: "Loves a walk in almost any weather, and always knows the best time to head out."
             )
-            .padding(.top, 8)
             character(
                 name: "Misty",
                 body: "Prefers the window seat, and will tell you when it's a day for staying in."
@@ -30,15 +27,36 @@ struct WelcomeView: View {
             Text("Together they check the sky so you know what to expect, for you and your pets.")
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
-                .padding(.top, 8)
-
+        } actions: {
             Button(action: onGetStarted) {
                 Text("Get started").frame(maxWidth: .infinity)
             }
             .accentButtonStyle()
             .controlSize(.large)
-            .padding(.top, 20)
         }
+    }
+
+    /// One line when it fits. Otherwise it breaks after "Meet", keeping the two names together, with
+    /// the lines pulled in: Baloo 2's lines are 1.6 times the font size, too far apart for a title.
+    /// The largest text sizes wrap wherever they must.
+    private var title: some View {
+        ViewThatFits(in: .horizontal) {
+            titleText("Meet Sunny & Misty")
+            VStack(spacing: -0.45 * titleSize) {
+                titleText("Meet")
+                titleText("Sunny & Misty")
+            }
+            titleText("Meet Sunny & Misty")
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Meet Sunny & Misty")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private func titleText(_ text: String) -> some View {
+        Text(text)
+            .font(.brand(.largeTitle, weight: .bold))
+            .multilineTextAlignment(.center)
     }
 
     private func character(name: String, body: String) -> some View {

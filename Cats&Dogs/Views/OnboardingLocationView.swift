@@ -33,14 +33,13 @@ struct OnboardingLocationView: View {
                 .font(.body)
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
-
+        } actions: {
             if viewModel.state != .locating {
                 Button(action: requestLocation) {
                     Text("Use my location").frame(maxWidth: .infinity)
                 }
                 .accentButtonStyle()
                 .controlSize(.large)
-                .padding(.top, 36)
 
                 Button(action: onSkip) {
                     Text("Enter a city manually").frame(maxWidth: .infinity)
