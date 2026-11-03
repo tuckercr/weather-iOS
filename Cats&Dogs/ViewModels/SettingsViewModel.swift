@@ -37,6 +37,8 @@ final class SettingsViewModel {
     private(set) var notifyWalkTime: Bool
     private(set) var notifyRain: Bool
     private(set) var locationPermission: PermissionStatus = .notDetermined
+    /// "Always" rather than "While Using the App".
+    private(set) var locationAlways = false
     private(set) var notificationPermission: PermissionStatus = .notDetermined
     /// Whether there's a My Location to follow: Follow my location only shows then.
     private(set) var hasMyLocation: Bool
@@ -143,7 +145,9 @@ final class SettingsViewModel {
     }
 
     func refreshPermissions() async {
-        locationPermission = PermissionStatus(locationStatus())
+        let location = locationStatus()
+        locationPermission = PermissionStatus(location)
+        locationAlways = location == .authorizedAlways
         hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
         notificationPermission = PermissionStatus(await notificationStatus())
     }

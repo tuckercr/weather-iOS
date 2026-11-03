@@ -14,30 +14,6 @@ struct SettingsView: SettingsScreen {
     var body: some View {
         List {
             Section {
-                ForEach(UnitOverride.allCases, id: \.self) { option in
-                    Button {
-                        settingsViewModel.setUnitOverride(option)
-                    } label: {
-                        HStack {
-                            Text(unitLabel(for: option))
-                            Spacer()
-                            if settingsViewModel.unitOverride == option {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(Color.accent)
-                            }
-                        }
-                        // A plain button only hit-tests what it draws; make the whole row tappable.
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    // The checkmark is visual only; VoiceOver reads "Selected" from this trait.
-                    .accessibilityAddTraits(settingsViewModel.unitOverride == option ? .isSelected : [])
-                }
-            } header: {
-                sectionHeader("Units")
-            }
-
-            Section {
                 // One switch for everything dog: the walk card, Paw check and the walk notifications.
                 switchRow(
                     "I have a dog",
@@ -47,6 +23,12 @@ struct SettingsView: SettingsScreen {
                 )
             } header: {
                 sectionHeader("My Pets")
+            }
+
+            Section {
+                Button("Manage locations", action: onOpenLocations)
+            } header: {
+                sectionHeader("My Locations")
             }
 
             Section {
@@ -69,7 +51,10 @@ struct SettingsView: SettingsScreen {
             Section {
                 permissionRow(
                     status: settingsViewModel.locationPermission,
-                    grantedText: "Location access granted",
+                    // iOS's own words for the two kinds of access.
+                    grantedText: settingsViewModel.locationAlways
+                        ? "Location access: Always"
+                        : "Location access: While Using the App",
                     requestTitle: "Allow location access",
                     openSettingsTitle: "Open Settings to enable location",
                     settingsURL: UIApplication.openSettingsURLString,
@@ -80,9 +65,27 @@ struct SettingsView: SettingsScreen {
             }
 
             Section {
-                Button("Manage locations", action: onOpenLocations)
+                ForEach(UnitOverride.allCases, id: \.self) { option in
+                    Button {
+                        settingsViewModel.setUnitOverride(option)
+                    } label: {
+                        HStack {
+                            Text(unitLabel(for: option))
+                            Spacer()
+                            if settingsViewModel.unitOverride == option {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(Color.accent)
+                            }
+                        }
+                        // A plain button only hit-tests what it draws; make the whole row tappable.
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    // The checkmark is visual only; VoiceOver reads "Selected" from this trait.
+                    .accessibilityAddTraits(settingsViewModel.unitOverride == option ? .isSelected : [])
+                }
             } header: {
-                sectionHeader("Locations")
+                sectionHeader("Units")
             }
 
             Section {
