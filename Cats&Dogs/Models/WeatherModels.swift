@@ -82,6 +82,11 @@ struct DayForecast: Codable, Equatable, Identifiable {
     /// 3:15 PM". Only on the first day (it reaches a few hours ahead, whatever the date); nil when the
     /// source doesn't provide it, or in a forecast cached before it existed.
     var quarterHours: [QuarterHour]? = nil
+    /// The day's sunrise and sunset, for the hourly strip. Nil when the sun doesn't rise or set that
+    /// day (polar night or day), when the source doesn't say (the OpenWeather 3-hourly fallback), or
+    /// in a forecast cached before they were kept.
+    var sunriseEpoch: Int? = nil
+    var sunsetEpoch: Int? = nil
 }
 
 /// Rain and snow over the 15 minutes from `epochSeconds`.

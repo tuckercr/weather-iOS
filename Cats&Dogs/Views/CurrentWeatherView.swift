@@ -457,7 +457,14 @@ private struct CurrentWeatherContent: View {
             }
             if !hourlySlots.isEmpty {
                 SectionHeader("HOURLY")
-                HourlyStrip(slots: hourlySlots)
+                HourlyStrip(
+                    items: HourlyStripItem.strip(
+                        hourlySlots,
+                        events: SunEvent.all(forecast: forecastDays, weather: weatherToday),
+                        now: now
+                    ),
+                    timeZone: weather.timeZone
+                )
             }
             if !isWide {
                 todaySection
@@ -643,24 +650,18 @@ private struct SectionHeader: View {
 }
 
 private struct HourlyStrip: View {
-    let slots: [HourlySlot]
+    let items: [HourlyStripItem]
+    let timeZone: TimeZone
     @Environment(\.seasonalTheme) private var seasonalTheme
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 4) {
-                ForEach(slots) { slot in
-                    VStack(spacing: 6) {
-                        Text(slot.timeLabel)
-                            .font(.caption)
-                            .foregroundStyle(Color.secondaryText)
-                        WeatherIconView(iconCode: slot.iconCode, size: 32, description: slot.description, date: slot.date)
-                        Text("\(Int(slot.temperature.rounded()))°")
-                            .fontWeight(.semibold)
-                        PrecipChance(percent: slot.precipitationChance)
+                ForEach(items) { item in
+                    switch item {
+                    case let .hour(slot): hour(slot)
+                    case let .sun(event): SunMarker(event: event, timeZone: timeZone)
                     }
-                    .padding(.horizontal, 8)
-                    .accessibilityElement(children: .combine)
                 }
             }
             .padding(.horizontal, 12)
@@ -668,6 +669,48 @@ private struct HourlyStrip: View {
         }
         .background(Color.card(seasonalTheme))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func hour(_ slot: HourlySlot) -> some View {
+        VStack(spacing: 6) {
+            Text(slot.timeLabel)
+                .font(.caption)
+                .foregroundStyle(Color.secondaryText)
+            WeatherIconView(iconCode: slot.iconCode, size: 32, description: slot.description, date: slot.date)
+            Text("\(Int(slot.temperature.rounded()))°")
+                .fontWeight(.semibold)
+            PrecipChance(percent: slot.precipitationChance)
+        }
+        .padding(.horizontal, 8)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A sunrise or sunset between two hours of the strip: half a column, with the time ("6:50"), the
+/// sun on the horizon and a thin line down past the temperatures.
+private struct SunMarker: View {
+    let event: SunEvent
+    let timeZone: TimeZone
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(event.shortTime(timeZone: timeZone))
+                .font(.caption.weight(.medium))
+                // The walk card's amber, the dark shade on the light card and the pale one on the dark.
+                .foregroundStyle(Color(hex: colorScheme == .dark ? 0xFAC775 : 0x633806))
+            Image(event.kind == .sunrise ? "wx_sunrise" : "wx_sunset")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 28, height: 28)
+                .padding(.vertical, 2)
+            Capsule()
+                .fill(Color.secondaryText.opacity(0.4))
+                .frame(width: 1.5, height: 38)
+        }
+        .padding(.horizontal, 2)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(event.spoken(timeZone: timeZone))
     }
 }
 
@@ -714,6 +757,10 @@ struct PrecipChance: View {
 private struct UpcomingDayRow: View {
     let day: DayForecast
     let onTap: () -> Void
+    /// Wide enough for "H 85° · L 76°", so the icons line up down the list.
+    @ScaledMetric(relativeTo: .body) private var temperaturesWidth: CGFloat = 112
+    /// The day's description ("Overcast"), 2 points up from the caption size.
+    @ScaledMetric(relativeTo: .caption) private var descriptionSize: CGFloat = 14
 
     var body: some View {
         VStack(spacing: 0) {
@@ -726,20 +773,24 @@ private struct UpcomingDayRow: View {
     private var dayButton: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                WeatherIconView(iconCode: day.iconCode, size: 36)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(day.dateLabel)
                         .fontWeight(.medium)
                     Text(day.description)
-                        .font(.caption)
+                        .font(.system(size: descriptionSize))
                         .foregroundStyle(Color.secondaryText)
                     PrecipChance(percent: day.precipitationChance)
                 }
-                Spacer()
-                Text(WeatherFormatting.temperature(day.tempMax, units: day.units))
-                    .fontWeight(.semibold)
-                Text(WeatherFormatting.temperature(day.tempMin, units: day.units))
-                    .foregroundStyle(Color.secondaryText)
+                Spacer(minLength: 0)
+                WeatherIconView(iconCode: day.iconCode, size: 36)
+                // The high and low as the hero has them, "H 85° · L 76°", with the high stronger.
+                let high = Int(day.tempMax.rounded())
+                let low = Int(day.tempMin.rounded())
+                (Text("H \(high)°").fontWeight(.semibold)
+                    + Text(" · L \(low)°").foregroundStyle(Color.secondaryText))
+                    .frame(minWidth: temperaturesWidth, alignment: .trailing)
+                    // "H 85°" would be read as the letter H.
+                    .accessibilityLabel("High \(high)°, low \(low)°")
             }
             .padding(.vertical, 10)
             .contentShape(Rectangle())

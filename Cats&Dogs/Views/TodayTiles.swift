@@ -75,11 +75,48 @@ struct TodayTiles: View {
 
     // MARK: Tiles
 
+    /// The feels-like temperature with its band ("Hot"), the band bar, and how far it is from the
+    /// actual temperature.
     private var feelsLike: some View {
-        Tile(icon: "thermometer.medium", label: "Feels like") {
-            TileValue(WeatherFormatting.temperature(weather.feelsLike, units: weather.units))
-            TileNote("Actual \(WeatherFormatting.temperature(weather.temperature, units: weather.units))")
+        let feelsLikeC = weather.units.toCelsius(weather.feelsLike)
+        let band = TodayDetails.feelsLikeBand(feelsLikeC: feelsLikeC, thresholds: thresholds)
+        return Tile(icon: "thermometer.medium", label: "Feels Like") {
+            // The same size as the other tiles' values, as Air Quality has its band beside it.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                TileValue(WeatherFormatting.temperature(weather.feelsLike, units: weather.units))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(band.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(feelsLikeTint(band))
+                    .lineLimit(1)
+            }
+            BandBar(
+                bands: Self.feelsLikeBands(dark: colorScheme == .dark),
+                position: TodayDetails.feelsLikeBarPosition(feelsLikeC: feelsLikeC, thresholds: thresholds)
+            )
+            .padding(.vertical, 2)
+            .accessibilityHidden(true)
+            TileNote(TodayDetails.feelsLikeGap(feelsLike: weather.feelsLike, temperature: weather.temperature))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
+    }
+
+    /// Cold to hot. The two blues are lighter on the dark theme, where the darker one barely shows.
+    private static func feelsLikeBands(dark: Bool) -> [UInt32] {
+        [dark ? 0x378ADD : 0x185FA5, dark ? 0x85B7EB : 0x378ADD, 0x4CAF50, 0xF08C2E, 0xD94141]
+    }
+
+    /// The walk card's shades: blue for cold and chilly, green for mild, amber for warm, red for hot.
+    private func feelsLikeTint(_ band: TodayDetails.FeelsLikeBand) -> Color {
+        let (light, dark): (UInt32, UInt32) = switch band {
+        case .cold, .chilly: (0x0C447C, 0xB5D4F4)
+        case .mild: (0x27500A, 0xC0DD97)
+        case .warm: (0x633806, 0xFAC775)
+        case .hot: (0x791F1F, 0xF7C1C1)
+        }
+        return Color(hex: colorScheme == .dark ? dark : light)
     }
 
     private var wind: some View {
@@ -126,9 +163,9 @@ struct TodayTiles: View {
             feelsLikeC: weather.units.toCelsius(weather.feelsLike),
             thresholds: thresholds
         )
-        return Tile(icon: "pawprint.fill", label: "Paw check") {
+        return Tile(icon: "pawprint.fill", label: "Paw Check") {
             // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
-            TileValue("About \(Int(pavement.rounded())) \(weather.units == .metric ? "°C" : "°F")")
+            TileValue("About \(WeatherFormatting.temperature(pavement, units: weather.units))")
             // The note says it in words.
             PawScale(step: band.pawScaleStep)
                 .accessibilityHidden(true)
@@ -149,14 +186,14 @@ struct TodayTiles: View {
     }
 
     private func air(_ air: AirQuality) -> some View {
-        Tile(icon: "aqi.medium", label: "Air quality") {
+        Tile(icon: "aqi.medium", label: "Air Quality") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 TileValue("\(air.index)")
                 Text(air.bandName)
                     .font(.subheadline)
                     .foregroundStyle(Color.secondaryText)
             }
-            AirQualityBar(position: air.barPosition)
+            BandBar(bands: BandBar.airQuality, position: air.barPosition)
                 .padding(.vertical, 2)
                 .accessibilityHidden(true)
             // The pollutant behind it is for VoiceOver only: another line would stretch every tile
@@ -185,7 +222,7 @@ struct TodayTiles: View {
 
     private func uv(_ uv: Double) -> some View {
         let line = TodayDetails.uvLine(peak: uvPeak, now: now, hasDog: hasDog)
-        return Tile(icon: "sun.max.fill", label: "UV index") {
+        return Tile(icon: "sun.max.fill", label: "UV Index") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 TileValue("\(Int(uv.rounded()))")
                 Text(WeatherFormatting.uvLevel(uv))
@@ -427,18 +464,21 @@ private struct TileNote: View {
     }
 }
 
-/// The six air quality bands, good to worst, with a mark where the reading sits.
-private struct AirQualityBar: View {
+/// Bands of equal width, such as the air quality bands from good to worst, with a mark where the
+/// reading sits.
+private struct BandBar: View {
+    let bands: [UInt32]
     /// 0 to 1 along the bar.
     let position: Double
 
-    private static let bands: [UInt32] = [0x4CAF50, 0xE6C531, 0xF08C2E, 0xD94141, 0x8E4AA8, 0x7A2230]
+    /// The six air quality bands, good to worst.
+    static let airQuality: [UInt32] = [0x4CAF50, 0xE6C531, 0xF08C2E, 0xD94141, 0x8E4AA8, 0x7A2230]
 
     var body: some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 HStack(spacing: 0) {
-                    ForEach(Self.bands, id: \.self) { Color(hex: $0) }
+                    ForEach(bands.indices, id: \.self) { Color(hex: bands[$0]) }
                 }
                 .frame(height: 6)
                 .clipShape(Capsule())

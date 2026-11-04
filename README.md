@@ -63,7 +63,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      night it follows the city's time of night (evening, late night, before dawn). The moon shows
      its real phase, lit from the other side in the southern hemisphere. Tap the card for today's
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
-   - **Best walk time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
+   - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
      around 7 AM" when it falls on the city's next day), or "Not a good day for walkies" when nothing
      in the next 24 hours qualifies. A good hour is under 30% rain chance, at a comfortable
      feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 45 °C
@@ -80,6 +80,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      minutes). Rules in `Utilities/NextRain.swift`.
    - **Hourly**: the next 24 hours, with rain chance. Cities without coordinates fall back to
      OpenWeatherMap, which is 3-hourly, so the strip spans three days for them.
+     Each sunrise and sunset still to come sits between the hours it falls between, as a slim
+     marker: the time ("6:50", the hours either side give AM or PM), a sun on the horizon with an
+     arrow up or down, and a thin line. The times are Open-Meteo's daily sunrise and sunset, so the
+     evening's strip has tomorrow's sunrise; a day without one (polar day or night) has no marker.
+     Cities on the OpenWeatherMap fallback only have today's, from the current reading. VoiceOver
+     reads "Sunset, 6:50 PM". Rules in `Utilities/SunEvents.swift`.
    - **Weather icons** are bundled with the app (vector assets drawn in the pets' style, with the
      pets' navy outline so they read on light and dark cards). Night icons show the moon's phase for
      that hour.
@@ -87,12 +93,17 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
      and UK), and reads "Clear" at OpenWeather's 10 km cap.
-   - **Paw check** (with a dog): the estimated temperature of dark pavement in direct sun ("About
+   - **Feels Like**: the feels-like temperature with its band beside it (Cold, Chilly, Mild, Warm or
+     Hot), a five-colour bar and how far it is from the actual temperature ("8° warmer than it is",
+     or "Same as it is" within a degree). The bands come from the pets' thresholds in Remote Config:
+     Cold and Hot at `pet_cold_threshold_c` and `pet_hot_threshold_c`, Mild across the walk comfort
+     range, and Chilly and Warm between. The bar's end bands reach 10 °C past the pets' limits.
+   - **Paw Check** (with a dog): the estimated temperature of dark pavement in direct sun ("About
      128 °F"), five paws from icy to dangerous with the pavement's own full size and colour (blue,
      green, orange, red and maroon), and a line about paws ("Too hot for paws"). Icy and below
      freezing share the blue paw, safe and fine underfoot the green one. The limits are the
      `walk_*_pavement_c` Remote Config keys.
-   - **Air quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
+   - **Air Quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar
      and a line about walks with a dog ("Fine for most walks") or about people without one. VoiceOver
@@ -111,6 +122,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      row for each hour's temperature and rain chance.
    - All times (hours, days, sunrise and sunset, radar frames and "today") are in the city's own
      time zone, not the device's.
+   - Temperatures are whole degrees with their unit ("89 °F"), except the hero's high and low, the
+     hourly strip, the walk card and notifications, which read "74°". `temperature_units_shown` in
+     Remote Config leaves the unit out everywhere ("89°").
    - On landscape phones and iPad the pets and walk card sit beside today's details, and the week
      splits into two columns.
    - City tabs appear under the title once two or more cities are saved.
@@ -123,7 +137,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
    added as typed and geocoded again at launch, on returning to the app, and when another city is added.
 7. **Settings** (gear), top to bottom:
-   - **My Pets**: *I have a dog* turns on the walk card, the Paw check tile, the briefing's walk
+   - **My Pets**: *I have a dog* turns on the walk card, the Paw Check tile, the briefing's walk
      sentence and the Walk time notification ("Walk times, pavement checks and walk reminders").
    - **My Locations**: *Manage locations* to add, reorder and delete cities (swipe, or Edit). A bell
      marks the city notifications are for: My Location, otherwise the top city. The city tabs on the
@@ -349,7 +363,7 @@ iOS only:
 
 - `WeatherBackgroundRefresherTests`: background refresh caching, notification rescheduling and retry timing
 - `PreferencesStoreTests`: per-city cache round trip, eviction when a city is removed, older cache format
-- `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear"
+- `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear", temperatures with and without the unit
 - `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed and foreground-refresh limits
 
 View-model tests run against real repositories with scripted API fakes, and a `PreferencesStore` backed
@@ -400,15 +414,15 @@ Remote Config parameters are defined and deployed from the Android repo
 | `radar_frame_interval_ms` | 850 (100–5000, otherwise the default) | Radar animation speed |
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |
-| `walk_card_enabled` | true | Hides the "Best walk time" card for everyone; users can also turn it off in Settings |
+| `walk_card_enabled` | true | Hides the "Best Walk Time" card for everyone; users can also turn it off in Settings |
 | `daily_weather_notifications_enabled` | true | The morning briefing; off removes the queued ones and hides its switch in Settings |
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
 | `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |
 | `foreground_refresh_min_minutes` | 0 (0–1440) | Skips the silent refresh on returning to the app if that city was fetched this recently. Pull-to-refresh and city changes are never skipped |
 | `walk_hot_pavement_c` | 52 (40–70) | Pavement temperature that triggers the hot-paws warning |
-| `walk_warm_pavement_c` | 45 (30–65, below `walk_hot_pavement_c`, otherwise 7 below it) | Pavement temperature at which the Today Paw check tile says "Getting hot" and that hour isn't suggested for a walk (a walk now rates "okay") |
-| `walk_dangerous_pavement_c` | 57.2, which is 135 °F (45–80, above `walk_hot_pavement_c`, otherwise 5 above it) | Pavement temperature at which the Today Paw check tile says "Dangerously hot" |
-| `walk_icy_pavement_c` | 0 (−20–10) | Pavement temperature below which the Today Paw check tile says "Icy, watch for salt" after rain or snow in the last 12 hours or with snow on the ground, and "Below freezing" otherwise |
+| `walk_warm_pavement_c` | 45 (30–65, below `walk_hot_pavement_c`, otherwise 7 below it) | Pavement temperature at which the Today Paw Check tile says "Getting hot" and that hour isn't suggested for a walk (a walk now rates "okay") |
+| `walk_dangerous_pavement_c` | 57.2, which is 135 °F (45–80, above `walk_hot_pavement_c`, otherwise 5 above it) | Pavement temperature at which the Today Paw Check tile says "Dangerously hot" |
+| `walk_icy_pavement_c` | 0 (−20–10) | Pavement temperature below which the Today Paw Check tile says "Icy, watch for salt" after rain or snow in the last 12 hours or with snow on the ground, and "Below freezing" otherwise |
 | `walk_max_rain_chance` | 30 (0–100) | Rain chance at or above which an hour isn't suggested for a walk |
 | `walk_comfort_min_c` / `walk_comfort_max_c` | 3 (−20–20) / 27 (15–40) | Comfortable walking temperatures (feels-like) |
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
@@ -424,6 +438,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
 | `seasonal_themes_enabled` | true | Seasonal themes (Halloween and so on); false switches them all off |
 | `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
+| `temperature_units_shown` | true | Off leaves the unit out of every temperature that shows one: "89°" rather than "89 °F", "About 81°" on the Paw check tile. Units and the Settings choice are unchanged; the high and low, the hourly strip and notifications have no unit either way |
 
 Walk and pet temperatures are Celsius whatever units the user picked. An out-of-range value falls
 back to its default, and if a pair ends up inverted (minimum not below maximum), both fall back to

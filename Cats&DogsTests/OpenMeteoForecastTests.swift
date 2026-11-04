@@ -96,7 +96,8 @@ final class OpenMeteoForecastTests: XCTestCase {
 
     func testDecodesAPayloadWithMissingFields() throws {
         let json = """
-        {"utc_offset_seconds":0,"hourly":{"time":[1704067200],"temperature_2m":[21.0],"weather_code":[null]}}
+        {"utc_offset_seconds":0,"hourly":{"time":[1704067200],"temperature_2m":[21.0],"weather_code":[null]},
+         "daily":{"time":[1704067200],"sunrise":[null]}}
         """
 
         let response = try JSONDecoder().decode(OpenMeteoResponse.self, from: Data(json.utf8))
@@ -105,6 +106,53 @@ final class OpenMeteoForecastTests: XCTestCase {
         XCTAssertEqual(day?.hourlySlots.count, 1)
         XCTAssertEqual(day?.conditionMain, "Clouds") // a missing code falls back to overcast
         XCTAssertNil(day?.uvIndexMax)
+        XCTAssertNil(day?.sunriseEpoch)
+        XCTAssertNil(day?.sunsetEpoch)
+    }
+
+    func testEachDayCarriesItsSunriseAndSunset() {
+        var response = openMeteoResponse(hours: 48)
+        response.daily = OpenMeteoDailyDTO(
+            time: [dayStart - 86_400, dayStart, dayStart + 86_400],
+            sunrise: [dayStart - 86_400 + 7 * 3600, dayStart + 7 * 3600 + 120, dayStart + 86_400 + 7 * 3600 + 180],
+            sunset: [dayStart - 86_400 + 16 * 3600, dayStart + 16 * 3600 + 2400, dayStart + 86_400 + 16 * 3600 + 2460]
+        )
+
+        let result = days(response)
+
+        XCTAssertEqual(result.map(\.sunriseEpoch), [dayStart + 7 * 3600 + 120, dayStart + 86_400 + 7 * 3600 + 180])
+        XCTAssertEqual(result.map(\.sunsetEpoch), [dayStart + 16 * 3600 + 2400, dayStart + 86_400 + 16 * 3600 + 2460])
+    }
+
+    func testADayTheSunDoesntRiseOrSetHasNoSunTimes() {
+        // Open-Meteo puts both on the day's midnight in a polar night, and the sunset on the next
+        // midnight in a polar day.
+        var response = openMeteoResponse(hours: 48)
+        response.daily = OpenMeteoDailyDTO(
+            time: [dayStart, dayStart + 86_400],
+            sunrise: [dayStart, dayStart + 86_400],
+            sunset: [dayStart, dayStart + 2 * 86_400]
+        )
+
+        let result = days(response)
+
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(result.map(\.sunriseEpoch), [nil, nil])
+        XCTAssertEqual(result.map(\.sunsetEpoch), [nil, nil])
+    }
+
+    func testSunTimesFollowTheCitysOwnDays() {
+        // UTC+10: the local day starting at 14:00 UTC has its sunrise at 20:30 UTC (6:30 AM local).
+        var response = openMeteoResponse(hours: 24, offset: 36_000)
+        response.daily = OpenMeteoDailyDTO(
+            time: [dayStart - 36_000, dayStart + 50_400],
+            sunrise: [dayStart - 36_000 + 6 * 3600, dayStart + 50_400 + 6 * 3600 + 1800],
+            sunset: [dayStart - 36_000 + 18 * 3600, dayStart + 50_400 + 18 * 3600]
+        )
+
+        let result = days(response)
+
+        XCTAssertEqual(result.map(\.sunriseEpoch), [dayStart - 36_000 + 6 * 3600, dayStart + 50_400 + 6 * 3600 + 1800])
     }
 
     // MARK: - WMO codes and pavement (Android WeatherHelpersTest)
