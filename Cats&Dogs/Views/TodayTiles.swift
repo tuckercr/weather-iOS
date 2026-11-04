@@ -129,15 +129,20 @@ struct TodayTiles: View {
         return Tile(icon: "pawprint.fill", label: "Paw check") {
             // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
             TileValue("About \(Int(pavement.rounded())) \(weather.units == .metric ? "°C" : "°F")")
+            // The note says it in words.
+            PawScale(step: band.pawScaleStep)
+                .accessibilityHidden(true)
             TileNote(band.line, color: pavementTint(band))
         }
     }
 
-    /// Same shades as the walk card's ratings: dark text on the light theme, pale on the dark.
+    /// Same shades as the walk card's ratings: dark text on the light theme, pale on the dark. Blue
+    /// for icy and below freezing, as on the paw scale.
     private func pavementTint(_ band: TodayDetails.PavementBand) -> Color {
         let (light, dark): (UInt32, UInt32) = switch band {
         case .safe: (0x27500A, 0xC0DD97)
-        case .warm, .pavementOK, .freezing, .icy: (0x633806, 0xFAC775)
+        case .warm, .pavementOK: (0x633806, 0xFAC775)
+        case .freezing, .icy: (0x0C447C, 0xB5D4F4)
         case .tooHot, .dangerous: (0x791F1F, 0xF7C1C1)
         }
         return Color(hex: colorScheme == .dark ? dark : light)
@@ -360,6 +365,32 @@ private struct Tile<Content: View>: View {
         .padding(.vertical, 12)
         .background(Color.card(seasonalTheme), in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// The Paw Check tile's five paws, icy to dangerous: the pavement's own full size and colour, the
+/// rest small and faded. Same colours as Android's `PawScale`.
+private struct PawScale: View {
+    let step: Int
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// Blue, green, orange, red and maroon, like the Feels Like and Air Quality bars. The blue and
+    /// the maroon are lighter on the dark theme, where the darker ones barely show.
+    private var colors: [UInt32] {
+        colorScheme == .dark
+            ? [0x85B7EB, 0x4CAF50, 0xF08C2E, 0xD94141, 0xC25A68]
+            : [0x378ADD, 0x4CAF50, 0xF08C2E, 0xD94141, 0x7A2230]
+    }
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 5) {
+            ForEach(colors.indices, id: \.self) { index in
+                Image(systemName: "pawprint.fill")
+                    .font(.system(size: index == step ? 20 : 13))
+                    // A little stronger on the dark card, where faint colours turn muddy.
+                    .foregroundStyle(Color(hex: colors[index]).opacity(index == step ? 1 : colorScheme == .dark ? 0.4 : 0.3))
+            }
+        }
     }
 }
 

@@ -87,6 +87,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
      and UK), and reads "Clear" at OpenWeather's 10 km cap.
+   - **Paw check** (with a dog): the estimated temperature of dark pavement in direct sun ("About
+     128 °F"), five paws from icy to dangerous with the pavement's own full size and colour (blue,
+     green, orange, red and maroon), and a line about paws ("Too hot for paws"). Icy and below
+     freezing share the blue paw, safe and fine underfoot the green one. The limits are the
+     `walk_*_pavement_c` Remote Config keys.
    - **Air quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar

@@ -143,6 +143,18 @@ enum TodayDetails {
             case .icy: "Icy, watch for salt"
             }
         }
+
+        /// Which of the Paw Check tile's five paws this is, 0 (icy) to 4 (dangerous). Icy and below
+        /// freezing share the first, safe and fine underfoot the second.
+        var pawScaleStep: Int {
+            switch self {
+            case .freezing, .icy: 0
+            case .safe, .pavementOK: 1
+            case .warm: 2
+            case .tooHot: 3
+            case .dangerous: 4
+            }
+        }
     }
 
     /// Below freezing it's only `.icy` after rain or snow (`groundWet`); dry, it's just cold.
