@@ -26,6 +26,8 @@ struct OpenMeteoClient: OpenMeteoAPI {
             URLQueryItem(name: "latitude", value: String(latitude)),
             URLQueryItem(name: "longitude", value: String(longitude)),
             URLQueryItem(name: "hourly", value: Self.hourlyFields),
+            // Each day's sunrise and sunset, for the hourly strip, which reaches into tomorrow.
+            URLQueryItem(name: "daily", value: "sunrise,sunset"),
             URLQueryItem(name: "timezone", value: "auto"),
             URLQueryItem(name: "timeformat", value: "unixtime"),
             URLQueryItem(name: "forecast_days", value: String(Self.forecastDays)),
