@@ -87,6 +87,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
      and UK), and reads "Clear" at OpenWeather's 10 km cap.
+   - **Feels Like**: the feels-like temperature with its band beside it (Cold, Chilly, Mild, Warm or
+     Hot), a five-colour bar and how far it is from the actual temperature ("8° warmer than it is",
+     or "Same as it is" within a degree). The bands come from the pets' thresholds in Remote Config:
+     Cold and Hot at `pet_cold_threshold_c` and `pet_hot_threshold_c`, Mild across the walk comfort
+     range, and Chilly and Warm between. The bar's end bands reach 10 °C past the pets' limits.
    - **Air Quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar
