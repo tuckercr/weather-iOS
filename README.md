@@ -98,6 +98,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      or "Same as it is" within a degree). The bands come from the pets' thresholds in Remote Config:
      Cold and Hot at `pet_cold_threshold_c` and `pet_hot_threshold_c`, Mild across the walk comfort
      range, and Chilly and Warm between. The bar's end bands reach 10 °C past the pets' limits.
+   - **Paw Check** (with a dog): the estimated temperature of dark pavement in direct sun ("About
+     128 °F"), five paws from icy to dangerous with the pavement's own full size and colour (blue,
+     green, orange, red and maroon), and a line about paws ("Too hot for paws"). Icy and below
+     freezing share the blue paw, safe and fine underfoot the green one. The limits are the
+     `walk_*_pavement_c` Remote Config keys.
    - **Air Quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar

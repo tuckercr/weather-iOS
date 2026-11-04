@@ -50,6 +50,15 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.skyCondition(conditionMain: "Rain", cloudPercent: nil, iconCode: "10d"), .overcast)
     }
 
+    func testPavementBandsSitOnFivePaws() {
+        let steps: [(TodayDetails.PavementBand, Int)] = [
+            (.icy, 0), (.freezing, 0), (.safe, 1), (.pavementOK, 1), (.warm, 2), (.tooHot, 3), (.dangerous, 4),
+        ]
+        for (band, step) in steps {
+            XCTAssertEqual(band.pawScaleStep, step, "\(band)")
+        }
+    }
+
     func testPavementBandsFollowTheWalkThresholds() {
         let t = PetWeatherThresholds.standard
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 57.2, groundWet: false, feelsLikeC: 20, thresholds: t), .dangerous)
