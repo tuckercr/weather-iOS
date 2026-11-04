@@ -143,6 +143,18 @@ enum TodayDetails {
             case .icy: "Icy, watch for salt"
             }
         }
+
+        /// Which of the Paw Check tile's five paws this is, 0 (icy) to 4 (dangerous). Icy and below
+        /// freezing share the first, safe and fine underfoot the second.
+        var pawScaleStep: Int {
+            switch self {
+            case .freezing, .icy: 0
+            case .safe, .pavementOK: 1
+            case .warm: 2
+            case .tooHot: 3
+            case .dangerous: 4
+            }
+        }
     }
 
     /// Below freezing it's only `.icy` after rain or snow (`groundWet`); dry, it's just cold.
@@ -159,6 +171,65 @@ enum TodayDetails {
         if pavementC < thresholds.icyPavementC { return groundWet ? .icy : .freezing }
         if feelsLikeC >= thresholds.petHotC || feelsLikeC <= thresholds.petColdC { return .pavementOK }
         return .safe
+    }
+
+    /// The Feels Like tile's band, from the Remote Config limits behind the pets' moods and the walk
+    /// advice: Hot and Cold where the pets are hot and cold, Mild across the walk comfort range, and
+    /// Chilly and Warm between.
+    enum FeelsLikeBand: Int, CaseIterable, Equatable {
+        case cold, chilly, mild, warm, hot
+
+        var name: String {
+            switch self {
+            case .cold: "Cold"
+            case .chilly: "Chilly"
+            case .mild: "Mild"
+            case .warm: "Warm"
+            case .hot: "Hot"
+            }
+        }
+    }
+
+    static func feelsLikeBand(feelsLikeC: Double, thresholds: PetWeatherThresholds) -> FeelsLikeBand {
+        if feelsLikeC >= thresholds.petHotC { return .hot }
+        if feelsLikeC <= thresholds.petColdC { return .cold }
+        if feelsLikeC < thresholds.comfortC.lowerBound { return .chilly }
+        if feelsLikeC <= thresholds.comfortC.upperBound { return .mild }
+        return .warm
+    }
+
+    /// How far the Cold and Hot bands reach past the pets' limits on the Feels Like bar.
+    static let feelsLikeEndBandC = 10.0
+
+    /// Where the Feels Like bar's mark sits, 0 to 1: five bands of equal width, with the reading
+    /// placed within its own. The end bands reach `feelsLikeEndBandC` past the pets' limits (-10 and
+    /// 40 C with the standard thresholds), and the mark stays at the end beyond them.
+    static func feelsLikeBarPosition(feelsLikeC: Double, thresholds: PetWeatherThresholds) -> Double {
+        let band = feelsLikeBand(feelsLikeC: feelsLikeC, thresholds: thresholds)
+        // Remote Config validates each limit, but the comfort range may still reach past the pets'
+        // limits, so its edges are kept between them.
+        let cold = thresholds.petColdC
+        let hot = max(thresholds.petHotC, cold)
+        let comfortLow = min(max(thresholds.comfortC.lowerBound, cold), hot)
+        let comfortHigh = min(max(thresholds.comfortC.upperBound, comfortLow), hot)
+        let (low, high): (Double, Double) = switch band {
+        case .cold: (cold - feelsLikeEndBandC, cold)
+        case .chilly: (cold, comfortLow)
+        case .mild: (comfortLow, comfortHigh)
+        case .warm: (comfortHigh, hot)
+        case .hot: (hot, hot + feelsLikeEndBandC)
+        }
+        let within = high > low ? min(max((feelsLikeC - low) / (high - low), 0), 1) : 0.5
+        return (Double(band.rawValue) + within) / Double(FeelsLikeBand.allCases.count)
+    }
+
+    /// The Feels Like tile's last line: how far it feels from the actual temperature, from the two
+    /// as shown (whole degrees), so it agrees with the hero. A degree or less either way is the same.
+    /// No unit: the number above carries it, and the line has to fit beside a half-width tile's edge.
+    static func feelsLikeGap(feelsLike: Double, temperature: Double) -> String {
+        let gap = Int(feelsLike.rounded()) - Int(temperature.rounded())
+        if abs(gap) <= 1 { return "Same as it is" }
+        return gap > 0 ? "\(gap)° warmer than it is" : "\(-gap)° cooler than it is"
     }
 
     /// Joins each number to its unit with a no-break space, so large text never leaves "°F", "mph" or

@@ -80,6 +80,9 @@ final class RemoteConfigRepository {
     /// replaces the list shipped in the app when it's valid. Empty uses the shipped list.
     nonisolated static let keySeasonalThemesEnabled = "seasonal_themes_enabled"
     nonisolated static let keySeasonalThemes = "seasonal_themes"
+    /// Off shows temperatures as "89°" rather than "89 °F". Units and conversion are unchanged.
+    nonisolated static let keyTemperatureUnitsShown = "temperature_units_shown"
+    nonisolated static let defaultTemperatureUnitsShown = true
     /// Off sends forecasts for cities with coordinates to OpenWeatherMap instead of Open-Meteo.
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
@@ -131,6 +134,7 @@ final class RemoteConfigRepository {
             Self.keyTileSkyEnabled: NSNumber(value: Self.defaultTiles.sky),
             Self.keySeasonalThemesEnabled: NSNumber(value: true),
             Self.keySeasonalThemes: "" as NSString,
+            Self.keyTemperatureUnitsShown: NSNumber(value: Self.defaultTemperatureUnitsShown),
             Self.keyOpenWeatherApiKey: "" as NSString,
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
@@ -243,6 +247,13 @@ final class RemoteConfigRepository {
 
     /// Read from the forecast fetch too. Air quality comes from Open-Meteo, so it also needs that on.
     nonisolated static var airQualityEnabled: Bool { flag(keyAirQualityEnabled) }
+
+    /// The default for `WeatherFormatting.temperature`'s `showsUnit`. Nonisolated, so it's a safe
+    /// default argument whatever the formatter's isolation (Xcode 16.4 builds it nonisolated).
+    /// Tests pass `showsUnit` instead.
+    nonisolated static var temperatureUnitsShown: Bool {
+        flag(keyTemperatureUnitsShown, fallback: defaultTemperatureUnitsShown)
+    }
 
     /// Which Today tiles show. Air quality has its own switch above, as it also stops the fetch.
     var todayTiles: TodayTileSwitches {

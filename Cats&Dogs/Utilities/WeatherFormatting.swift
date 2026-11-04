@@ -2,10 +2,18 @@ import Foundation
 
 enum WeatherFormatting {
     /// Whole degrees: forecasts aren't accurate to a tenth, and other weather apps don't show one.
-    static func temperature(_ value: Double, units: WeatherUnits) -> String {
-        switch units {
-        case .metric: "\(Int(value.rounded())) °C"
-        case .imperial: "\(Int(value.rounded())) °F"
+    /// "89 °F", or "89°" with `temperature_units_shown` off in Remote Config. Every temperature shown
+    /// with its unit comes through here, so that switch is read in this one place.
+    static func temperature(
+        _ value: Double,
+        units: WeatherUnits,
+        showsUnit: Bool = RemoteConfigRepository.temperatureUnitsShown
+    ) -> String {
+        let degrees = Int(value.rounded())
+        guard showsUnit else { return "\(degrees)°" }
+        return switch units {
+        case .metric: "\(degrees) °C"
+        case .imperial: "\(degrees) °F"
         }
     }
 

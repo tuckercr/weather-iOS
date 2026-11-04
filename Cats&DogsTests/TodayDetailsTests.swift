@@ -50,6 +50,15 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.skyCondition(conditionMain: "Rain", cloudPercent: nil, iconCode: "10d"), .overcast)
     }
 
+    func testPavementBandsSitOnFivePaws() {
+        let steps: [(TodayDetails.PavementBand, Int)] = [
+            (.icy, 0), (.freezing, 0), (.safe, 1), (.pavementOK, 1), (.warm, 2), (.tooHot, 3), (.dangerous, 4),
+        ]
+        for (band, step) in steps {
+            XCTAssertEqual(band.pawScaleStep, step, "\(band)")
+        }
+    }
+
     func testPavementBandsFollowTheWalkThresholds() {
         let t = PetWeatherThresholds.standard
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 57.2, groundWet: false, feelsLikeC: 20, thresholds: t), .dangerous)
@@ -69,6 +78,58 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 2, groundWet: false, feelsLikeC: -4, thresholds: t), .pavementOK)
         // Too-hot pavement still says so, whatever the air.
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 53, groundWet: false, feelsLikeC: 31, thresholds: t), .tooHot)
+    }
+
+    func testFeelsLikeBandsMatchThePetsMoodsAndTheWalkComfortRange() {
+        let t = PetWeatherThresholds.standard
+        func band(_ c: Double) -> TodayDetails.FeelsLikeBand { TodayDetails.feelsLikeBand(feelsLikeC: c, thresholds: t) }
+        XCTAssertEqual(band(-5), .cold)
+        XCTAssertEqual(band(0), .cold)
+        XCTAssertEqual(band(0.1), .chilly)
+        XCTAssertEqual(band(2.9), .chilly)
+        XCTAssertEqual(band(3), .mild)
+        XCTAssertEqual(band(27), .mild)
+        XCTAssertEqual(band(27.1), .warm)
+        XCTAssertEqual(band(29.9), .warm)
+        XCTAssertEqual(band(30), .hot)
+        XCTAssertEqual(TodayDetails.FeelsLikeBand.allCases.map(\.name), ["Cold", "Chilly", "Mild", "Warm", "Hot"])
+    }
+
+    func testTheFeelsLikeMarkMovesAcrossFiveEqualBands() {
+        let t = PetWeatherThresholds.standard
+        func position(_ c: Double) -> Double { TodayDetails.feelsLikeBarPosition(feelsLikeC: c, thresholds: t) }
+        XCTAssertEqual(position(-10), 0, accuracy: 0.001)
+        XCTAssertEqual(position(-30), 0, accuracy: 0.001, "Stays at the end past -10 C")
+        XCTAssertEqual(position(0), 0.2, accuracy: 0.001)
+        XCTAssertEqual(position(1.5), 0.3, accuracy: 0.001)
+        XCTAssertEqual(position(15), 0.5, accuracy: 0.001)
+        XCTAssertEqual(position(27), 0.6, accuracy: 0.001)
+        XCTAssertEqual(position(30), 0.8, accuracy: 0.001)
+        // Singapore feeling 89 F.
+        XCTAssertEqual(position(31.67), 0.833, accuracy: 0.001)
+        XCTAssertEqual(position(40), 1, accuracy: 0.001)
+        XCTAssertEqual(position(48), 1, accuracy: 0.001, "Stays at the end past 40 C")
+    }
+
+    func testTheFeelsLikeMarkKeepsInsideItsBandWhenTheComfortRangePassesThePetsLimits() {
+        var t = PetWeatherThresholds.standard
+        t.comfortC = -5 ... 35
+        // Chilly and Warm are empty: the pets' limits come first.
+        XCTAssertEqual(TodayDetails.feelsLikeBand(feelsLikeC: -2, thresholds: t), .cold)
+        XCTAssertEqual(TodayDetails.feelsLikeBand(feelsLikeC: 1, thresholds: t), .mild)
+        XCTAssertEqual(TodayDetails.feelsLikeBand(feelsLikeC: 32, thresholds: t), .hot)
+        XCTAssertEqual(TodayDetails.feelsLikeBarPosition(feelsLikeC: -2, thresholds: t), 0.16, accuracy: 0.001)
+        XCTAssertEqual(TodayDetails.feelsLikeBarPosition(feelsLikeC: 15, thresholds: t), 0.5, accuracy: 0.001)
+        XCTAssertEqual(TodayDetails.feelsLikeBarPosition(feelsLikeC: 32, thresholds: t), 0.84, accuracy: 0.001)
+    }
+
+    func testTheFeelsLikeGapComparesTheTwoNumbersAsShown() {
+        XCTAssertEqual(TodayDetails.feelsLikeGap(feelsLike: 89.4, temperature: 81.2), "8° warmer than it is")
+        XCTAssertEqual(TodayDetails.feelsLikeGap(feelsLike: 28, temperature: 34), "6° cooler than it is")
+        // 81.6 and 83.4 show as 82 and 83.
+        XCTAssertEqual(TodayDetails.feelsLikeGap(feelsLike: 83.4, temperature: 81.6), "Same as it is")
+        XCTAssertEqual(TodayDetails.feelsLikeGap(feelsLike: 20, temperature: 21), "Same as it is")
+        XCTAssertEqual(TodayDetails.feelsLikeGap(feelsLike: 22, temperature: 20), "2° warmer than it is")
     }
 
     func testBelowFreezingThePavementIsOnlyIcyAfterRainOrSnow() {

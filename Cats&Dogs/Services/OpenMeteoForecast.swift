@@ -72,7 +72,30 @@ enum OpenMeteoForecast {
         var days = ForecastAggregator.aggregate(slots: slots, timeZone: timeZone, units: units)
         let quarters = quarterHours(from: response)
         if !quarters.isEmpty, !days.isEmpty { days[0].quarterHours = quarters }
+        let sunTimes = sunTimes(from: response.daily, calendar: calendar)
+        for i in days.indices {
+            guard let first = days[i].hourlySlots.first?.epochSeconds, let sun = sunTimes[dayStart(first)] else { continue }
+            days[i].sunriseEpoch = sun.sunrise
+            days[i].sunsetEpoch = sun.sunset
+        }
         return days
+    }
+
+    /// Each local day's sunrise and sunset, by the day's start. A time on a midnight is dropped:
+    /// that's how Open-Meteo marks a day the sun doesn't rise (both on its midnight) or set (the
+    /// sunset on the next).
+    static func sunTimes(from daily: OpenMeteoDailyDTO, calendar: Calendar) -> [Date: (sunrise: Int?, sunset: Int?)] {
+        func real(_ epoch: Int?) -> Int? {
+            guard let epoch else { return nil }
+            let date = Date(timeIntervalSince1970: TimeInterval(epoch))
+            return calendar.startOfDay(for: date) == date ? nil : epoch
+        }
+        var times: [Date: (sunrise: Int?, sunset: Int?)] = [:]
+        for i in daily.time.indices {
+            let day = calendar.startOfDay(for: Date(timeIntervalSince1970: TimeInterval(daily.time[i])))
+            times[day] = (real(daily.sunrise[ifPresent: i] ?? nil), real(daily.sunset[ifPresent: i] ?? nil))
+        }
+        return times
     }
 
     /// Each amount is for the 15 minutes before its time, so its quarter starts 15 minutes earlier.

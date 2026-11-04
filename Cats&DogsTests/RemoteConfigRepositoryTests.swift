@@ -90,6 +90,11 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(.infinity), 20)
     }
 
+    func testTemperatureUnitsAreShownByDefault() {
+        XCTAssertEqual(RemoteConfigRepository.keyTemperatureUnitsShown, "temperature_units_shown")
+        XCTAssertTrue(RemoteConfigRepository.defaultTemperatureUnitsShown)
+    }
+
     @MainActor
     func testWithoutFirebaseTheDefaultsApply() {
         XCTAssertFalse(FirebaseSetup.isConfigured)
@@ -105,6 +110,7 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookHours, 10)
         XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookMinChance, 20)
         XCTAssertTrue(RemoteConfigRepository.openMeteoEnabled)
+        XCTAssertTrue(RemoteConfigRepository.temperatureUnitsShown)
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkTimeNotificationsEnabled)
