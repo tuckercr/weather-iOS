@@ -165,7 +165,7 @@ struct TodayTiles: View {
         )
         return Tile(icon: "pawprint.fill", label: "Paw Check") {
             // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
-            TileValue("About \(Int(pavement.rounded())) \(weather.units == .metric ? "°C" : "°F")")
+            TileValue("About \(WeatherFormatting.temperature(pavement, units: weather.units))")
             TileNote(band.line, color: pavementTint(band))
         }
     }

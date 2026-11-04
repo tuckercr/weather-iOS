@@ -53,6 +53,11 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.foregroundRefreshMinInterval(minutes: 1441), 0)
     }
 
+    func testTemperatureUnitsAreShownByDefault() {
+        XCTAssertEqual(RemoteConfigRepository.keyTemperatureUnitsShown, "temperature_units_shown")
+        XCTAssertTrue(RemoteConfigRepository.defaultTemperatureUnitsShown)
+    }
+
     @MainActor
     func testWithoutFirebaseTheDefaultsApply() {
         XCTAssertFalse(FirebaseSetup.isConfigured)
@@ -62,6 +67,7 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertTrue(RemoteConfigRepository.shared.radarEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkCardEnabled)
         XCTAssertTrue(RemoteConfigRepository.openMeteoEnabled)
+        XCTAssertTrue(RemoteConfigRepository.temperatureUnitsShown)
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkTimeNotificationsEnabled)
