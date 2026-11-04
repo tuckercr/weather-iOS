@@ -52,6 +52,20 @@ final class RemoteConfigRepository {
 
     /// Hides the "time to walk the dog" card.
     nonisolated static let keyWalkCardEnabled = "walk_card_enabled"
+    /// Hide the HOURLY strip, the "Rain starting around 3:15 PM" line and the rest of the week, each
+    /// with its header.
+    nonisolated static let keyHourlyForecastEnabled = "hourly_forecast_enabled"
+    nonisolated static let keyNextRainEnabled = "next_rain_enabled"
+    nonisolated static let keyWeekForecastEnabled = "week_forecast_enabled"
+    /// The Rain outlook card: a switch, how many hours it charts from the one in progress, and the
+    /// chance an hour must reach for the card to show (also where "Drying out after" draws the line).
+    nonisolated static let keyRainOutlookEnabled = "rain_outlook_enabled"
+    nonisolated static let keyRainOutlookHours = "rain_outlook_hours"
+    nonisolated static let defaultRainOutlookHours = 10
+    nonisolated static let rainOutlookHoursRange = 6 ... 12
+    nonisolated static let keyRainOutlookMinChance = "rain_outlook_min_chance"
+    nonisolated static let defaultRainOutlookMinChance = 20
+    nonisolated static let rainOutlookMinChanceRange = 1 ... 100
     /// Stops fetching air quality: no Air quality tile, and the walk planner ignores the air.
     nonisolated static let keyAirQualityEnabled = "air_quality_enabled"
     /// One switch per Today tile, so any can be hidden for everyone. UV is new and starts off.
@@ -99,6 +113,12 @@ final class RemoteConfigRepository {
             Self.keyAnalyticsEnabled: NSNumber(value: Self.defaultAnalyticsEnabled),
             Self.keyRadarEnabled: NSNumber(value: true),
             Self.keyWalkCardEnabled: NSNumber(value: true),
+            Self.keyHourlyForecastEnabled: NSNumber(value: true),
+            Self.keyNextRainEnabled: NSNumber(value: true),
+            Self.keyWeekForecastEnabled: NSNumber(value: true),
+            Self.keyRainOutlookEnabled: NSNumber(value: true),
+            Self.keyRainOutlookHours: NSNumber(value: Self.defaultRainOutlookHours),
+            Self.keyRainOutlookMinChance: NSNumber(value: Self.defaultRainOutlookMinChance),
             Self.keyDailyWeatherNotificationsEnabled: NSNumber(value: true),
             Self.keyWalkTimeNotificationsEnabled: NSNumber(value: true),
             Self.keyRainNotificationsEnabled: NSNumber(value: Self.defaultRainNotificationsEnabled),
@@ -152,6 +172,22 @@ final class RemoteConfigRepository {
     var radarEnabled: Bool { Self.flag(Self.keyRadarEnabled) }
 
     var walkCardEnabled: Bool { Self.flag(Self.keyWalkCardEnabled) }
+
+    var hourlyForecastEnabled: Bool { Self.flag(Self.keyHourlyForecastEnabled) }
+
+    var nextRainEnabled: Bool { Self.flag(Self.keyNextRainEnabled) }
+
+    var weekForecastEnabled: Bool { Self.flag(Self.keyWeekForecastEnabled) }
+
+    var rainOutlookEnabled: Bool { Self.flag(Self.keyRainOutlookEnabled) }
+
+    var rainOutlookHours: Int {
+        Self.rainOutlookHours(number(Self.keyRainOutlookHours)?.doubleValue)
+    }
+
+    var rainOutlookMinChance: Int {
+        Self.rainOutlookMinChance(number(Self.keyRainOutlookMinChance)?.doubleValue)
+    }
 
     var petWeatherThresholds: PetWeatherThresholds {
         PetWeatherThresholds.validated(
@@ -295,6 +331,22 @@ final class RemoteConfigRepository {
             return .milliseconds(defaultRadarFrameIntervalMs)
         }
         return .milliseconds(milliseconds)
+    }
+
+    /// Read as a double so that 7.5 falls back to the default too, rather than being cut to 7.
+    nonisolated static func rainOutlookHours(_ value: Double?) -> Int {
+        wholeNumber(value, in: rainOutlookHoursRange) ?? defaultRainOutlookHours
+    }
+
+    nonisolated static func rainOutlookMinChance(_ value: Double?) -> Int {
+        wholeNumber(value, in: rainOutlookMinChanceRange) ?? defaultRainOutlookMinChance
+    }
+
+    /// Nil unless `value` is a whole number in `range`.
+    private nonisolated static func wholeNumber(_ value: Double?, in range: ClosedRange<Int>) -> Int? {
+        guard let value, value.rounded() == value,
+              value >= Double(range.lowerBound), value <= Double(range.upperBound) else { return nil }
+        return Int(value)
     }
 }
 

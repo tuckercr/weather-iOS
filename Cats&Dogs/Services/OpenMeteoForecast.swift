@@ -61,6 +61,9 @@ enum OpenMeteoForecast {
                 humidity: (hourly.relativeHumidity[ifPresent: i] ?? nil) ?? 0,
                 pressure: Int((hourly.seaLevelPressure[ifPresent: i] ?? nil) ?? 0),
                 pop: Double((hourly.precipitationProbability[ifPresent: i] ?? nil) ?? 0) / 100,
+                // The same index as the chance, so a Rain outlook bar's chance and amount describe
+                // the same hour.
+                precipitationMm: hourly.precipitation[ifPresent: i] ?? nil,
                 uvIndex: hourly.uvIndex[ifPresent: i] ?? nil,
                 pavementTemperature: pavementC[i].map(units.fromCelsius),
                 groundWet: groundWet(hourly, at: i)

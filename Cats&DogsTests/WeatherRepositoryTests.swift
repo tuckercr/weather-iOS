@@ -165,6 +165,13 @@ final class WeatherRepositoryTests: XCTestCase {
         XCTAssertEqual(decoded.airQuality, slot.airQuality)
     }
 
+    func testOpenWeathersForecastHasNoHourlyRainAmounts() async {
+        let slots = await makeForecast().flatMap(\.hourlySlots)
+
+        XCTAssertFalse(slots.isEmpty)
+        XCTAssertTrue(slots.allSatisfy { $0.precipitationMm == nil })
+    }
+
     func testForecastStillLoadsWhenAirQualityFails() async {
         let repository = WeatherRepository(
             client: FakeOpenWeatherAPI(),

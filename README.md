@@ -77,7 +77,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Next rain**: one line under the top card, only when rain or snow is due in the next 2 hours:
      "Rain starting around 3:15 PM", "Rain stopping around 4:30 PM" or "Rain for the next 2 hours",
      from Open-Meteo's 15-minute forecast (0.1 mm in 15 minutes counts; it stops after 30 dry
-     minutes). Rules in `Utilities/NextRain.swift`.
+     minutes). Rules in `Utilities/NextRain.swift`. While the Rain outlook card shows, the line
+     becomes its headline instead.
    - **Hourly**: the next 24 hours, with rain chance. Cities without coordinates fall back to
      OpenWeatherMap, which is 3-hourly, so the strip spans three days for them.
      Each sunrise and sunset still to come sits between the hours it falls between, as a slim
@@ -86,6 +87,19 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      evening's strip has tomorrow's sunrise; a day without one (polar day or night) has no marker.
      Cities on the OpenWeatherMap fallback only have today's, from the current reading. VoiceOver
      reads "Sunset, 6:50 PM". Rules in `Utilities/SunEvents.swift`.
+   - **Rain outlook**: under the hourly strip (on landscape phones and iPad too), a bar chart of the
+     chance of rain for each of the next 10 hours from the hour in progress, shown only when one of
+     them reaches 20%. The hourly icon is Open-Meteo's best single model and the chance its ensemble,
+     so the two can disagree (a cloud at 70%); the chart makes the outlook plain. The headline is the
+     next-rain line when there is one, otherwise "Rain likely around 5 PM" (50% or more) or "A
+     chance of rain around 5 PM" ("now" when the first hour is the highest). Then "Drying out after
+     9 PM." after the last hour at 20% or more, or "The chance stays up past 12 AM." when that is
+     the last hour charted, and the forecast amount over the chart's hours: "About 2.5 mm in all."
+     (from 0.5 mm, whole numbers from 10) or "About 0.25 inches in all." (from 0.01 in). A dashed
+     line marks 50%. Tapping a bar shows "5 PM · 70% · 2.5 mm" above it, and VoiceOver reads each
+     bar the same way. Cities without coordinates chart OpenWeatherMap's 3-hourly slots, with no
+     amounts. The card, its hours and the 20% are set in Remote Config. Rules in
+     `Utilities/RainOutlook.swift`.
    - **Weather icons** are bundled with the app (vector assets drawn in the pets' style, with the
      pets' navy outline so they read on light and dark cards). Night icons show the moon's phase for
      that hour.
@@ -132,7 +146,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      (unless `foreground_refresh_min_minutes` says that city was fetched recently), every 30 minutes
      while the app stays open, and periodically in the background. Each refresh also moves the
      clock on, so hours that have passed drop off and a screen left open overnight keeps up.
-   - The walk card, the radar and air quality can each be switched off from Remote Config.
+   - The hourly strip, the next-rain line, the Rain outlook card, the walk card, the radar, air
+     quality and the rest of the week can each be switched off from Remote Config.
 6. **Add city** (＋): search with geocoding suggestions; choosing a suggestion pins exact coordinates.
    **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
    added as typed and geocoded again at launch, on returning to the app, and when another city is added.
@@ -309,8 +324,9 @@ Cats&Dogs/
 
 ## Accessibility
 
-- VoiceOver labels on every control, including the radar slider (read as the frame's time) and
-  the hourly weather icons. The selected unit and the active city tab carry the Selected trait.
+- VoiceOver labels on every control, including the radar slider (read as the frame's time), the
+  hourly weather icons and each Rain outlook bar ("5 PM, 70% chance of rain, about 2.5 mm"). The
+  selected unit and the active city tab carry the Selected trait.
 - Touch targets of at least 44 pt (radar play button, city tabs).
 - Text meets WCAG AA contrast: the light theme's blue is `#01579B` and secondary text uses
   `SecondaryText` rather than the system grey. The brand colour is applied as the app's tint
@@ -358,13 +374,14 @@ Shared with Android (the same cases on both platforms):
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event
 - `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK
 - `PetWeatherThresholdsTests`: walk and pet threshold ranges and pair checks
+- `RainOutlookTests`: when the card shows, the headline and detail wording, metric and imperial amounts, the bars' labels
 
 iOS only:
 
 - `WeatherBackgroundRefresherTests`: background refresh caching, notification rescheduling and retry timing
 - `PreferencesStoreTests`: per-city cache round trip, eviction when a city is removed, older cache format
 - `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear", temperatures with and without the unit
-- `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed and foreground-refresh limits
+- `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed, foreground-refresh and Rain outlook limits
 
 View-model tests run against real repositories with scripted API fakes, and a `PreferencesStore` backed
 by a throwaway `UserDefaults` suite, so they never touch the app's real data. Shared helpers (including
@@ -415,6 +432,12 @@ Remote Config parameters are defined and deployed from the Android repo
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |
 | `walk_card_enabled` | true | Hides the "Best Walk Time" card for everyone; users can also turn it off in Settings |
+| `hourly_forecast_enabled` | true | Hides the HOURLY strip, header included, for everyone |
+| `next_rain_enabled` | true | Hides the "Rain starting around 3:15 PM" line (from the 15-minute forecast) for everyone |
+| `week_forecast_enabled` | true | Hides the rest of the week, header and day rows, for everyone |
+| `rain_outlook_enabled` | true | Hides the Rain outlook card for everyone; the next-rain line then shows on its own as before |
+| `rain_outlook_hours` | 10 (whole number 6–12, otherwise the default) | Hours in the Rain outlook chart, from the hour in progress |
+| `rain_outlook_min_chance` | 20 (whole number 1–100, otherwise the default) | The Rain outlook card only shows when an hour in the chart reaches this chance of rain; the last such hour is the one "Drying out after" names |
 | `daily_weather_notifications_enabled` | true | The morning briefing; off removes the queued ones and hides its switch in Settings |
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
 | `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |
