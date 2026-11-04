@@ -81,16 +81,11 @@ struct TodayTiles: View {
         let feelsLikeC = weather.units.toCelsius(weather.feelsLike)
         let band = TodayDetails.feelsLikeBand(feelsLikeC: feelsLikeC, thresholds: thresholds)
         return Tile(icon: "thermometer.medium", label: "Feels Like") {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(TodayDetails.keepUnitsTogether(WeatherFormatting.temperature(weather.feelsLike, units: weather.units)))
-                    .font(.brand(.largeTitle, size: 34, weight: .bold))
+            // The same size as the other tiles' values, as Air Quality has its band beside it.
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                TileValue(WeatherFormatting.temperature(weather.feelsLike, units: weather.units))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    // Baloo's line is 1.3 times its size, and digits need far less: trimming the
-                    // space above and below keeps the tile, and every tile in the grid with it,
-                    // near the others' height.
-                    .padding(.top, -6)
-                    .padding(.bottom, -9)
+                    .minimumScaleFactor(0.8)
                 Text(band.name)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(feelsLikeTint(band))
