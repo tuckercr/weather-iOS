@@ -85,7 +85,7 @@ struct WalkCard: View {
                 .foregroundStyle(tint)
                 .font(.title3)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Best walk time")
+                Text("Best Walk Time")
                     .font(.caption)
                     .foregroundStyle(Color.secondaryText)
                 Text(detail)
