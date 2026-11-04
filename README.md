@@ -80,6 +80,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      minutes). Rules in `Utilities/NextRain.swift`.
    - **Hourly**: the next 24 hours, with rain chance. Cities without coordinates fall back to
      OpenWeatherMap, which is 3-hourly, so the strip spans three days for them.
+     Each sunrise and sunset still to come sits between the hours it falls between, as a slim
+     marker: the time ("6:50", the hours either side give AM or PM), a sun on the horizon with an
+     arrow up or down, and a thin line. The times are Open-Meteo's daily sunrise and sunset, so the
+     evening's strip has tomorrow's sunrise; a day without one (polar day or night) has no marker.
+     Cities on the OpenWeatherMap fallback only have today's, from the current reading. VoiceOver
+     reads "Sunset, 6:50 PM". Rules in `Utilities/SunEvents.swift`.
    - **Weather icons** are bundled with the app (vector assets drawn in the pets' style, with the
      pets' navy outline so they read on light and dark cards). Night icons show the moon's phase for
      that hour.

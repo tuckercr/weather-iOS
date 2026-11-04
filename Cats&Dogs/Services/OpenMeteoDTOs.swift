@@ -8,24 +8,28 @@ struct OpenMeteoResponse: Decodable {
     var timezone: String? = nil
     var hourly = OpenMeteoHourlyDTO()
     var minutely15 = OpenMeteoMinutely15DTO()
+    var daily = OpenMeteoDailyDTO()
 
     enum CodingKeys: String, CodingKey {
         case utcOffsetSeconds = "utc_offset_seconds"
         case timezone
         case hourly
         case minutely15 = "minutely_15"
+        case daily
     }
 
     init(
         utcOffsetSeconds: Int = 0,
         timezone: String? = nil,
         hourly: OpenMeteoHourlyDTO = OpenMeteoHourlyDTO(),
-        minutely15: OpenMeteoMinutely15DTO = OpenMeteoMinutely15DTO()
+        minutely15: OpenMeteoMinutely15DTO = OpenMeteoMinutely15DTO(),
+        daily: OpenMeteoDailyDTO = OpenMeteoDailyDTO()
     ) {
         self.utcOffsetSeconds = utcOffsetSeconds
         self.timezone = timezone
         self.hourly = hourly
         self.minutely15 = minutely15
+        self.daily = daily
     }
 
     init(from decoder: Decoder) throws {
@@ -34,6 +38,32 @@ struct OpenMeteoResponse: Decodable {
         timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
         hourly = try container.decodeIfPresent(OpenMeteoHourlyDTO.self, forKey: .hourly) ?? OpenMeteoHourlyDTO()
         minutely15 = try container.decodeIfPresent(OpenMeteoMinutely15DTO.self, forKey: .minutely15) ?? OpenMeteoMinutely15DTO()
+        daily = try container.decodeIfPresent(OpenMeteoDailyDTO.self, forKey: .daily) ?? OpenMeteoDailyDTO()
+    }
+}
+
+/// Parallel arrays, one entry per local day from `time[i]`, its midnight. In a polar night both
+/// times are that midnight, and in a polar day the sunset is the next one.
+struct OpenMeteoDailyDTO: Decodable {
+    var time: [Int] = []
+    var sunrise: [Int?] = []
+    var sunset: [Int?] = []
+
+    init(time: [Int] = [], sunrise: [Int?] = [], sunset: [Int?] = []) {
+        self.time = time
+        self.sunrise = sunrise
+        self.sunset = sunset
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        time = try c.decodeIfPresent([Int].self, forKey: .time) ?? []
+        sunrise = try c.decodeIfPresent([Int?].self, forKey: .sunrise) ?? []
+        sunset = try c.decodeIfPresent([Int?].self, forKey: .sunset) ?? []
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case time, sunrise, sunset
     }
 }
 
