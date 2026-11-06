@@ -173,6 +173,7 @@ func openMeteoCurrentResponse(
             seaLevelPressure: 1014.8,
             windSpeed: 1.1,
             windDirection: 267,
+            windGusts: 9.8,
             visibility: 29_300,
             isDay: isDay
         ),

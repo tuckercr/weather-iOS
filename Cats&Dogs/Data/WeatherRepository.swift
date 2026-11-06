@@ -205,6 +205,7 @@ struct WeatherRepository {
             pressureHpa: response.main.pressure,
             windSpeed: response.wind.speed,
             windDeg: response.wind.deg,
+            windGust: response.wind.gust,
             visibilityMeters: response.visibility,
             cloudPercent: response.clouds?.all ?? 0,
             units: units,

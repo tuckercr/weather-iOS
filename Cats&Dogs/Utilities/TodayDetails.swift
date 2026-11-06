@@ -241,8 +241,9 @@ enum TodayDetails {
 
     private static let spokenCompassPoints = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
 
-    /// The compass point a wind comes from, as a word, for VoiceOver: the Wind tile shows it only as an
-    /// arrow.
+    private static let compassPoints = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+
+    /// The compass point a wind comes from, as a word, for VoiceOver.
     static func spokenCompassPoint(_ deg: Int) -> String {
         spokenCompassPoints[((deg + 22) / 45) % 8]
     }
@@ -279,6 +280,40 @@ enum TodayDetails {
         case .muggy: hasDog ? "Puffy fur, panting pup" : "Misty's getting puffy"
         case .soupy: "Misty has gone full floof"
         }
+    }
+
+    /// The compass point a wind comes from, for the Wind tile: "SW".
+    static func compassPoint(_ deg: Int) -> String {
+        compassPoints[((deg + 22) / 45) % 8]
+    }
+
+    /// The windsock's droop below the horizontal: limp (75°) when calm, lifting steadily until it
+    /// flies straight out from a strong breeze (Beaufort 6, 10.8 m/s or 24 mph).
+    static func windsockDroopDegrees(speed: Double, units: WeatherUnits) -> Double {
+        let metersPerSecond = units == .imperial ? speed * metersPerSecondPerMph : speed
+        return windsockLimpDegrees * (1 - min(max(metersPerSecond / windsockStraightMetersPerSecond, 0), 1))
+    }
+
+    static let windsockLimpDegrees = 75.0
+    private static let windsockStraightMetersPerSecond = 10.8
+
+    /// Gusts are mentioned when they're at least this much stronger than the wind (5 mph).
+    private static let gustGapMetersPerSecond = 2.2
+
+    /// The Wind tile's note, with what VoiceOver says. The windsock shows how strong the wind is, so
+    /// the note gives where it comes from, and gusts that stand out: "From the SW, gusts 24".
+    static func windNote(speed: Double, deg: Int, gust: Double?, units: WeatherUnits) -> (text: String, spoken: String) {
+        let force = windForce(speed: speed, units: units)
+        if force == 0 || WeatherFormatting.isCalm(speed, units: units) { return ("Calm", "Calm") }
+        let toMetersPerSecond = units == .imperial ? metersPerSecondPerMph : 1
+        var text = "From the \(compassPoint(deg))"
+        var spoken = "From the \(spokenCompassPoint(deg)), \(windForceNames[force].lowercased())"
+        if let gust, (gust - speed) * toMetersPerSecond >= gustGapMetersPerSecond {
+            let formatted = WeatherFormatting.wind(gust, units: units)
+            text += ", gusts \(formatted.split(separator: " ").first.map(String.init) ?? formatted)"
+            spoken += ", gusts \(formatted)"
+        }
+        return (text, spoken)
     }
 
     /// Dew point in Celsius (Magnus formula); nil when the humidity is 0, where it's undefined.

@@ -199,7 +199,7 @@ private struct Painter {
 
     func sky(_ mood: PetMood, moonPhase: MoonPhase, southernHemisphere: Bool) {
         switch mood {
-        case .sunny:
+        case .fair, .sunny:
             circle(Palette.sun, cx: 220, cy: 32, r: 18)
         case .hot:
             circle(Palette.sunHot, cx: 220, cy: 32, r: 24)

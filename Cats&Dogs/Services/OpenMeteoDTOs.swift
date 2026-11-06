@@ -120,6 +120,7 @@ struct OpenMeteoCurrentDTO: Decodable, Equatable {
     var seaLevelPressure: Double?
     var windSpeed: Double?
     var windDirection: Int?
+    var windGusts: Double?
     var visibility: Double?
     var isDay: Int?
 
@@ -133,6 +134,7 @@ struct OpenMeteoCurrentDTO: Decodable, Equatable {
         case seaLevelPressure = "pressure_msl"
         case windSpeed = "wind_speed_10m"
         case windDirection = "wind_direction_10m"
+        case windGusts = "wind_gusts_10m"
         case visibility
         case isDay = "is_day"
     }
@@ -147,6 +149,7 @@ struct OpenMeteoCurrentDTO: Decodable, Equatable {
         seaLevelPressure: Double? = nil,
         windSpeed: Double? = nil,
         windDirection: Int? = nil,
+        windGusts: Double? = nil,
         visibility: Double? = nil,
         isDay: Int? = nil
     ) {
@@ -159,6 +162,7 @@ struct OpenMeteoCurrentDTO: Decodable, Equatable {
         self.seaLevelPressure = seaLevelPressure
         self.windSpeed = windSpeed
         self.windDirection = windDirection
+        self.windGusts = windGusts
         self.visibility = visibility
         self.isDay = isDay
     }
