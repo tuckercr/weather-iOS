@@ -70,4 +70,21 @@ enum HourlyStripItem: Equatable, Identifiable {
             (before[index] ?? []).sorted { $0.epochSeconds < $1.epochSeconds }.map(HourlyStripItem.sun) + [.hour(slot)]
         }
     }
+
+    /// Whether an hour beside the sun event at `index` shows a rain chance (`showsChance`), so its
+    /// marker's line runs on down beside the chances; otherwise it stops at the temperatures. Only the
+    /// hours either side count: they're on screen with the marker, so the strip is already that tall
+    /// and the line never makes it grow. Same rule as Android's `besideRainChance`.
+    static func besideRainChance(
+        _ items: [HourlyStripItem],
+        at index: Int,
+        showsChance: (HourlySlot) -> Bool
+    ) -> Bool {
+        func slot(_ item: HourlyStripItem) -> HourlySlot? {
+            if case let .hour(slot) = item { slot } else { nil }
+        }
+        let before = items[..<index].compactMap(slot).last
+        let after = items[(index + 1)...].compactMap(slot).first
+        return [before, after].compactMap { $0 }.contains(where: showsChance)
+    }
 }
