@@ -56,8 +56,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 3. **Notification onboarding**: opt in to the 8:30 AM briefing (and, with a dog, walk-time nudges), or **Not now**.
 4. **Location onboarding**: use the device location, or **Enter a city manually**.
 5. **Current weather**: the main screen for the active city:
-   - Hero card: Sunny and Misty act out one of 8 weather moods (sunny, cloudy, rain, storm, snow, hot,
-     cold, night) on a mood-coloured card, with the city, temperature, today's high and low (from
+   - Hero card: Sunny and Misty act out one of 9 weather moods (fair, sunny, cloudy, rain, storm,
+     snow, hot, cold, night) on a mood-coloured card. A clear day follows the Feels Like tile's
+     bands: fair (a pale yellow card and the sun) when it's chilly or mild, sunny (amber, Sunny in
+     sunglasses) when it's warm, above `walk_comfort_max_c`, and hot from `pet_hot_threshold_c`.
+     The card shows the city, temperature, today's high and low (from
      the forecast, over the whole day and taking in the temperature now) and a caption in the
      pets' voice ("Sunny wants puddles. Misty wants a towel."). One caption is picked per day; at
      night it follows the city's time of night (evening, late night, before dawn). The moon shows
@@ -463,7 +466,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_dangerous_pavement_c` | 57.2, which is 135 °F (45–80, above `walk_hot_pavement_c`, otherwise 5 above it) | Pavement temperature at which the Today Paw Check tile says "Dangerously hot" |
 | `walk_icy_pavement_c` | 0 (−20–10) | Pavement temperature below which the Today Paw Check tile says "Icy, watch for salt" after rain or snow in the last 12 hours or with snow on the ground, and "Below freezing" otherwise |
 | `walk_max_rain_chance` | 30 (0–100) | Rain chance at or above which an hour isn't suggested for a walk |
-| `walk_comfort_min_c` / `walk_comfort_max_c` | 3 (−20–20) / 27 (15–40) | Comfortable walking temperatures (feels-like) |
+| `walk_comfort_min_c` / `walk_comfort_max_c` | 3 (−20–20) / 27 (15–40) | Comfortable walking temperatures (feels-like); above the maximum, a clear day's hero turns from fair to sunny |
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
 | `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which hours aren't suggested for a walk and the walk card says "Bad air". 3 is US "Unhealthy" and Europe's "Poor" |
