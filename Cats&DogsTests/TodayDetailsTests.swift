@@ -144,6 +144,38 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertNil(TodayDetails.dewPointC(temperatureC: 20, humidityPercent: 0))
     }
 
+    func testMistyFluffsUpAsTheDewPointRisesAndCracklesInDryAir() {
+        func level(_ dewC: Double?, _ humidity: Int = 60) -> TodayDetails.FluffLevel {
+            TodayDetails.fluffLevel(dewPointC: dewC, humidityPercent: humidity)
+        }
+        XCTAssertEqual(level(nil, 0), .dry)
+        XCTAssertEqual(level(5, 34), .dry)
+        XCTAssertEqual(level(5, 35), .comfy)
+        XCTAssertEqual(level(15.9), .comfy)
+        XCTAssertEqual(level(16), .sticky)
+        XCTAssertEqual(level(18), .muggy)
+        XCTAssertEqual(level(20.9), .muggy)
+        XCTAssertEqual(level(21), .soupy)
+        // Muggy wins over dry: 30% at 38 °C still has a dew point of about 18 °C.
+        XCTAssertEqual(level(18.2, 30), .muggy)
+        // 87% at 9.5 °C (London tonight) is damp, not dry: a dew point of about 7.5 °C.
+        XCTAssertEqual(level(TodayDetails.dewPointC(temperatureC: 9.5, humidityPercent: 87), 87), .comfy)
+        // 62% at 20 °C is a dew point of about 12.5 °C; 85% at 27 °C about 24 °C.
+        XCTAssertEqual(level(TodayDetails.dewPointC(temperatureC: 20, humidityPercent: 62), 62), .comfy)
+        XCTAssertEqual(level(TodayDetails.dewPointC(temperatureC: 27, humidityPercent: 85), 85), .soupy)
+    }
+
+    func testMistysLinesMentionPantingOnlyWithADog() {
+        XCTAssertEqual(TodayDetails.fluffLine(.dry, hasDog: true), "Dry air, static fur")
+        XCTAssertEqual(TodayDetails.fluffLine(.comfy, hasDog: true), "Misty's fur is behaving")
+        XCTAssertEqual(TodayDetails.fluffLine(.muggy, hasDog: true), "Puffy fur, panting pup")
+        XCTAssertEqual(TodayDetails.fluffLine(.muggy, hasDog: false), "Misty's getting puffy")
+        XCTAssertEqual(TodayDetails.fluffLine(.soupy, hasDog: false), "Misty has gone full floof")
+        for level in TodayDetails.FluffLevel.allCases {
+            XCTAssertFalse(TodayDetails.fluffLine(level, hasDog: true).isEmpty)
+        }
+    }
+
     func testCompassPoints() {
         XCTAssertEqual(TodayDetails.compassPoint(0), "N")
         XCTAssertEqual(TodayDetails.compassPoint(22), "N")

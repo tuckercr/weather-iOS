@@ -248,6 +248,40 @@ enum TodayDetails {
         spokenCompassPoints[((deg + 22) / 45) % 8]
     }
 
+    /// The Fluff Factor tile's bands. Misty's fur goes from sleek to full floof, with static sparks
+    /// in dry air. Same bands as Android's `FluffLevel`.
+    enum FluffLevel: Int, CaseIterable, Equatable {
+        case dry, comfy, sticky, muggy, soupy
+    }
+
+    /// Mugginess goes by the dew point (humidity alone rises and falls with the temperature): sticky
+    /// from 16 °C (61 °F), muggy from 18 °C (64 °F), soupy from 21 °C (70 °F). Below that, the air
+    /// is dry under 35% humidity, when fur crackles with static, and comfy otherwise (cool, damp air
+    /// included). No dew point means 0% humidity.
+    static func fluffLevel(dewPointC: Double?, humidityPercent: Int) -> FluffLevel {
+        guard let dewPointC else { return .dry }
+        return switch dewPointC {
+        case 21...: .soupy
+        case 18...: .muggy
+        case 16...: .sticky
+        default: humidityPercent < dryBelowPercent ? .dry : .comfy
+        }
+    }
+
+    private static let dryBelowPercent = 35
+
+    /// Misty's line on the Fluff Factor tile. Muggy air matters most to a dog, which cools down by
+    /// panting, so with a dog that band says so.
+    static func fluffLine(_ level: FluffLevel, hasDog: Bool) -> String {
+        switch level {
+        case .dry: "Dry air, static fur"
+        case .comfy: "Misty's fur is behaving"
+        case .sticky: "Misty's fluffing up"
+        case .muggy: hasDog ? "Puffy fur, panting pup" : "Misty's getting puffy"
+        case .soupy: "Misty has gone full floof"
+        }
+    }
+
     /// The compass point a wind comes from, for the Wind tile: "SW".
     static func compassPoint(_ deg: Int) -> String {
         compassPoints[((deg + 22) / 45) % 8]

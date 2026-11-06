@@ -125,6 +125,13 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      green, orange, red and maroon), and a line about paws ("Too hot for paws"). Icy and below
      freezing share the blue paw, safe and fine underfoot the green one. The limits are the
      `walk_*_pavement_c` Remote Config keys.
+   - **Fluff Factor**: the humidity with the dew point under it ("Dew point 50°"), beside Misty,
+     whose fur goes from sleek to full floof as the dew point rises, and her line about it. The
+     mugginess goes by dew point, since humidity alone rises and falls with the temperature: Sticky
+     from 16 °C / 61 °F ("Misty's fluffing up"), Muggy from 18 °C / 64 °F ("Puffy fur, panting pup",
+     or "Misty's getting puffy" without a dog) and Soupy from 21 °C / 70 °F ("Misty has gone full
+     floof"). Below that it's Dry under 35% humidity (static sparks, "Dry air, static fur") and
+     Comfy otherwise ("Misty's fur is behaving").
    - **Air Quality**: the hour in progress from Open-Meteo's air quality forecast, on Europe's index
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar

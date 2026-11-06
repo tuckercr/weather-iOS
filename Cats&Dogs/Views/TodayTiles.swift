@@ -144,19 +144,35 @@ struct TodayTiles: View {
         }
     }
 
+    /// Fluff Factor: the humidity with the dew point under it, beside Misty, whose fur fluffs up as
+    /// the dew point rises, and her line about it.
     private var humidity: some View {
-        Tile(icon: "drop.fill", label: "Humidity") {
-            TileValue("\(weather.humidityPercent)%")
-            ProgressView(value: Double(weather.humidityPercent), total: 100)
-                .tint(Color.accent)
-                .padding(.vertical, 2)
-                .accessibilityHidden(true)
-            if let dewC = TodayDetails.dewPointC(
-                temperatureC: weather.units.toCelsius(weather.temperature),
-                humidityPercent: weather.humidityPercent
-            ) {
-                TileNote("Dew point \(WeatherFormatting.temperature(weather.units.fromCelsius(dewC), units: weather.units))")
+        let dewC = TodayDetails.dewPointC(
+            temperatureC: weather.units.toCelsius(weather.temperature),
+            humidityPercent: weather.humidityPercent
+        )
+        let level = TodayDetails.fluffLevel(dewPointC: dewC, humidityPercent: weather.humidityPercent)
+        return Tile(icon: "drop.fill", label: "Fluff Factor") {
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    TileValue("\(weather.humidityPercent)%")
+                        .accessibilityLabel("Humidity \(weather.humidityPercent)%")
+                    if let dewC {
+                        Text("Dew point \(WeatherFormatting.temperature(weather.units.fromCelsius(dewC), units: weather.units, showsUnit: false))")
+                            .font(.footnote)
+                            .foregroundStyle(Color.secondaryText)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                }
+                Spacer(minLength: 0)
+                FluffyMisty(level: level)
+                    .frame(width: 48, height: 42)
+                    .accessibilityHidden(true)
             }
+            TileNote(TodayDetails.fluffLine(level, hasDog: hasDog))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
     }
 
@@ -538,6 +554,66 @@ private struct Windsock: View {
                 band.closeSubpath()
                 sock.fill(band, with: .color(stripe.isMultiple(of: 2) ? Self.orange : .white))
                 sock.stroke(band, with: .color(Self.seam), lineWidth: 0.6)
+            }
+        }
+    }
+}
+
+/// Misty's head, as in the hero, with her fur sleek in dry air and fluffing up as it gets muggy: a
+/// ring of tufts round her head grows with each `FluffLevel`, and dry air gives her static sparks.
+/// Drawn on a 60 x 52 grid. Same drawing as Android's `FluffyMisty`.
+private struct FluffyMisty: View {
+    let level: TodayDetails.FluffLevel
+    @Environment(\.colorScheme) private var colorScheme
+
+    /// How far the tufts reach past her head, by level.
+    private static let tuftReach: [CGFloat] = [0, 0, 1.4, 2.6, 4]
+
+    var body: some View {
+        Canvas { context, size in
+            let scale = min(size.width / 60, size.height / 52)
+            let origin = CGPoint(x: (size.width - 60 * scale) / 2, y: (size.height - 52 * scale) / 2)
+            func point(_ x: CGFloat, _ y: CGFloat) -> CGPoint {
+                CGPoint(x: origin.x + x * scale, y: origin.y + y * scale)
+            }
+            func poly(_ color: Color, _ points: [(CGFloat, CGFloat)]) {
+                var path = Path()
+                path.addLines(points.map { point($0.0, $0.1) })
+                path.closeSubpath()
+                context.fill(path, with: .color(color))
+            }
+            func oval(_ color: Color, _ cx: CGFloat, _ cy: CGFloat, _ rx: CGFloat, _ ry: CGFloat) {
+                let rect = CGRect(x: origin.x + (cx - rx) * scale, y: origin.y + (cy - ry) * scale, width: rx * 2 * scale, height: ry * 2 * scale)
+                context.fill(Path(ellipseIn: rect), with: .color(color))
+            }
+            // Lighter on the dark card, where her usual grey sinks into it.
+            let fur = Color(hex: colorScheme == .dark ? 0x8C8B85 : 0x5F5E5A)
+            let reach = Self.tuftReach[level.rawValue]
+            if reach > 0 {
+                let tufts = 18
+                poly(fur, (0 ..< tufts).map { index in
+                    let angle = Double(index) / Double(tufts) * 2 * .pi - .pi / 2
+                    let radius = 17 + (index.isMultiple(of: 2) ? 0 : reach)
+                    return (30 + radius * CGFloat(cos(angle)), 31 + radius * CGFloat(sin(angle)))
+                })
+            }
+            poly(fur, [(15, 22), (18, 6), (27, 17)])
+            poly(fur, [(33, 17), (42, 6), (45, 22)])
+            poly(Color(hex: 0xED93B1), [(18, 19), (19.5, 11), (24, 17)])
+            poly(Color(hex: 0xED93B1), [(36, 17), (40.5, 11), (42, 19)])
+            oval(fur, 30, 31, 16, 16)
+            poly(Color(hex: 0xF1EFE8), [(28.5, 17), (31.5, 17), (34, 33), (26, 33)])
+            oval(Color(hex: 0xF1EFE8), 26, 36, 6, 5)
+            oval(Color(hex: 0xF1EFE8), 34, 36, 6, 5)
+            oval(Color(hex: 0x10324A), 24.5, 28, 2, 2)
+            oval(Color(hex: 0x10324A), 35.5, 28, 2, 2)
+            poly(Color(hex: 0xE8849A), [(28.2, 32), (31.8, 32), (30, 34.3)])
+            if level == .dry {
+                // Static sparks either side.
+                var sparks = Path()
+                sparks.addLines([point(5, 12), point(9, 15), point(6, 17), point(10, 21)])
+                sparks.addLines([point(55, 12), point(51, 15), point(54, 17), point(50, 21)])
+                context.stroke(sparks, with: .color(Color(hex: 0xEF9F27)), style: StrokeStyle(lineWidth: 1.4 * scale, lineCap: .round, lineJoin: .round))
             }
         }
     }
