@@ -42,7 +42,7 @@ struct OnboardingLocationView: View {
                 .controlSize(.large)
 
                 Button(action: onSkip) {
-                    Text("Enter a city manually").frame(maxWidth: .infinity)
+                    Text("Enter a town or city manually").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
@@ -64,7 +64,7 @@ struct OnboardingLocationView: View {
     private var bodyText: String {
         switch viewModel.state {
         case .failed:
-            "Could not determine your location. You can still add cities manually."
+            "Could not determine your location. You can still add locations manually."
         default:
             "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are."
         }

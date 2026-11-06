@@ -118,6 +118,10 @@ struct SettingsView: SettingsScreen {
                 Button("Forecast data by Open-Meteo.com") {
                     openURL(URL(string: "https://open-meteo.com")!)
                 }
+                // Town and city search uses Open-Meteo's geocoding, whose terms ask for this credit.
+                Button("Location data based on GeoNames") {
+                    openURL(URL(string: "https://www.geonames.org")!)
+                }
                 Button("Privacy policy") {
                     openURL(URL(string: "https://sunnyandmisty.com/privacy")!)
                 }

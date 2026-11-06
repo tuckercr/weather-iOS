@@ -64,7 +64,18 @@ final class AddLocationRulesTests: XCTestCase {
         XCTAssertEqual(action("London", [london], saved: saved), .goTo(london, index: 2))
     }
 
-    func testSavedMeansTheSameLabelOrWithin2KmButNeverMyLocation() {
+    func testTwoPlacesSharingALabelAreNotTakenForEachOther() {
+        let richmondLondon = SavedLocation(label: "Richmond, England, GB", latitude: 51.46, longitude: -0.30)
+        let richmondYorkshire = CitySuggestion(
+            label: "Richmond, England, GB", weatherLat: 54.40, weatherLon: -1.74, admin1: "England", admin2: "North Yorkshire"
+        )
+
+        XCTAssertNil(AddLocationRules.savedIndex(of: richmondYorkshire, in: [richmondLondon]))
+        XCTAssertEqual(AddLocationRules.labelToSave(richmondYorkshire, saved: [richmondLondon]), "Richmond, North Yorkshire, England, GB")
+        XCTAssertEqual(AddLocationRules.labelToSave(richmondYorkshire, saved: []), "Richmond, England, GB")
+    }
+
+    func testSavedMeansWithin2KmOrTheSameLabelWhenNameOnlyButNeverMyLocation() {
         let myLocation = SavedLocation(label: "My Location", latitude: 55.61, longitude: 13.0, isCurrentLocation: true)
         let spelledOtherwise = SavedLocation(label: "Malmo, Skane, SE", latitude: 55.605, longitude: 13.003)
         let nameOnly = SavedLocation(label: "Malmö, Skåne County, SE", latitude: nil, longitude: nil)

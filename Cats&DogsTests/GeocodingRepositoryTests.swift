@@ -16,7 +16,8 @@ final class GeocodingRepositoryTests: XCTestCase {
         let suggestions = try! result.get()
 
         XCTAssertEqual(api.lastQuery, "Austin")
-        XCTAssertEqual(api.lastLimit, 8)
+        // OpenWeather never returns more than 5, so that's what's asked for.
+        XCTAssertEqual(api.lastLimit, 5)
         XCTAssertEqual(suggestions.count, 2)
         XCTAssertEqual(suggestions.first?.label, "Austin, TX, US")
         XCTAssertEqual(suggestions.first?.weatherLat ?? 0, 30.2672, accuracy: 0.0001)

@@ -154,14 +154,24 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    coordinates are saved, so the result is unambiguous). The button above the keyboard says what it
    will do, and the keyboard's Search key does the same: "Add Malmö, SE" adds the first row named what
    was typed (accents ignored, so "Malmo" finds Malmö). Otherwise it asks "Pick a town or city from
-   the list", as it also will when a row above the match has 20 times its population, so "Nas" never
-   adds Nås, Sweden (results with populations come with the planned Open-Meteo search; OpenWeather's
-   have none). A place already saved (the same label, or within 2 km; My Location aside) is marked
-   *Saved* and its button reads "Go to London, GB", which shows its weather. If the search fails
-   (offline, say), the button adds the typed name, which is geocoded again at launch, on returning to
-   the app, and when another location is added. *Add My Location* shows while My Location isn't
-   saved. After adding, the app goes back to where it was opened from; Manage Locations confirms
-   with "Malmö added".
+   the list", as it also will when a row above the match has `city_search_size_ratio` (20) times its
+   population, so "Nas" never adds Nås, Sweden. A place already saved (within 2 km, or the same label
+   for a name-only one; My Location aside) is marked *Saved* and its button reads "Go to London, GB",
+   which shows its weather. If the search fails (offline, say), the button adds the typed name, which
+   is geocoded again at launch, on returning to the app, and when another location is added, the same
+   way: the row named as it is, or none. *Add My Location* shows while My Location isn't saved. After
+   adding, the app goes back to where it was opened from; Manage Locations confirms with "Malmö
+   added".
+   - **The search** (SEARCH.md, which Android follows): Open-Meteo's prefix search, so "Nashv"
+     already finds Nashville, falling back to OpenWeather's whole-name search if it fails. Only
+     populated places are kept (no airports, parks, or historical, abandoned or destroyed towns),
+     rows within 2 km with the same label are one place, and places that would still read the same
+     get their county. Rows in the phone's region come first, and places with the same name nearest
+     My Location first, but neither rule lifts a place past one 20 times its size, so a US phone
+     still gets Paris, France before Paris, Texas. Text after a comma narrows the list ("Paris, TX",
+     "Richmond, North Yorkshire"), a US ZIP code finds its town, and other postcodes search nothing.
+     The six `city_search_*` Remote Config keys tune it. On the OpenWeather fallback nothing is
+     sorted, since it has no populations.
 7. **Settings** (gear), top to bottom:
    - **My Pets**: *I have a dog* turns on the walk card, the Paw Check tile, the briefing's walk
      sentence and the Walk time notification ("Walk times, pavement checks and walk reminders").
@@ -370,6 +380,7 @@ Shared with Android (the same cases on both platforms):
 - `WeatherUnitsTests`: imperial vs metric by region, Celsius conversion
 - `WeatherRepositoryTests`: repository mapping and error handling (fake API), Open-Meteo switched off by Remote Config
 - `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
+- `CitySearchTests`: what was typed (names, text after a comma, ZIP codes, postcodes), filtering, merging and county labels, and SEARCH.md's worked examples (Paris, Nas, Springfield, Portland, Birmingham, Sydney, London) against live Open-Meteo rows in `LiveSearchFixtures`; the provider, the 100 rows asked for with a comma, and falling back to OpenWeather (Android's will follow with its search)
 - `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
@@ -463,7 +474,13 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
 | `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which hours aren't suggested for a walk and the walk card says "Bad air". 3 is US "Unhealthy" and Europe's "Poor" |
-| `open_meteo_enabled` | true | Off sends forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo |
+| `open_meteo_enabled` | true | Off sends forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo, and town and city search to OpenWeather |
+| `city_search_provider` | `open_meteo` | Where search suggestions come from: `open_meteo` (prefix search) or `openweather` (whole names, at most 5). Anything else uses the default; `open_meteo_enabled` off forces `openweather` |
+| `city_search_results` | 8 (3–10) | Most suggestions shown |
+| `city_search_country_first` | true | Suggestions in the phone's region go first |
+| `city_search_nearest_first` | true | Places with the same name are listed nearest My Location first, when it's saved |
+| `city_search_size_ratio` | 20 (2–1000, or 0 for none) | Neither rule above lifts a place past one this many times its population, and Add with nothing tapped doesn't take one from under such a place |
+| `city_search_delay_ms` | 280 (100–1000) | Wait after the last keystroke before searching |
 | `air_quality_enabled` | true | Off stops fetching air quality: no Air quality tile, and the walk planner ignores the air |
 | `openweather_api_key` | "" | Replacement OpenWeather API key, used from the next launch; empty uses the key built into the app. Lets a leaked key be rotated without an update. Not secret: Remote Config values reach every device |
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |
@@ -490,7 +507,7 @@ The events and parameters match Android, so both platforms report into the same 
 | Event | Parameters | When |
 |---|---|---|
 | `onboarding_complete` | None | The last onboarding step (location) finished or was skipped |
-| `city_added` | None | A new city was saved (re-adding an existing one doesn't count) |
+| `city_added` | `source` (`suggestion`, `typed_match`, `typed_name`, `my_location`), `provider` (`open_meteo`, `openweather`) | A new location was saved (re-adding an existing one doesn't count): how, and which search found it (for a typed name or My Location, the one search would use). Never which place |
 | `settings_opened` | None | Settings opened from the gear |
 | `weather_error` | `error_key` (e.g. `offline`, `city_not_found`) | A current-weather or forecast fetch failed, even if cached data hid the error |
 
@@ -556,6 +573,6 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
 ## Credits
 
 Weather data by [OpenWeather](https://openweathermap.org/) and [Open-Meteo.com](https://open-meteo.com)
-(CC BY 4.0). Radar by [RainViewer](https://www.rainviewer.com). Base map ©
+(CC BY 4.0). Location data based on [GeoNames](https://www.geonames.org), through Open-Meteo's search. Radar by [RainViewer](https://www.rainviewer.com). Base map ©
 [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. [Baloo 2](https://github.com/EkType/Baloo2)
 by Ek Type, under the SIL Open Font License.

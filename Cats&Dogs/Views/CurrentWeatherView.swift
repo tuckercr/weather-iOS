@@ -127,8 +127,8 @@ struct CurrentWeatherView: View {
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(
                 savedLocations: cityListViewModel.locations,
-                onAdd: { location, _ in
-                    cityListViewModel.addLocation(location)
+                onAdd: { location, _, added in
+                    cityListViewModel.addLocation(location, added: added)
                     showAddLocation = false
                 },
                 onGoTo: { index in

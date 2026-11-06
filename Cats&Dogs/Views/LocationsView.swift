@@ -85,8 +85,8 @@ struct LocationsView: View {
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(
                 savedLocations: cityListViewModel.locations,
-                onAdd: { location, name in
-                    cityListViewModel.addLocation(location)
+                onAdd: { location, name, added in
+                    cityListViewModel.addLocation(location, added: added)
                     showAddLocation = false
                     let message = "\(name) added"
                     confirmation = message
