@@ -106,7 +106,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Today**: feels like, humidity, wind ("0 mph", with no direction, when calm), visibility,
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
-     and UK), and reads "Clear" at OpenWeather's 10 km cap.
+     and UK), and reads "Clear" from 10 km.
    - **Feels Like**: the feels-like temperature with its band beside it (Cold, Chilly, Mild, Warm or
      Hot), a five-colour bar and how far it is from the actual temperature ("8° warmer than it is",
      or "Same as it is" within a degree). The bands come from the pets' thresholds in Remote Config:
@@ -203,7 +203,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 
 | Data | Source |
 |---|---|
-| Current conditions, city search | OpenWeatherMap (needs the API key) |
+| Current conditions for cities with coordinates | Open-Meteo's `current` reading for the spot, so the hero and Today tiles agree with the hourly strip. OpenWeatherMap's reading is the backup when Open-Meteo fails or `open_meteo_enabled` is off. |
+| My Location's name | The phone's own place lookup (Apple's): the town, else the county, else the state. Kept until My Location moves 1 km (`Services/PlaceNames.swift`); "My Location" when the lookup fails. |
+| Current conditions for name-only cities, city search | OpenWeatherMap (needs the API key) |
 | Forecast for cities with coordinates | [Open-Meteo](https://open-meteo.com): true hourly data, UV index, and solar radiation for the pavement estimate. Free, no key. |
 | Forecast for name-only cities | OpenWeatherMap's 3-hourly `/forecast`, as a fallback |
 | Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly US and European indices per pollutant, fetched alongside the Open-Meteo forecast. Free, no key. |
@@ -368,7 +370,9 @@ Shared with Android (the same cases on both platforms):
 - `ForecastAggregatorTests`: noon slot selection, multi-day grouping, rain chance, local hour, UV
 - `OpenWeatherParsingTests`: JSON decoding for API responses, including UTC offsets and rain chance
 - `WeatherUnitsTests`: imperial vs metric by region, Celsius conversion
-- `WeatherRepositoryTests`: repository mapping and error handling (fake API), Open-Meteo switched off by Remote Config
+- `WeatherRepositoryTests`: repository mapping and error handling (fake API), Open-Meteo's reading with OpenWeather as the backup, Open-Meteo switched off by Remote Config
+- `OpenMeteoCurrentTests`: Open-Meteo's current reading mapped for the hero, today's range holding the reading
+- `PlaceNamesTests`: My Location's name kept until it moves 1 km, failed lookups tried again
 - `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
 - `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
@@ -463,7 +467,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
 | `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which hours aren't suggested for a walk and the walk card says "Bad air". 3 is US "Unhealthy" and Europe's "Poor" |
-| `open_meteo_enabled` | true | Off sends forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo |
+| `open_meteo_enabled` | true | Off sends the current reading and forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo |
 | `air_quality_enabled` | true | Off stops fetching air quality: no Air quality tile, and the walk planner ignores the air |
 | `openweather_api_key` | "" | Replacement OpenWeather API key, used from the next launch; empty uses the key built into the app. Lets a leaked key be rotated without an update. Not secret: Remote Config values reach every device |
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |

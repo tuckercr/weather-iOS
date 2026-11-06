@@ -1,7 +1,7 @@
 import Foundation
 
 struct CurrentWeather: Codable, Equatable {
-    let cityName: String
+    var cityName: String
     let conditionMain: String
     let description: String
     let iconCode: String

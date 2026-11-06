@@ -16,6 +16,13 @@ final class PreferencesStoreTests: XCTestCase {
         preferences.destroy()
     }
 
+    func testMyLocationsFallbackNameNeverBecomesTheLastCity() {
+        preferences.store.setLastCity("Paris")
+        preferences.store.setLastCity("My Location")
+
+        XCTAssertEqual(preferences.reopened().lastCity, "Paris")
+    }
+
     func testCachedWeatherAndForecastRoundTripPerLocation() async {
         let weather = await makeCurrentWeather(cityName: "Austin", temperature: 31)
         let forecast = await makeForecast(temperature: 28)

@@ -4,6 +4,7 @@ struct WeatherRepository {
     private let client: any OpenWeatherAPI
     private let openMeteo: any OpenMeteoAPI
     private let airQuality: any AirQualityAPI
+    private let placeNames: any PlaceNaming
     private let timeZone: TimeZone
     private let now: @Sendable () -> Date
     private let useOpenMeteo: @Sendable () -> Bool
@@ -13,6 +14,7 @@ struct WeatherRepository {
         client: any OpenWeatherAPI = OpenWeatherClient(),
         openMeteo: any OpenMeteoAPI = OpenMeteoClient(),
         airQuality: any AirQualityAPI = AirQualityClient(),
+        placeNames: (any PlaceNaming)? = nil,
         timeZone: TimeZone = .current,
         now: @escaping @Sendable () -> Date = { Date() },
         useOpenMeteo: (@Sendable () -> Bool)? = nil,
@@ -21,12 +23,16 @@ struct WeatherRepository {
         self.client = client
         self.openMeteo = openMeteo
         self.airQuality = airQuality
+        self.placeNames = placeNames ?? DevicePlaceNames()
         self.timeZone = timeZone
         self.now = now
         self.useOpenMeteo = useOpenMeteo ?? { RemoteConfigRepository.openMeteoEnabled }
         self.useAirQuality = useAirQuality ?? { RemoteConfigRepository.airQualityEnabled }
     }
 
+    /// With coordinates, Open-Meteo's reading for the exact spot, which agrees with the hourly strip.
+    /// OpenWeather's is the backup: when Open-Meteo fails or Remote Config switches it off, and for
+    /// name-only cities. An empty `locationLabel` (My Location) is named by the phone.
     func fetchCurrentWeather(
         units: WeatherUnits,
         locationLabel: String = "",
@@ -35,6 +41,10 @@ struct WeatherRepository {
         longitude: Double? = nil
     ) async -> Result<CurrentWeather, Error> {
         if let latitude, let longitude {
+            if useOpenMeteo(),
+               let weather = await openMeteoCurrent(units: units, locationLabel: locationLabel, latitude: latitude, longitude: longitude) {
+                return .success(weather)
+            }
             return await performCurrentFetch(
                 units: units,
                 locationLabel: locationLabel,
@@ -95,6 +105,27 @@ struct WeatherRepository {
             latitude: nil,
             longitude: nil
         )
+    }
+
+    /// Nil when Open-Meteo fails or sends no reading. The place is named only after a reading
+    /// arrives, so a failure doesn't spend one of the phone's lookups.
+    private func openMeteoCurrent(
+        units: WeatherUnits,
+        locationLabel: String,
+        latitude: Double,
+        longitude: Double
+    ) async -> CurrentWeather? {
+        guard let response = try? await openMeteo.current(latitude: latitude, longitude: longitude, units: units),
+              var weather = OpenMeteoCurrent.weather(from: response, units: units, cityName: "") else {
+            return nil
+        }
+        let label = locationLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        if label.isEmpty {
+            weather.cityName = await placeNames.name(latitude: latitude, longitude: longitude) ?? SavedLocation.myLocationLabel
+        } else {
+            weather.cityName = label
+        }
+        return weather
     }
 
     /// Puts each hour's air quality on its slot.

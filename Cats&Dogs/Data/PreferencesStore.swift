@@ -187,6 +187,9 @@ final class PreferencesStore {
     }
 
     func setLastCity(_ cityName: String) {
+        // My Location's name when the phone couldn't name it: no city to look up if the list is
+        // ever rebuilt from this.
+        guard cityName != SavedLocation.myLocationLabel else { return }
         defaults.set(cityName, forKey: lastCityKey)
     }
 
