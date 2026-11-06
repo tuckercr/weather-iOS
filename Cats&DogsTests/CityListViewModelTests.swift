@@ -55,6 +55,48 @@ final class CityListViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.locations, [austin])
     }
 
+    func testUpdateCurrentLocationSaysWhetherMyLocationMoved() {
+        preferences.store.setSavedLocations([myLocation])
+        let viewModel = makeViewModel()
+
+        XCTAssertFalse(viewModel.updateCurrentLocation(SavedLocation(label: "My Location", latitude: 40.001, longitude: -83, isCurrentLocation: true)))
+        XCTAssertTrue(viewModel.updateCurrentLocation(SavedLocation(label: "My Location", latitude: 40.1, longitude: -83, isCurrentLocation: true)))
+    }
+
+    // MARK: - Following a move made in storage
+
+    func testAMoveMadeInStorageWhileOpenIsTakenUp() {
+        preferences.store.setSavedLocations([austin, myLocation])
+        let viewModel = makeViewModel()
+
+        // Follow my location, while the screen is open.
+        XCTAssertTrue(preferences.store.moveMyLocation(latitude: 40.1, longitude: -83))
+        viewModel.followStoredMyLocation()
+
+        let moved = SavedLocation(label: "My Location", latitude: 40.1, longitude: -83, isCurrentLocation: true)
+        XCTAssertEqual(viewModel.locations, [austin, moved])
+    }
+
+    func testFollowingTheStoredListChangesNothingWhenMyLocationHasntMoved() {
+        preferences.store.setSavedLocations([austin, myLocation])
+        let viewModel = makeViewModel()
+        viewModel.addLocation(denver)
+
+        viewModel.followStoredMyLocation()
+
+        XCTAssertEqual(viewModel.locations.map(\.label), ["Austin", "My Location", "Denver"])
+    }
+
+    func testACheckMadeByPullToRefreshHoldsOffTheNextOnReturn() {
+        let viewModel = makeViewModel()
+        let pulled = Date(timeIntervalSince1970: 1_793_990_000)
+
+        viewModel.noteMyLocationChecked(now: pulled)
+
+        XCTAssertFalse(viewModel.claimMyLocationCheck(now: pulled.addingTimeInterval(60)))
+        XCTAssertTrue(viewModel.claimMyLocationCheck(now: pulled.addingTimeInterval(CityListViewModel.myLocationCheckInterval)))
+    }
+
     // MARK: - init
 
     func testInitLoadsSavedLocationsAndActiveIndex() {

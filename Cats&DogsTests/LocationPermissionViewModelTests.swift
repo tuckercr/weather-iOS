@@ -53,6 +53,34 @@ final class LocationPermissionViewModelTests: XCTestCase {
         )
     }
 
+    func testCurrentPositionWaitsForAFixAndLeavesTheStateAlone() async {
+        let viewModel = LocationPermissionViewModel(
+            authorizationStatus: { .authorizedAlways },
+            locationFetcher: { CLLocation(latitude: 36.03, longitude: -84.1) }
+        )
+
+        let here = await viewModel.currentPosition()
+
+        XCTAssertEqual(here, SavedLocation(label: "My Location", latitude: 36.03, longitude: -84.1, isCurrentLocation: true))
+        XCTAssertEqual(viewModel.state, .idle)
+    }
+
+    func testCurrentPositionIsNilWithoutPermissionOrAFix() async {
+        var asked = false
+        let denied = LocationPermissionViewModel(
+            authorizationStatus: { .denied },
+            locationFetcher: { asked = true; return CLLocation(latitude: 1, longitude: 2) }
+        )
+        let noFix = LocationPermissionViewModel(authorizationStatus: { .authorizedWhenInUse }, locationFetcher: { nil })
+
+        let deniedPosition = await denied.currentPosition()
+        let noFixPosition = await noFix.currentPosition()
+
+        XCTAssertNil(deniedPosition)
+        XCTAssertFalse(asked)
+        XCTAssertNil(noFixPosition)
+    }
+
     func testFetchLocationFailsWhenNoCoordinatesAreReturned() async {
         let viewModel = LocationPermissionViewModel(
             authorizationStatus: { .authorizedAlways },

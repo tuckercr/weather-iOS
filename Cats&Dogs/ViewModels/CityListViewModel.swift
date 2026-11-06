@@ -100,11 +100,26 @@ final class CityListViewModel {
     }
 
     /// Moves My Location to where the device is now, after a real move (`withMyLocation`).
-    func updateCurrentLocation(_ location: SavedLocation) {
+    /// True when My Location moved.
+    @discardableResult
+    func updateCurrentLocation(_ location: SavedLocation) -> Bool {
         guard let latitude = location.latitude, let longitude = location.longitude,
-              let updated = locations.withMyLocation(atLatitude: latitude, longitude: longitude) else { return }
+              let updated = locations.withMyLocation(atLatitude: latitude, longitude: longitude) else { return false }
         locations = updated
         preferences.setSavedLocations(updated)
+        return true
+    }
+
+    /// Takes up My Location's position as stored, where Follow my location (and the background
+    /// refresh) moves it, so a move made while the app is open shows at once. Same as Android's
+    /// `followStoredMyLocation`.
+    func followStoredMyLocation() {
+        guard let stored = preferences.savedLocations.first(where: \.isCurrentLocation),
+              let index = locations.firstIndex(where: \.isCurrentLocation),
+              locations[index] != stored else { return }
+        var updated = locations
+        updated[index] = stored
+        locations = updated
     }
 
     /// Checking whether My Location has moved happens at most this often, so switching in and out of
@@ -119,6 +134,12 @@ final class CityListViewModel {
         }
         myLocationCheckedAt = now
         return true
+    }
+
+    /// A check made anyway (pull to refresh asks whatever the interval), so returning to the app
+    /// straight after doesn't make another.
+    func noteMyLocationChecked(now: Date = Date()) {
+        myLocationCheckedAt = now
     }
 
     func removeLocation(at index: Int) {
