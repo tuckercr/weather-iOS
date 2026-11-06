@@ -10,7 +10,7 @@ enum WeatherErrorMessages {
             // `pullToRetry`, as pulling to refresh is the only way to retry there.
             "Misty knocked the Wi-Fi off the shelf."
         case "city_not_found":
-            "We couldn't find that city. Try a different search."
+            "We couldn't find that town or city. Try a different search."
         case "missing_api_key", "bad_api_key":
             "Weather service is not configured. Check your API key in Secrets.plist."
         case "rate_limited":

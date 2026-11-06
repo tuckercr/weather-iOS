@@ -148,15 +148,26 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      clock on, so hours that have passed drop off and a screen left open overnight keeps up.
    - The hourly strip, the next-rain line, the Rain outlook card, the walk card, the radar, air
      quality and the rest of the week can each be switched off from Remote Config.
-6. **Add city** (＋): search with geocoding suggestions; choosing a suggestion pins exact coordinates.
-   **Add city** without choosing one takes the top suggestion. A name with no suggestions at all is
-   added as typed and geocoded again at launch, on returning to the app, and when another city is added.
+6. **Add location**: a full-screen cover, opened from *Add location* in Manage Locations or on the
+   empty weather screen, and closed with its X. Results appear right under the field, the name above
+   its state and country, with the letters typed so far in bold. Tapping a row adds it (its
+   coordinates are saved, so the result is unambiguous). The button above the keyboard says what it
+   will do, and the keyboard's Search key does the same: "Add Malmö, SE" adds the first row named what
+   was typed (accents ignored, so "Malmo" finds Malmö). Otherwise it asks "Pick a town or city from
+   the list", as it also will when a row above the match has 20 times its population, so "Nas" never
+   adds Nås, Sweden (results with populations come with the planned Open-Meteo search; OpenWeather's
+   have none). A place already saved (the same label, or within 2 km; My Location aside) is marked
+   *Saved* and its button reads "Go to London, GB", which shows its weather. If the search fails
+   (offline, say), the button adds the typed name, which is geocoded again at launch, on returning to
+   the app, and when another location is added. *Add My Location* shows while My Location isn't
+   saved. After adding, the app goes back to where it was opened from; Manage Locations confirms
+   with "Malmö added".
 7. **Settings** (gear), top to bottom:
    - **My Pets**: *I have a dog* turns on the walk card, the Paw Check tile, the briefing's walk
      sentence and the Walk time notification ("Walk times, pavement checks and walk reminders").
-   - **My Locations**: *Manage locations* to add, reorder and delete cities (swipe, or Edit). A bell
-     marks the city notifications are for: My Location, otherwise the top city. The city tabs on the
-     main screen choose which city it shows.
+   - **My Locations**: *Manage locations* to reorder and delete locations (swipe, or Edit), with *Add
+     location* under the list. A bell marks the location notifications are for: My Location,
+     otherwise the top location. The city tabs on the main screen choose which city it shows.
    - **Notifications**: a row showing how many are on ("2 on", or "Off"), which opens its own screen:
      - Asks for permission if it hasn't been given (in-app while never asked, since iOS has no
        Settings entry yet; a denied one links to this app's notification settings in iOS Settings).
@@ -358,7 +369,7 @@ Shared with Android (the same cases on both platforms):
 - `OpenWeatherParsingTests`: JSON decoding for API responses, including UTC offsets and rain chance
 - `WeatherUnitsTests`: imperial vs metric by region, Celsius conversion
 - `WeatherRepositoryTests`: repository mapping and error handling (fake API), Open-Meteo switched off by Remote Config
-- `GeocodingRepositoryTests`: suggestion formatting and validation (fake API)
+- `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
 - `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
@@ -368,7 +379,8 @@ Shared with Android (the same cases on both platforms):
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
 - `CityListViewModelTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
 - `WeatherForecastViewModelTests`: request routing, cache-first display, error mapping, silent background refresh, the foreground-refresh window, analytics events, and races between overlapping requests
-- `GeoLocationViewModelTests`: debounced search, latest-input-wins, suggestion pinning, reset
+- `GeoLocationViewModelTests`: debounced search, latest-input-wins, a failed search told apart from finding nothing
+- `AddLocationRulesTests`: Add location's button: the first row named what was typed (accents ignored), the size check that stops "Nas" adding Nås, saved places (label or within 2 km, never My Location) gone to, and failed or empty searches
 - `LocationPermissionViewModelTests`: denied, located and failed states
 - `SettingsViewModelTests`: unit override persistence, clear cache, permission requests, usage-sharing opt-out, the walk card setting
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event

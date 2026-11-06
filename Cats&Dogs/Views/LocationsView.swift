@@ -1,9 +1,14 @@
 import SwiftUI
 
+/// Manage Locations: reorder and remove, and the Add location row, which opens the full-screen
+/// `AddLocationView`.
 struct LocationsView: View {
     @Bindable var cityListViewModel: CityListViewModel
-    @Bindable var geoViewModel: GeoLocationViewModel
-    @State private var showAddSheet = false
+    /// Back to the weather screen, after Add location's Go to picks a place already saved.
+    let onShowWeather: () -> Void
+    @State private var showAddLocation = false
+    /// "Malmö added", shown for a few seconds after adding.
+    @State private var confirmation: String?
 
     var body: some View {
         List {
@@ -36,9 +41,16 @@ struct LocationsView: View {
                     cityListViewModel.reorderLocations(from: source, to: destination)
                 }
             } footer: {
-                Label("Notifications are for My Location, otherwise the top city.", systemImage: "bell.fill")
+                Label("Notifications are for My Location, otherwise the top location.", systemImage: "bell.fill")
                     .font(.footnote)
                     .foregroundStyle(Color.secondaryText)
+            }
+            Section {
+                Button {
+                    showAddLocation = true
+                } label: {
+                    Label("Add location", systemImage: "plus")
+                }
             }
         }
         .scrollContentBackground(.hidden)
@@ -46,42 +58,48 @@ struct LocationsView: View {
         .navigationTitle("Manage Locations")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showAddSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel("Add location")
-            }
             ToolbarItem(placement: .topBarLeading) {
                 EditButton()
             }
         }
-        .sheet(isPresented: $showAddSheet) {
-            AddCitySheet(
+        .overlay(alignment: .bottom) {
+            if let confirmation {
+                Text(confirmation)
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.systemBackground))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.label).opacity(0.88), in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: confirmation)
+        .task(id: confirmation) {
+            guard confirmation != nil else { return }
+            try? await Task.sleep(for: .seconds(3))
+            confirmation = nil
+        }
+        .fullScreenCover(isPresented: $showAddLocation) {
+            AddLocationView(
                 savedLocations: cityListViewModel.locations,
-                geoViewModel: geoViewModel,
-                onAddCity: {
-                    addCityFromSheet()
-                    showAddSheet = false
+                onAdd: { location, name in
+                    cityListViewModel.addLocation(location)
+                    showAddLocation = false
+                    let message = "\(name) added"
+                    confirmation = message
+                    AccessibilityNotification.Announcement(message).post()
                 },
-                onRemoveSaved: { index in
-                    cityListViewModel.removeLocation(at: index)
+                onGoTo: { index in
+                    cityListViewModel.setActiveIndex(index)
+                    showAddLocation = false
+                    onShowWeather()
                 },
-                onAddMyLocation: { cityListViewModel.addLocation($0) },
-                onDismiss: {
-                    geoViewModel.reset()
-                    showAddSheet = false
-                }
+                onClose: { showAddLocation = false }
             )
         }
-    }
-
-    private func addCityFromSheet() {
-        guard let location = geoViewModel.locationToAdd else { return }
-        cityListViewModel.addLocation(location)
-        geoViewModel.reset()
     }
 }
 
@@ -89,7 +107,7 @@ struct LocationsView: View {
     NavigationStack {
         LocationsView(
             cityListViewModel: CityListViewModel(),
-            geoViewModel: GeoLocationViewModel()
+            onShowWeather: {}
         )
     }
 }

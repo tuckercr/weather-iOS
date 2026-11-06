@@ -9,7 +9,6 @@ private enum AppScreen: Hashable {
 struct RootView: View {
     @State private var welcomeViewModel = WelcomeViewModel()
     @State private var cityListViewModel = CityListViewModel()
-    @State private var geoViewModel = GeoLocationViewModel()
     @State private var weatherViewModel = WeatherForecastViewModel()
     @State private var settingsViewModel = SettingsViewModel()
     @State private var path: [AppScreen] = []
@@ -50,7 +49,6 @@ struct RootView: View {
                     NavigationStack(path: $path) {
                         CurrentWeatherView(
                             cityListViewModel: cityListViewModel,
-                            geoViewModel: geoViewModel,
                             weatherViewModel: weatherViewModel,
                             settingsViewModel: settingsViewModel,
                             onOpenSettings: {
@@ -79,7 +77,7 @@ struct RootView: View {
                             case .locations:
                                 LocationsView(
                                     cityListViewModel: cityListViewModel,
-                                    geoViewModel: geoViewModel
+                                    onShowWeather: { path.removeAll() }
                                 )
                             }
                         }
