@@ -103,7 +103,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Weather icons** are bundled with the app (vector assets drawn in the pets' style, with the
      pets' navy outline so they read on light and dark cards). Night icons show the moon's phase for
      that hour.
-   - **Today**: feels like, humidity, wind ("0 mph", with no direction, when calm), visibility,
+   - **Today**: feels like, humidity, wind ("0 mph" and "Calm" when calm), visibility,
      cloud cover, UV index (daytime only), sunrise and sunset. Visibility is in miles or km to
      match the units (for "Use system setting", the device's measurement system: miles in the US
      and UK), and reads "Clear" from 10 km.
@@ -112,6 +112,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      or "Same as it is" within a degree). The bands come from the pets' thresholds in Remote Config:
      Cold and Hot at `pet_cold_threshold_c` and `pet_hot_threshold_c`, Mild across the walk comfort
      range, and Chilly and Warm between. The bar's end bands reach 10 °C past the pets' limits.
+   - **Wind**: the speed beside a windsock drawn in code, which hangs limp when it's calm and lifts
+     steadily until it flies straight out from a strong breeze (24 mph, 10.8 m/s). Underneath,
+     where the wind comes from ("From the SW") and the gusts when they're at least 5 mph (2.2 m/s)
+     above the wind ("From the SW, gusts 24"); "Calm" when there's none. VoiceOver also hears the
+     Beaufort name ("moderate breeze"). Gusts come with the current reading from both providers.
    - **Paw Check** (with a dog): the estimated temperature of dark pavement in direct sun ("About
      128 °F"), five paws from icy to dangerous with the pavement's own full size and colour (blue,
      green, orange, red and maroon), and a line about paws ("Too hot for paws"). Icy and below

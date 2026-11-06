@@ -33,6 +33,7 @@ enum OpenMeteoCurrent {
             pressureHpa: Int((reading.seaLevelPressure ?? 0).rounded()),
             windSpeed: reading.windSpeed ?? 0,
             windDeg: reading.windDirection ?? 0,
+            windGust: reading.windGusts,
             visibilityMeters: reading.visibility.map { Int($0.rounded()) },
             cloudPercent: reading.cloudCover ?? 0,
             units: units,

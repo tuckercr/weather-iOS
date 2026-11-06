@@ -19,7 +19,8 @@ struct OpenMeteoClient: OpenMeteoAPI {
     ].joined(separator: ",")
     private static let currentFields = [
         "temperature_2m", "apparent_temperature", "relative_humidity_2m", "weather_code",
-        "cloud_cover", "pressure_msl", "wind_speed_10m", "wind_direction_10m", "visibility", "is_day",
+        "cloud_cover", "pressure_msl", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "visibility",
+        "is_day",
     ].joined(separator: ",")
 
     init(session: URLSession = .shared) {
