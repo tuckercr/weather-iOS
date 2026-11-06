@@ -66,6 +66,20 @@ final class OpenWeatherParsingTests: XCTestCase {
         XCTAssertEqual(parsed.wind.speed, 4.2, accuracy: 0.0001)
         XCTAssertEqual(parsed.main.tempMin, 0, accuracy: 0.0001)
         XCTAssertNil(parsed.visibility)
+        XCTAssertNil(parsed.wind.gust)
+    }
+
+    func testParsesGustsWhenSent() throws {
+        let json = """
+        { "name": "Austin", "weather": [{ "main": "Clear", "description": "clear sky", "icon": "01d" }],
+          "main": { "temp": 21.3, "feels_like": 20.1, "humidity": 55 },
+          "wind": { "speed": 6.2, "deg": 225, "gust": 10.7 } }
+        """
+
+        let parsed = try decoder.decode(CurrentWeatherResponse.self, from: Data(json.utf8))
+
+        XCTAssertEqual(parsed.wind.gust, 10.7)
+        XCTAssertEqual(parsed.wind.deg, 225)
     }
 
     func testParsesForecastPayloadList() throws {

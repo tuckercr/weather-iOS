@@ -18,6 +18,7 @@ final class OpenMeteoCurrentTests: XCTestCase {
         XCTAssertEqual(weather.pressureHpa, 1015)
         XCTAssertEqual(weather.windSpeed, 1.1)
         XCTAssertEqual(weather.windDeg, 267)
+        XCTAssertEqual(weather.windGust, 9.8)
         XCTAssertEqual(weather.visibilityMeters, 29_300)
         XCTAssertEqual(weather.cloudPercent, 5)
         XCTAssertEqual(weather.units, .imperial)
@@ -51,13 +52,14 @@ final class OpenMeteoCurrentTests: XCTestCase {
         {"utc_offset_seconds":-18000,
          "current":{"time":1793986200,"interval":900,"temperature_2m":63.3,"apparent_temperature":63.8,
                     "relative_humidity_2m":62,"weather_code":0,"cloud_cover":5,"pressure_msl":1014.8,
-                    "wind_speed_10m":1.1,"wind_direction_10m":267,"visibility":29300.0,"is_day":1},
+                    "wind_speed_10m":1.1,"wind_direction_10m":267,"wind_gusts_10m":9.8,"visibility":29300.0,"is_day":1},
          "daily":{"time":[1793941200],"sunrise":[1793966580],"sunset":[1794004500],
                   "temperature_2m_max":[65.6],"temperature_2m_min":[48.0]}}
         """
         let response = try JSONDecoder().decode(OpenMeteoCurrentResponse.self, from: Data(json.utf8))
         XCTAssertEqual(response.current.temperature, 63.3)
         XCTAssertEqual(response.current.visibility, 29_300)
+        XCTAssertEqual(response.current.windGusts, 9.8)
         XCTAssertEqual(response.daily.temperatureMax, [65.6])
         XCTAssertEqual(response.daily.sunrise, [1_793_966_580])
     }

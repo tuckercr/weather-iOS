@@ -13,6 +13,9 @@ struct CurrentWeather: Codable, Equatable {
     let pressureHpa: Int
     let windSpeed: Double
     let windDeg: Int
+    /// The strongest gusts now, in the wind speed's units; nil when the provider doesn't say, and in
+    /// data cached before it was recorded.
+    var windGust: Double? = nil
     let visibilityMeters: Int?
     let cloudPercent: Int
     let units: WeatherUnits
