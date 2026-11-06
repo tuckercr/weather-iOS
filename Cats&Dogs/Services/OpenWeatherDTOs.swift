@@ -96,21 +96,26 @@ struct MainDTO: Decodable {
 struct WindDTO: Decodable {
     let speed: Double
     let deg: Int
+    /// Only sent when there are gusts.
+    let gust: Double?
 
-    init(speed: Double, deg: Int = 0) {
+    init(speed: Double, deg: Int = 0, gust: Double? = nil) {
         self.speed = speed
         self.deg = deg
+        self.gust = gust
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         speed = try container.decode(Double.self, forKey: .speed)
         deg = try container.decodeIfPresent(Int.self, forKey: .deg) ?? 0
+        gust = try container.decodeIfPresent(Double.self, forKey: .gust)
     }
 
     enum CodingKeys: String, CodingKey {
         case speed
         case deg
+        case gust
     }
 }
 

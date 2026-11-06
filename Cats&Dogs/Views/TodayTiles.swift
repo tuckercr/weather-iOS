@@ -119,24 +119,28 @@ struct TodayTiles: View {
         return Color(hex: colorScheme == .dark ? dark : light)
     }
 
+    /// The speed beside a windsock whose droop shows the strength, with where the wind comes from
+    /// and any gusts that stand out underneath.
     private var wind: some View {
-        let force = TodayDetails.windForce(speed: weather.windSpeed, units: weather.units)
-        let calm = force == 0 || WeatherFormatting.isCalm(weather.windSpeed, units: weather.units)
+        let note = TodayDetails.windNote(
+            speed: weather.windSpeed,
+            deg: weather.windDeg,
+            gust: weather.windGust,
+            units: weather.units
+        )
         return Tile(icon: "wind", label: "Wind") {
-            HStack(spacing: 10) {
-                WindCompass(fromDegrees: calm ? nil : weather.windDeg)
-                    .frame(width: 36, height: 36)
-                    .accessibilityHidden(true)
+            HStack(alignment: .center, spacing: 8) {
                 TileValue(WeatherFormatting.wind(weather.windSpeed, units: weather.units))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                Windsock(droopDegrees: TodayDetails.windsockDroopDegrees(speed: weather.windSpeed, units: weather.units))
+                    .frame(width: 40, height: 40)
+                    .accessibilityHidden(true)
             }
-            // The arrow shows the direction, so the note is just the wind's name; VoiceOver, which
-            // can't see the arrow, hears the direction too.
-            TileNote(
-                calm ? "Calm" : TodayDetails.windForceNames[force],
-                spoken: calm
-                    ? nil
-                    : "From the \(TodayDetails.spokenCompassPoint(weather.windDeg)), \(TodayDetails.windForceNames[force])"
-            )
+            TileNote(note.text, spoken: note.spoken)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
     }
 
@@ -493,38 +497,48 @@ private struct BandBar: View {
     }
 }
 
-/// A compass dial with N at the top and an arrow pointing the way the wind blows, as Apple and Google
-/// Weather draw it: a wind from the NW points SE. No arrow when it's calm.
-private struct WindCompass: View {
-    let fromDegrees: Int?
+/// A windsock on its pole, side on: limp when calm, flying straight out in a strong breeze. Five
+/// stripes, orange and white, narrowing to the tail. Same drawing as Android's `Windsock`.
+private struct Windsock: View {
+    /// Below the horizontal, from `TodayDetails.windsockDroopDegrees`.
+    let droopDegrees: Double
+    @Environment(\.colorScheme) private var colorScheme
+
+    private static let orange = Color(hex: 0xF08C2E)
+    private static let seam = Color(hex: 0xB3621C)
 
     var body: some View {
         Canvas { context, size in
-            let center = CGPoint(x: size.width / 2, y: size.height / 2)
-            let radius = min(size.width, size.height) / 2 - 1
-            let ring = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
-            context.stroke(ring, with: .color(Color.accent.opacity(0.35)), lineWidth: 1.5)
-            context.draw(
-                Text("N").font(.system(size: 8, weight: .medium)).foregroundStyle(Color.accent),
-                at: CGPoint(x: center.x, y: center.y - radius + 6)
-            )
-            guard let fromDegrees else { return }
-            // Drawn pointing north, then turned to point downwind (from + 180°).
-            var arrowContext = context
-            arrowContext.translateBy(x: center.x, y: center.y)
-            arrowContext.rotate(by: .degrees(Double(fromDegrees) + 180))
-            let reach = radius * 0.5
-            var shaft = Path()
-            shaft.move(to: CGPoint(x: 0, y: reach))
-            shaft.addLine(to: CGPoint(x: 0, y: -reach))
-            arrowContext.stroke(shaft, with: .color(.accent), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-            let head = radius * 0.32
-            var tip = Path()
-            tip.move(to: CGPoint(x: 0, y: -reach - 2))
-            tip.addLine(to: CGPoint(x: -head * 0.7, y: -reach + head * 0.6))
-            tip.addLine(to: CGPoint(x: head * 0.7, y: -reach + head * 0.6))
-            tip.closeSubpath()
-            arrowContext.fill(tip, with: .color(.accent))
+            // Low enough that the mouth clears the top when it flies straight out.
+            let pivot = CGPoint(x: 3, y: 7)
+            var pole = Path()
+            pole.move(to: CGPoint(x: pivot.x, y: 1.5))
+            pole.addLine(to: CGPoint(x: pivot.x, y: size.height - 1.5))
+            let poleColor = Color(hex: colorScheme == .dark ? 0xB4B2A9 : 0x5F5E5A)
+            context.stroke(pole, with: .color(poleColor), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+
+            // Drawn flying straight out to the right of the pivot, then turned down by the droop.
+            var sock = context
+            sock.translateBy(x: pivot.x, y: pivot.y)
+            sock.rotate(by: .degrees(droopDegrees))
+            let length = min(size.width - pivot.x - 2, size.height - pivot.y - 2)
+            let mouth = length * 0.17
+            let tail = length * 0.08
+            let stripes = 5
+            for stripe in 0 ..< stripes {
+                let x0 = length * Double(stripe) / Double(stripes)
+                let x1 = length * Double(stripe + 1) / Double(stripes)
+                let h0 = mouth + (tail - mouth) * Double(stripe) / Double(stripes)
+                let h1 = mouth + (tail - mouth) * Double(stripe + 1) / Double(stripes)
+                var band = Path()
+                band.move(to: CGPoint(x: x0, y: -h0))
+                band.addLine(to: CGPoint(x: x1, y: -h1))
+                band.addLine(to: CGPoint(x: x1, y: h1))
+                band.addLine(to: CGPoint(x: x0, y: h0))
+                band.closeSubpath()
+                sock.fill(band, with: .color(stripe.isMultiple(of: 2) ? Self.orange : .white))
+                sock.stroke(band, with: .color(Self.seam), lineWidth: 0.6)
+            }
         }
     }
 }

@@ -108,13 +108,18 @@ struct WeatherRequest: Equatable {
 let fixtureDayStart = 1_704_067_200
 
 /// Open-Meteo fake that returns `response` (or throws `error`) and records the coordinates asked for.
+/// The current reading fails unless `currentResponse` is set, so tests written around OpenWeather's
+/// reading get it as the backup.
 final class StubOpenMeteoAPI: OpenMeteoAPI, @unchecked Sendable {
     private(set) var requests: [(latitude: Double, longitude: Double, units: WeatherUnits)] = []
+    private(set) var currentRequests: [(latitude: Double, longitude: Double, units: WeatherUnits)] = []
     var response: OpenMeteoResponse
+    var currentResponse: OpenMeteoCurrentResponse?
     var error: Error?
 
-    init(response: OpenMeteoResponse = openMeteoResponse(), error: Error? = nil) {
+    init(response: OpenMeteoResponse = openMeteoResponse(), currentResponse: OpenMeteoCurrentResponse? = nil, error: Error? = nil) {
         self.response = response
+        self.currentResponse = currentResponse
         self.error = error
     }
 
@@ -123,6 +128,63 @@ final class StubOpenMeteoAPI: OpenMeteoAPI, @unchecked Sendable {
         if let error { throw error }
         return response
     }
+
+    func current(latitude: Double, longitude: Double, units: WeatherUnits) async throws -> OpenMeteoCurrentResponse {
+        currentRequests.append((latitude, longitude, units))
+        if let error { throw error }
+        guard let currentResponse else { throw OpenWeatherClientError.network }
+        return currentResponse
+    }
+}
+
+/// Names places with `name`, recording what it was asked.
+final class StubPlaceNames: PlaceNaming, @unchecked Sendable {
+    private(set) var requests: [(latitude: Double, longitude: Double)] = []
+    var name: String?
+
+    init(name: String? = nil) {
+        self.name = name
+    }
+
+    func name(latitude: Double, longitude: Double) async -> String? {
+        requests.append((latitude, longitude))
+        return name
+    }
+}
+
+/// An Open-Meteo current reading: 63.3° feeling like 63.8°, clear, by day, with today's range.
+func openMeteoCurrentResponse(
+    time: Int? = fixtureDayStart + 12 * 3600,
+    temperature: Double? = 63.3,
+    weatherCode: Int = 0,
+    isDay: Int = 1,
+    high: Double = 65.6,
+    low: Double = 48
+) -> OpenMeteoCurrentResponse {
+    OpenMeteoCurrentResponse(
+        utcOffsetSeconds: -18_000,
+        current: OpenMeteoCurrentDTO(
+            time: time,
+            temperature: temperature,
+            apparentTemperature: 63.8,
+            relativeHumidity: 62,
+            weatherCode: weatherCode,
+            cloudCover: 5,
+            seaLevelPressure: 1014.8,
+            windSpeed: 1.1,
+            windDirection: 267,
+            windGusts: 9.8,
+            visibility: 29_300,
+            isDay: isDay
+        ),
+        daily: OpenMeteoDailyDTO(
+            time: [fixtureDayStart + 18_000],
+            sunrise: [fixtureDayStart + 18_000 + 7 * 3600],
+            sunset: [fixtureDayStart + 18_000 + 17 * 3600],
+            temperatureMax: [high],
+            temperatureMin: [low]
+        )
+    )
 }
 
 /// Air quality fake: no hourly readings unless `hourlyIndices` (US AQI by hour) are set; throws `error` if set.

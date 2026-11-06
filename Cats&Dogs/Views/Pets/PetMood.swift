@@ -2,11 +2,14 @@ import SwiftUI
 
 /// How Sunny (the dog) and Misty (the cat) react on the home screen, derived from the current conditions.
 enum PetMood: CaseIterable {
-    case sunny, cloudy, rain, storm, snow, hot, cold, night
+    /// `fair` is a clear day that's chilly or mild, `sunny` a clear day that's warm (sunglasses on).
+    case fair, sunny, cloudy, rain, storm, snow, hot, cold, night
 
     /// Precipitation and storms win over temperature, temperature extremes win over time of day,
     /// and an OpenWeatherMap icon ending in "n" means night. Hot and cold go by the feels-like
-    /// temperature, since humid heat and wind chill are what pets feel.
+    /// temperature, since humid heat and wind chill are what pets feel, and a clear day is warm by
+    /// the Feels Like tile's bands (above the walk comfort range). Same rules as Android's
+    /// `PetMood.forConditions`.
     static func forConditions(
         conditionMain: String,
         iconCode: String,
@@ -21,7 +24,10 @@ enum PetMood: CaseIterable {
             if feelsLikeC >= thresholds.petHotC { return .hot }
             if feelsLikeC <= thresholds.petColdC { return .cold }
             if iconCode.hasSuffix("n") { return .night }
-            if conditionMain.caseInsensitiveCompare("clear") == .orderedSame { return .sunny }
+            if conditionMain.caseInsensitiveCompare("clear") == .orderedSame {
+                let band = TodayDetails.feelsLikeBand(feelsLikeC: feelsLikeC, thresholds: thresholds)
+                return band == .warm ? .sunny : .fair
+            }
             return .cloudy
         }
     }
@@ -30,6 +36,7 @@ enum PetMood: CaseIterable {
     /// always uses `ink`.
     var skyColor: Color {
         switch self {
+        case .fair: Color(hex: 0xFCE7B4)
         case .sunny: Color(hex: 0xFAC775)
         case .cloudy: Color(hex: 0xB3DDF2)
         case .rain: Color(hex: 0x81C7EC)
@@ -51,10 +58,15 @@ enum PetMood: CaseIterable {
     func captions(nightPart: NightPart = .evening, hasDog: Bool = true) -> [String] {
         if !hasDog, let noDog = noDogCaptions(nightPart: nightPart) { return noDog }
         return switch self {
-        case .sunny: [
+        case .fair: [
             "Perfect walkies weather! Off we go.",
             "Misty has claimed the sunniest windowsill.",
             "Sunshine and tail wags all round.",
+        ]
+        case .sunny: [
+            "Sunglasses on. It's a warm one today.",
+            "Warm out. Shady walks and plenty of water.",
+            "Misty has claimed the sunniest windowsill.",
         ]
         case .cloudy: [
             "A bit grey, but Sunny is still keen for a walk.",
@@ -104,10 +116,15 @@ enum PetMood: CaseIterable {
     /// storm and late night, which have no walks and keep their own.
     private func noDogCaptions(nightPart: NightPart) -> [String]? {
         switch self {
-        case .sunny: [
+        case .fair: [
             "Lovely day out. Misty will supervise from the window.",
             "Misty has claimed the sunniest windowsill.",
             "Sunshine and tail wags all round.",
+        ]
+        case .sunny: [
+            "Sunglasses on. It's a warm one today.",
+            "Warm out. Misty has found the coolest spot in the house.",
+            "Misty has claimed the sunniest windowsill.",
         ]
         case .cloudy: [
             "A bit grey. Misty says it's a blanket sort of day.",

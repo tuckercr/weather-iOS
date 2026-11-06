@@ -65,6 +65,9 @@ extension Array where Element == SavedLocation {
 }
 
 extension SavedLocation {
+    /// My Location's label, and its name in the hero when the phone can't name the place.
+    static let myLocationLabel = "My Location"
+
     /// How far the device has to move before My Location follows it.
     static let myLocationMoveMeters: CLLocationDistance = 1_000
 }

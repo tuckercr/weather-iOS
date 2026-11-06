@@ -48,11 +48,22 @@ struct OpenMeteoDailyDTO: Decodable {
     var time: [Int] = []
     var sunrise: [Int?] = []
     var sunset: [Int?] = []
+    /// Asked for only with the current reading, for the day's high and low.
+    var temperatureMax: [Double?] = []
+    var temperatureMin: [Double?] = []
 
-    init(time: [Int] = [], sunrise: [Int?] = [], sunset: [Int?] = []) {
+    init(
+        time: [Int] = [],
+        sunrise: [Int?] = [],
+        sunset: [Int?] = [],
+        temperatureMax: [Double?] = [],
+        temperatureMin: [Double?] = []
+    ) {
         self.time = time
         self.sunrise = sunrise
         self.sunset = sunset
+        self.temperatureMax = temperatureMax
+        self.temperatureMin = temperatureMin
     }
 
     init(from decoder: Decoder) throws {
@@ -60,10 +71,100 @@ struct OpenMeteoDailyDTO: Decodable {
         time = try c.decodeIfPresent([Int].self, forKey: .time) ?? []
         sunrise = try c.decodeIfPresent([Int?].self, forKey: .sunrise) ?? []
         sunset = try c.decodeIfPresent([Int?].self, forKey: .sunset) ?? []
+        temperatureMax = try c.decodeIfPresent([Double?].self, forKey: .temperatureMax) ?? []
+        temperatureMin = try c.decodeIfPresent([Double?].self, forKey: .temperatureMin) ?? []
     }
 
     enum CodingKeys: String, CodingKey {
         case time, sunrise, sunset
+        case temperatureMax = "temperature_2m_max"
+        case temperatureMin = "temperature_2m_min"
+    }
+}
+
+/// Response of Open-Meteo's /v1/forecast asked for the `current` reading and today's `daily` values,
+/// with `timeformat=unixtime` and `timezone=auto`.
+struct OpenMeteoCurrentResponse: Decodable {
+    var utcOffsetSeconds: Int = 0
+    var current = OpenMeteoCurrentDTO()
+    var daily = OpenMeteoDailyDTO()
+
+    enum CodingKeys: String, CodingKey {
+        case utcOffsetSeconds = "utc_offset_seconds"
+        case current, daily
+    }
+
+    init(utcOffsetSeconds: Int = 0, current: OpenMeteoCurrentDTO = OpenMeteoCurrentDTO(), daily: OpenMeteoDailyDTO = OpenMeteoDailyDTO()) {
+        self.utcOffsetSeconds = utcOffsetSeconds
+        self.current = current
+        self.daily = daily
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        utcOffsetSeconds = try c.decodeIfPresent(Int.self, forKey: .utcOffsetSeconds) ?? 0
+        current = try c.decodeIfPresent(OpenMeteoCurrentDTO.self, forKey: .current) ?? OpenMeteoCurrentDTO()
+        daily = try c.decodeIfPresent(OpenMeteoDailyDTO.self, forKey: .daily) ?? OpenMeteoDailyDTO()
+    }
+}
+
+/// The model's reading for the current 15 minutes, starting at `time`. Visibility is in metres
+/// whatever the units.
+struct OpenMeteoCurrentDTO: Decodable, Equatable {
+    var time: Int?
+    var temperature: Double?
+    var apparentTemperature: Double?
+    var relativeHumidity: Int?
+    var weatherCode: Int?
+    var cloudCover: Int?
+    var seaLevelPressure: Double?
+    var windSpeed: Double?
+    var windDirection: Int?
+    var windGusts: Double?
+    var visibility: Double?
+    var isDay: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature = "temperature_2m"
+        case apparentTemperature = "apparent_temperature"
+        case relativeHumidity = "relative_humidity_2m"
+        case weatherCode = "weather_code"
+        case cloudCover = "cloud_cover"
+        case seaLevelPressure = "pressure_msl"
+        case windSpeed = "wind_speed_10m"
+        case windDirection = "wind_direction_10m"
+        case windGusts = "wind_gusts_10m"
+        case visibility
+        case isDay = "is_day"
+    }
+
+    init(
+        time: Int? = nil,
+        temperature: Double? = nil,
+        apparentTemperature: Double? = nil,
+        relativeHumidity: Int? = nil,
+        weatherCode: Int? = nil,
+        cloudCover: Int? = nil,
+        seaLevelPressure: Double? = nil,
+        windSpeed: Double? = nil,
+        windDirection: Int? = nil,
+        windGusts: Double? = nil,
+        visibility: Double? = nil,
+        isDay: Int? = nil
+    ) {
+        self.time = time
+        self.temperature = temperature
+        self.apparentTemperature = apparentTemperature
+        self.relativeHumidity = relativeHumidity
+        self.weatherCode = weatherCode
+        self.cloudCover = cloudCover
+        self.seaLevelPressure = seaLevelPressure
+        self.windSpeed = windSpeed
+        self.windDirection = windDirection
+        self.windGusts = windGusts
+        self.visibility = visibility
+        self.isDay = isDay
     }
 }
 

@@ -19,9 +19,9 @@ final class PetMoodTests: XCTestCase {
         XCTAssertEqual(mood("Clouds", "04n", 0), .cold)
     }
 
-    func testNightIconMeansNightOtherwiseClearIsSunnyAndAnythingElseIsCloudy() {
+    func testNightIconMeansNightOtherwiseClearIsFairOrSunnyAndAnythingElseIsCloudy() {
         XCTAssertEqual(mood("Clear", "01n", 15), .night)
-        XCTAssertEqual(mood("Clear", "01d", 20), .sunny)
+        XCTAssertEqual(mood("Clear", "01d", 20), .fair)
         XCTAssertEqual(mood("Clouds", "03d", 20), .cloudy)
         XCTAssertEqual(mood("Mist", "50d", 12), .cloudy)
     }
@@ -31,7 +31,23 @@ final class PetMoodTests: XCTestCase {
 
         XCTAssertEqual(PetMood.forConditions(conditionMain: "Clear", iconCode: "01d", feelsLikeC: 26, thresholds: thresholds), .hot)
         XCTAssertEqual(PetMood.forConditions(conditionMain: "Clear", iconCode: "01d", feelsLikeC: 4, thresholds: thresholds), .cold)
-        XCTAssertEqual(mood("Clear", "01d", 26), .sunny)
+        XCTAssertEqual(mood("Clear", "01d", 26), .fair)
+    }
+
+    func testAClearDayIsSunnyOnlyWhenTheFeelsLikeTileSaysWarm() {
+        // Chilly and mild: the sun, no sunglasses.
+        XCTAssertEqual(mood("Clear", "01d", 1), .fair)
+        XCTAssertEqual(mood("Clear", "01d", 20), .fair)
+        XCTAssertEqual(mood("Clear", "01d", 27), .fair)
+        // Warm, between the walk comfort range and hot: sunglasses on.
+        XCTAssertEqual(mood("Clear", "01d", 27.5), .sunny)
+        XCTAssertEqual(mood("Clear", "01d", 29.9), .sunny)
+        XCTAssertEqual(mood("Clear", "01d", 30), .hot)
+        // A warm day that isn't clear stays cloudy.
+        XCTAssertEqual(mood("Clouds", "03d", 28), .cloudy)
+        // The comfort range comes from Remote Config too.
+        let thresholds = PetWeatherThresholds.validated(comfortMaxC: 22)
+        XCTAssertEqual(PetMood.forConditions(conditionMain: "Clear", iconCode: "01d", feelsLikeC: 23, thresholds: thresholds), .sunny)
     }
 
     func testCaptionIsStableForADayAndEveryMoodHasOne() {

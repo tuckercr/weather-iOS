@@ -73,9 +73,10 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   (`now`), which refreshes, returning to the app and a 30-minute tick move on, so past hours drop off.
 - **Data.** Repositories in `Data/` sit over the API clients in `Services/` (`OpenWeatherAPI`,
   `OpenMeteoAPI`, `GeocodingAPI` protocols, faked in tests). Cities with coordinates get their
-  forecast from Open-Meteo (hourly, UV, pavement heat, the 15-minute precipitation behind
-  `NextRain`, air quality in the same request); name-only cities fall back to OpenWeather's
-  3-hourly forecast. Open-Meteo's WMO codes are mapped to OpenWeather-style condition and icon
+  current reading and forecast from Open-Meteo (hourly, UV, pavement heat, the 15-minute
+  precipitation behind `NextRain`, air quality in the same request), with OpenWeather's reading as
+  the backup and My Location named by the phone (`PlaceNames`); name-only cities fall back to
+  OpenWeather's reading and 3-hourly forecast. Open-Meteo's WMO codes are mapped to OpenWeather-style condition and icon
   codes, so moods and icons work the same for both. `ForecastAggregator` groups slots into the
   city's local days.
 - **Cache first.** `PreferencesStore` (UserDefaults) holds the cities, settings and the last weather
@@ -84,7 +85,7 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 - **Time zones.** Everything shown for a city uses the city's time zone (`CurrentWeather.timeZone`),
   including "today", night captions and seasonal themes. Only the 8:30 notifications use the
   device clock.
-- **Pets.** `PetMood.forConditions` maps conditions to one of 8 moods, which choose the hero card's
+- **Pets.** `PetMood.forConditions` maps conditions to one of 9 moods, which choose the hero card's
   colour, ink and caption; `PetScene` draws the pets in code. A `SeasonalTheme` (built-in
   `SeasonalThemes.json`, replaceable from Remote Config `seasonal_themes`) can override the hero
   colours, caption and decorations on its dates. `WalkAdvisor` rates walks for the walk card, the

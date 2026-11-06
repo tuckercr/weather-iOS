@@ -144,6 +144,35 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertNil(TodayDetails.dewPointC(temperatureC: 20, humidityPercent: 0))
     }
 
+    func testCompassPoints() {
+        XCTAssertEqual(TodayDetails.compassPoint(0), "N")
+        XCTAssertEqual(TodayDetails.compassPoint(22), "N")
+        XCTAssertEqual(TodayDetails.compassPoint(23), "NE")
+        XCTAssertEqual(TodayDetails.compassPoint(225), "SW")
+        XCTAssertEqual(TodayDetails.compassPoint(359), "N")
+    }
+
+    func testTheWindsockLiftsWithTheWindUntilAStrongBreeze() {
+        XCTAssertEqual(TodayDetails.windsockDroopDegrees(speed: 0, units: .metric), 75)
+        XCTAssertEqual(TodayDetails.windsockDroopDegrees(speed: 5.4, units: .metric), 37.5, accuracy: 0.01)
+        XCTAssertEqual(TodayDetails.windsockDroopDegrees(speed: 14, units: .imperial), 31.6, accuracy: 0.1)
+        XCTAssertEqual(TodayDetails.windsockDroopDegrees(speed: 10.8, units: .metric), 0)
+        XCTAssertEqual(TodayDetails.windsockDroopDegrees(speed: 40, units: .imperial), 0)
+    }
+
+    func testTheWindNoteGivesTheDirectionAndGustsThatStandOut() {
+        XCTAssertEqual(TodayDetails.windNote(speed: 0.2, deg: 225, gust: 9, units: .imperial).text, "Calm")
+        let breeze = TodayDetails.windNote(speed: 14, deg: 225, gust: 24, units: .imperial)
+        XCTAssertEqual(breeze.text, "From the SW, gusts 24")
+        XCTAssertEqual(breeze.spoken, "From the southwest, moderate breeze, gusts 24 mph")
+        // 4 mph above the wind is nothing to mention; 5 is.
+        XCTAssertEqual(TodayDetails.windNote(speed: 10, deg: 270, gust: 14, units: .imperial).text, "From the W")
+        XCTAssertEqual(TodayDetails.windNote(speed: 10, deg: 270, gust: 15, units: .imperial).text, "From the W, gusts 15")
+        XCTAssertEqual(TodayDetails.windNote(speed: 10, deg: 270, gust: nil, units: .imperial).text, "From the W")
+        XCTAssertEqual(TodayDetails.windNote(speed: 3, deg: 0, gust: 6.4, units: .metric).text, "From the N, gusts 6.4")
+        XCTAssertEqual(TodayDetails.windNote(speed: 3, deg: 0, gust: 5, units: .metric).text, "From the N")
+    }
+
     func testWindForceUsesTheBeaufortScaleInEitherUnit() {
         XCTAssertEqual(TodayDetails.windForce(speed: 0.2, units: .metric), 0)
         XCTAssertEqual(TodayDetails.windForce(speed: 1, units: .imperial), 1)
