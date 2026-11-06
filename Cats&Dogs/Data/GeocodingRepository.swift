@@ -27,7 +27,9 @@ struct GeocodingRepository {
         return CitySuggestion(
             label: labelParts.joined(separator: ", "),
             weatherLat: dto.lat,
-            weatherLon: dto.lon
+            weatherLon: dto.lon,
+            name: dto.name,
+            countryCode: dto.country
         )
     }
 }

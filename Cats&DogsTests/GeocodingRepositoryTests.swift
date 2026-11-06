@@ -22,6 +22,11 @@ final class GeocodingRepositoryTests: XCTestCase {
         XCTAssertEqual(suggestions.first?.weatherLat ?? 0, 30.2672, accuracy: 0.0001)
         XCTAssertEqual(suggestions.first?.weatherLon ?? 0, -97.7431, accuracy: 0.0001)
         XCTAssertEqual(suggestions.last?.label, "London, GB")
+        // The Add location screen shows the name above the rest, and the button "Add Austin, US".
+        XCTAssertEqual(suggestions.first?.name, "Austin")
+        XCTAssertEqual(suggestions.first?.detail, "TX, US")
+        XCTAssertEqual(suggestions.first?.shortLabel, "Austin, US")
+        XCTAssertEqual(suggestions.last?.detail, "GB")
     }
 
     func testAPlaceListedTwiceIsSuggestedOnceAtItsFirstMatch() async {

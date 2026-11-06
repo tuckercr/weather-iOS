@@ -2,7 +2,6 @@ import SwiftUI
 
 struct CurrentWeatherView: View {
     @Bindable var cityListViewModel: CityListViewModel
-    @Bindable var geoViewModel: GeoLocationViewModel
     @Bindable var weatherViewModel: WeatherForecastViewModel
     /// Read here rather than passed in as values: if RootView read them, every change would rebuild
     /// the navigation stack, Settings screen included, under the user's finger.
@@ -14,7 +13,7 @@ struct CurrentWeatherView: View {
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showAddSheet = false
+    @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
     @State private var rescheduleTask: Task<Void, Never>?
     /// "Now" for the hourly strip, walk advice, captions and moon. Moved on when the app becomes
@@ -47,14 +46,8 @@ struct CurrentWeatherView: View {
         // title under the tabs' inset is drawn blurred behind the scroll edge effect.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showAddSheet = true
-                } label: {
-                    Image(systemName: "plus")
-                }
-                .accessibilityLabel("Add a city")
-            }
+            // Locations are added from Manage Locations in Settings, or the empty screen's button
+            // when there are none.
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: onOpenSettings) {
                     Image(systemName: "gearshape")
@@ -131,19 +124,18 @@ struct CurrentWeatherView: View {
             }
             fetchingMyLocationToAdd = false
         }
-        .sheet(isPresented: $showAddSheet) {
-            AddCitySheet(
+        .fullScreenCover(isPresented: $showAddLocation) {
+            AddLocationView(
                 savedLocations: cityListViewModel.locations,
-                geoViewModel: geoViewModel,
-                onAddCity: addCityFromSheet,
-                onRemoveSaved: { index in
-                    cityListViewModel.removeLocation(at: index)
+                onAdd: { location, _ in
+                    cityListViewModel.addLocation(location)
+                    showAddLocation = false
                 },
-                onAddMyLocation: { cityListViewModel.addLocation($0) },
-                onDismiss: {
-                    geoViewModel.reset()
-                    showAddSheet = false
-                }
+                onGoTo: { index in
+                    cityListViewModel.setActiveIndex(index)
+                    showAddLocation = false
+                },
+                onClose: { showAddLocation = false }
             )
         }
         .sheet(item: $selectedDay) { day in
@@ -206,16 +198,16 @@ struct CurrentWeatherView: View {
             Image(systemName: "cloud.fill")
                 .font(.system(size: 72))
                 .foregroundStyle(Color.accent.opacity(0.4))
-            Text("No cities added yet")
+            Text("No locations added yet")
                 .font(.brand(.title2))
                 .multilineTextAlignment(.center)
-            Text("Tap the + button to add your first city and get started.")
+            Text("Add your first location to get started.")
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
             Button {
-                showAddSheet = true
+                showAddLocation = true
             } label: {
-                Label("Add city", systemImage: "plus")
+                Label("Add location", systemImage: "plus")
             }
             .accentButtonStyle()
         }
@@ -340,13 +332,6 @@ struct CurrentWeatherView: View {
         guard let location = cityListViewModel.activeLocation else { return }
         weatherViewModel.backgroundRefreshCurrent(location: location)
         weatherViewModel.backgroundRefreshForecast(location: location)
-    }
-
-    private func addCityFromSheet() {
-        guard let location = geoViewModel.locationToAdd else { return }
-        cityListViewModel.addLocation(location)
-        geoViewModel.reset()
-        showAddSheet = false
     }
 }
 
