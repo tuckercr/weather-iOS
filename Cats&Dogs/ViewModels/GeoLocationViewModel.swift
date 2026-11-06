@@ -11,12 +11,24 @@ final class GeoLocationViewModel {
     /// save the typed name instead. Cleared when the text changes.
     private(set) var searchFailed = false
 
+    /// Where sorting measures from: the phone's region and My Location. Set by the screen.
+    var origin = CitySearchOrigin()
+
     private let geocodingRepository: GeocodingRepository
+    /// Remote Config's search settings, read on every search.
+    private let readPolicy: @MainActor () -> CitySearchPolicy
     private var suggestTask: Task<Void, Never>?
 
-    init(geocodingRepository: GeocodingRepository? = nil) {
-        self.geocodingRepository = geocodingRepository ?? GeocodingRepository()
+    init(
+        geocodingRepository: GeocodingRepository? = nil,
+        readPolicy: (@MainActor () -> CitySearchPolicy)? = nil
+    ) {
+        self.geocodingRepository = geocodingRepository ?? .live
+        self.readPolicy = readPolicy ?? { RemoteConfigRepository.shared.citySearchPolicy }
     }
+
+    /// The settings the next search uses, for the screen's own rules (Add's size check).
+    var policy: CitySearchPolicy { readPolicy() }
 
     func onCityInputChange(_ value: String) {
         cityInput = value
@@ -30,15 +42,17 @@ final class GeoLocationViewModel {
             return
         }
 
+        let policy = readPolicy()
+        let origin = origin
         suggestTask = Task {
             citySuggestLoading = true
-            try? await Task.sleep(for: .milliseconds(280))
+            try? await Task.sleep(for: .milliseconds(policy.delayMilliseconds))
             guard !Task.isCancelled, cityInput.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed else {
                 citySuggestLoading = false
                 return
             }
 
-            let result = await geocodingRepository.searchCities(query: trimmed)
+            let result = await geocodingRepository.searchCities(query: trimmed, policy: policy, origin: origin)
             guard !Task.isCancelled, cityInput.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed else {
                 citySuggestLoading = false
                 return

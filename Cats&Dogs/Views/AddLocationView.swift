@@ -6,8 +6,8 @@ import SwiftUI
 /// `ui/AddLocationScreen.kt`.
 struct AddLocationView: View {
     let savedLocations: [SavedLocation]
-    /// The location to save, and the name to confirm it with ("Malmö added").
-    let onAdd: (SavedLocation, String) -> Void
+    /// The location to save, the name to confirm it with ("Malmö added"), and how, for `city_added`.
+    let onAdd: (SavedLocation, String, CityAdded) -> Void
     /// A place already saved, at this index: show its weather.
     let onGoTo: (Int) -> Void
     let onClose: () -> Void
@@ -18,7 +18,7 @@ struct AddLocationView: View {
 
     init(
         savedLocations: [SavedLocation],
-        onAdd: @escaping (SavedLocation, String) -> Void,
+        onAdd: @escaping (SavedLocation, String, CityAdded) -> Void,
         onGoTo: @escaping (Int) -> Void,
         onClose: @escaping () -> Void,
         geoViewModel: GeoLocationViewModel? = nil
@@ -27,7 +27,10 @@ struct AddLocationView: View {
         self.onAdd = onAdd
         self.onGoTo = onGoTo
         self.onClose = onClose
-        _geoViewModel = State(initialValue: geoViewModel ?? GeoLocationViewModel())
+        let viewModel = geoViewModel ?? GeoLocationViewModel()
+        // Sorting measures from the phone's region and My Location, both already on the phone.
+        viewModel.origin = CitySearchOrigin.current(savedLocations: savedLocations)
+        _geoViewModel = State(initialValue: viewModel)
     }
 
     private var query: String {
@@ -40,7 +43,8 @@ struct AddLocationView: View {
             suggestions: geoViewModel.citySuggestions,
             searching: geoViewModel.citySuggestLoading,
             searchFailed: geoViewModel.searchFailed,
-            saved: savedLocations
+            saved: savedLocations,
+            sizeRatio: geoViewModel.policy.sizeRatio
         )
     }
 
@@ -87,6 +91,7 @@ struct AddLocationView: View {
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 actionBar
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(Color.brandSurface)
@@ -106,7 +111,7 @@ struct AddLocationView: View {
         // The screen stays open until the fix arrives, then adds it and closes.
         .onChange(of: locationViewModel.state) { _, state in
             if case .located(let location) = state {
-                onAdd(location, location.label)
+                onAdd(location, location.label, CityAdded(source: .myLocation, provider: geoViewModel.policy.provider))
             }
         }
     }
@@ -183,7 +188,7 @@ struct AddLocationView: View {
             if let savedIndex {
                 onGoTo(savedIndex)
             } else {
-                add(suggestion)
+                add(suggestion, source: .suggestion)
             }
         } label: {
             HStack {
@@ -267,21 +272,30 @@ struct AddLocationView: View {
     private func runAction() {
         switch action {
         case .add(let suggestion):
-            add(suggestion)
+            add(suggestion, source: .typedMatch)
         case .goTo(_, let index):
             onGoTo(index)
         case .addByName(let name):
-            onAdd(SavedLocation(label: name, latitude: nil, longitude: nil), name)
+            onAdd(
+                SavedLocation(label: name, latitude: nil, longitude: nil),
+                name,
+                CityAdded(source: .typedName, provider: geoViewModel.policy.provider)
+            )
         case .none, .pickFromList, .notFound:
             // Return would otherwise put the keyboard away with nothing done.
             searchFocused = true
         }
     }
 
-    private func add(_ suggestion: CitySuggestion) {
+    private func add(_ suggestion: CitySuggestion, source: CityAddedSource) {
         onAdd(
-            SavedLocation(label: suggestion.label, latitude: suggestion.weatherLat, longitude: suggestion.weatherLon),
-            suggestion.name
+            SavedLocation(
+                label: AddLocationRules.labelToSave(suggestion, saved: savedLocations),
+                latitude: suggestion.weatherLat,
+                longitude: suggestion.weatherLon
+            ),
+            suggestion.name,
+            CityAdded(source: source, provider: suggestion.provider)
         )
     }
 }
@@ -289,7 +303,7 @@ struct AddLocationView: View {
 #Preview {
     AddLocationView(
         savedLocations: [SavedLocation(label: "London, England, GB", latitude: 51.51, longitude: -0.13)],
-        onAdd: { _, _ in },
+        onAdd: { _, _, _ in },
         onGoTo: { _ in },
         onClose: {}
     )

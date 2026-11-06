@@ -22,9 +22,9 @@ enum AddLocationAction: Equatable {
 enum AddLocationRules {
     /// The shortest text that's searched, as in `GeoLocationViewModel`.
     static let minSearchLength = 2
-    /// Add with nothing tapped can't take a row past one this many times its population. SEARCH.md's
-    /// `city_search_size_ratio` default; it becomes that Remote Config key with the new search.
-    static let sizeRatio = 20
+    /// Add with nothing tapped can't take a row past one this many times its population: Remote
+    /// Config `city_search_size_ratio`'s default.
+    static let sizeRatio = CitySearchPolicy.standard.sizeRatio
     /// Two places closer than this are the same place (SEARCH.md, "Already saved").
     static let samePlaceMeters: CLLocationDistance = 2_000
 
@@ -65,23 +65,36 @@ enum AddLocationRules {
         return passesAll ? match : nil
     }
 
-    private static func canPass(_ row: CitySuggestion, above: CitySuggestion, sizeRatio: Int) -> Bool {
+    /// Whether `row` may be put above `above`: the size guard, shared with `CitySearchRanking`.
+    static func canPass(_ row: CitySuggestion, above: CitySuggestion, sizeRatio: Int) -> Bool {
         guard sizeRatio > 0, let abovePopulation = above.population else { return true }
         guard let population = row.population else { return false }
         return abovePopulation < sizeRatio * population
     }
 
-    /// Where `suggestion` already is in the saved list: the same label, or within `samePlaceMeters`
-    /// (labels miss the same place spelt two ways). My Location is left out: it moves, and saving the
-    /// town you're in as its own location is reasonable.
+    /// Where `suggestion` already is in the saved list: within `samePlaceMeters` (labels miss the same
+    /// place spelt two ways, and two places can share one: "Richmond, England, GB" is in London and in
+    /// North Yorkshire), or, for a name-only location, which has no coordinates, the same label. My
+    /// Location is left out: it moves, and saving the town you're in as its own location is
+    /// reasonable.
     static func savedIndex(of suggestion: CitySuggestion, in saved: [SavedLocation]) -> Int? {
         let place = CLLocation(latitude: suggestion.weatherLat, longitude: suggestion.weatherLon)
         return saved.firstIndex { location in
             if location.isCurrentLocation { return false }
-            if location.label == suggestion.label { return true }
-            guard let latitude = location.latitude, let longitude = location.longitude else { return false }
+            guard let latitude = location.latitude, let longitude = location.longitude else {
+                return location.label == suggestion.label
+            }
             return CLLocation(latitude: latitude, longitude: longitude).distance(from: place) < samePlaceMeters
         }
+    }
+
+    /// The label to save `suggestion` under: its own, or with its county when a different saved place
+    /// already has that label, so the two read differently and the list's de-duplication by label
+    /// doesn't take one for the other.
+    static func labelToSave(_ suggestion: CitySuggestion, saved: [SavedLocation]) -> String {
+        guard saved.contains(where: { !$0.isCurrentLocation && $0.label == suggestion.label }),
+              let county = suggestion.admin2, !county.isEmpty else { return suggestion.label }
+        return suggestion.relabelled([suggestion.name, county, suggestion.admin1, suggestion.countryCode]).label
     }
 
     /// How many characters at the start of `name` the typed text covers, accents ignored ("Nas" in

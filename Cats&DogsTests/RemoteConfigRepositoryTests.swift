@@ -53,6 +53,38 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.foregroundRefreshMinInterval(minutes: 1441), 0)
     }
 
+    private func citySearchPolicy(
+        provider: String? = nil,
+        openMeteoEnabled: Bool = true,
+        results: Double? = nil,
+        sizeRatio: Double? = nil,
+        delay: Double? = nil
+    ) -> CitySearchPolicy {
+        RemoteConfigRepository.citySearchPolicy(
+            provider: provider, openMeteoEnabled: openMeteoEnabled, results: results,
+            countryFirst: true, nearestFirst: true, sizeRatio: sizeRatio, delayMilliseconds: delay
+        )
+    }
+
+    func testCitySearchDefaultsAreSearchMdsDefaults() {
+        XCTAssertEqual(citySearchPolicy(), CitySearchPolicy(
+            provider: .openMeteo, results: 8, countryFirst: true, nearestFirst: true, sizeRatio: 20, delayMilliseconds: 280
+        ))
+    }
+
+    func testCitySearchProviderIsOpenMeteoOrOpenWeatherAndTheLicenceSwitchWins() {
+        XCTAssertEqual(citySearchPolicy(provider: "openweather").provider, .openWeather)
+        XCTAssertEqual(citySearchPolicy(provider: "open_meteo").provider, .openMeteo)
+        XCTAssertEqual(citySearchPolicy(provider: "google").provider, .openMeteo)
+        XCTAssertEqual(citySearchPolicy(provider: "open_meteo", openMeteoEnabled: false).provider, .openWeather)
+    }
+
+    func testCitySearchNumbersAreWholeAndInRangeOrTheirDefault() {
+        XCTAssertEqual([3.0, 10, 2, 11, 7.5].map { citySearchPolicy(results: $0).results }, [3, 10, 8, 8, 8])
+        XCTAssertEqual([2.0, 1000, 0, 1, 1001, 20.5].map { citySearchPolicy(sizeRatio: $0).sizeRatio }, [2, 1000, 0, 20, 20, 20])
+        XCTAssertEqual([100.0, 1000, 99, 1001].map { citySearchPolicy(delay: $0).delayMilliseconds }, [100, 1000, 280, 280])
+    }
+
     func testRainOutlookHoursDefaultsToTen() {
         XCTAssertEqual(RemoteConfigRepository.rainOutlookHours(nil), 10)
     }

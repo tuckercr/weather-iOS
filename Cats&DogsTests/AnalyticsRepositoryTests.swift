@@ -6,6 +6,7 @@ final class AnalyticsRepositoryTests: XCTestCase {
     private var preferences: IsolatedPreferences!
     private var sent: [(name: String, parameters: [String: Any]?)] = []
     private var collectionSettings: [Bool] = []
+    private let added = CityAdded(source: .suggestion, provider: .openWeather)
 
     override func setUp() async throws {
         preferences = IsolatedPreferences()
@@ -21,22 +22,24 @@ final class AnalyticsRepositoryTests: XCTestCase {
         let analytics = makeRepository()
 
         analytics.logOnboardingComplete()
-        analytics.logCityAdded()
+        analytics.logCityAdded(CityAdded(source: .typedMatch, provider: .openMeteo))
         analytics.logSettingsOpened()
         analytics.logWeatherError("offline")
 
         XCTAssertEqual(sent.map(\.name), ["onboarding_complete", "city_added", "settings_opened", "weather_error"])
+        XCTAssertEqual(sent[1].parameters?["source"] as? String, "typed_match")
+        XCTAssertEqual(sent[1].parameters?["provider"] as? String, "open_meteo")
         XCTAssertEqual(sent.last?.parameters?["error_key"] as? String, "offline")
     }
 
     func testDropsEventsWithoutFirebase() {
-        makeRepository(configured: false).logCityAdded()
+        makeRepository(configured: false).logCityAdded(added)
 
         XCTAssertTrue(sent.isEmpty)
     }
 
     func testRemoteKillSwitchDropsEvents() {
-        makeRepository(remotelyEnabled: false).logCityAdded()
+        makeRepository(remotelyEnabled: false).logCityAdded(added)
 
         XCTAssertTrue(sent.isEmpty)
     }
@@ -44,7 +47,7 @@ final class AnalyticsRepositoryTests: XCTestCase {
     func testUserOptOutDropsEvents() {
         preferences.store.setShareUsageStatistics(false)
 
-        makeRepository().logCityAdded()
+        makeRepository().logCityAdded(added)
 
         XCTAssertTrue(sent.isEmpty)
     }

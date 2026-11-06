@@ -25,8 +25,8 @@ struct OnboardingNotificationView: View {
             // only while Remote Config has it on.
             Text(
                 (PreferencesStore.shared.showWalkCard && RemoteConfigRepository.shared.walkTimeNotificationsEnabled
-                    ? "Each morning, Sunny & Misty will send a weather briefing for your city, and Sunny will nudge you at the best time for a walk."
-                    : "Each morning, Sunny & Misty will send a weather briefing for your city.")
+                    ? "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
+                    : "Each morning, Sunny & Misty will send a weather briefing for your location.")
                     + (RemoteConfigRepository.shared.rainNotificationsEnabled ? "\n\nYou can turn on rain alerts in Settings." : "")
             )
                 .font(.body)

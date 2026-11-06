@@ -13,21 +13,27 @@ final class CityListViewModel {
 
     private let preferences: PreferencesStore
     private let geocodingRepository: GeocodingRepository
-    private let onCityAdded: @MainActor () -> Void
+    private let onCityAdded: @MainActor (CityAdded) -> Void
+    /// Remote Config's search settings, for looking up name-only locations as search would.
+    private let readPolicy: @MainActor () -> CitySearchPolicy
 
     init(
         preferences: PreferencesStore? = nil,
         geocodingRepository: GeocodingRepository? = nil,
-        onCityAdded: (@MainActor () -> Void)? = nil
+        onCityAdded: (@MainActor (CityAdded) -> Void)? = nil,
+        readPolicy: (@MainActor () -> CitySearchPolicy)? = nil
     ) {
         self.preferences = preferences ?? .shared
-        self.geocodingRepository = geocodingRepository ?? GeocodingRepository()
-        self.onCityAdded = onCityAdded ?? { AnalyticsRepository.shared.logCityAdded() }
+        self.geocodingRepository = geocodingRepository ?? .live
+        self.onCityAdded = onCityAdded ?? { AnalyticsRepository.shared.logCityAdded($0) }
+        self.readPolicy = readPolicy ?? { RemoteConfigRepository.shared.citySearchPolicy }
         loadFromPreferences()
         fillInMissingCoordinates()
     }
 
-    func addLocation(_ location: SavedLocation) {
+    /// `added` says how, for `city_added`; without it, My Location counts as `my_location` and
+    /// anything else as a typed name, with the provider search would use.
+    func addLocation(_ location: SavedLocation, added: CityAdded? = nil) {
         if let existingIndex = locations.firstIndex(where: { $0.label == location.label }) {
             setActiveIndex(existingIndex)
             return
@@ -39,7 +45,10 @@ final class CityListViewModel {
         let newIndex = updated.count - 1
         locations = updated
         activeIndex = newIndex
-        onCityAdded()
+        onCityAdded(added ?? CityAdded(
+            source: location.isCurrentLocation ? .myLocation : .typedName,
+            provider: readPolicy().provider
+        ))
         preferences.setSavedLocations(updated)
         preferences.setActiveLocationIndex(newIndex)
 
@@ -62,10 +71,19 @@ final class CityListViewModel {
         }
     }
 
-    /// Geocodes a name-only entry so it gets a radar and an unambiguous forecast. The entered label
-    /// is kept so the duplicate check in `addLocation` still matches it.
+    /// Geocodes a name-only entry so it gets a radar and an unambiguous forecast, the way Add would
+    /// with nothing tapped (SEARCH.md, "Add with nothing picked"): the same search, filtering and
+    /// sorting, then the first row named as the entry is, unless one far bigger sits above it. No
+    /// such row leaves it name-only, on the forecast by name. The entered label is kept so the
+    /// duplicate check in `addLocation` still matches it.
     private func fillInCoordinates(forLabel label: String) async {
-        guard let geocoded = await geocodingRepository.searchCities(query: label).getOrNil()?.first,
+        let policy = readPolicy()
+        let rows = await geocodingRepository.searchCities(
+            query: label,
+            policy: policy,
+            origin: CitySearchOrigin.current(savedLocations: locations)
+        ).getOrNil() ?? []
+        guard let geocoded = AddLocationRules.typedMatch(label, in: rows, sizeRatio: policy.sizeRatio),
               // The list may have changed while geocoding was in flight.
               let index = locations.firstIndex(where: { $0.label == label && $0.latitude == nil })
         else { return }

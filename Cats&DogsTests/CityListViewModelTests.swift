@@ -218,17 +218,53 @@ final class CityListViewModelTests: XCTestCase {
 
     func testOnlyANewCityIsReportedAsAdded() {
         preferences.store.setSavedLocations([austin])
-        var added = 0
+        var added: [CityAdded] = []
         let viewModel = CityListViewModel(
             preferences: preferences.store,
             geocodingRepository: geocoding.repository,
-            onCityAdded: { added += 1 }
+            onCityAdded: { added.append($0) }
         )
 
         viewModel.addLocation(denver)
         viewModel.addLocation(SavedLocation(label: "Austin", latitude: 1, longitude: 2))
 
-        XCTAssertEqual(added, 1)
+        XCTAssertEqual(added.count, 1)
+    }
+
+    /// `city_added` says how: as the Add screen says, or else My Location or a typed name, with the
+    /// provider search would use.
+    func testAnAddedCityIsReportedWithHowItWasAdded() {
+        var added: [CityAdded] = []
+        var policy = CitySearchPolicy.standard
+        policy.provider = .openWeather
+        let viewModel = CityListViewModel(
+            preferences: preferences.store,
+            geocodingRepository: geocoding.repository,
+            onCityAdded: { added.append($0) },
+            readPolicy: { policy }
+        )
+
+        viewModel.addLocation(denver, added: CityAdded(source: .suggestion, provider: .openMeteo))
+        viewModel.addLocation(myLocation)
+        viewModel.addLocation(seattle)
+
+        XCTAssertEqual(added, [
+            CityAdded(source: .suggestion, provider: .openMeteo),
+            CityAdded(source: .myLocation, provider: .openWeather),
+            CityAdded(source: .typedName, provider: .openWeather),
+        ])
+    }
+
+    /// Looked up as Add would with nothing tapped: a row named as the entry is, or none at all.
+    func testANameOnlyCityStaysNameOnlyWithoutARowOfItsName() async {
+        geocoding.onSearch = { _ in [geocodingResult(name: "Nashville", state: "Tennessee", lat: 36.17, lon: -86.78)] }
+        let viewModel = makeViewModel()
+
+        viewModel.addLocation(SavedLocation(label: "Nashvil", latitude: nil, longitude: nil))
+        await waitUntil { self.geocoding.completedSearches == 1 }
+        await settle()
+
+        XCTAssertEqual(viewModel.locations, [SavedLocation(label: "Nashvil", latitude: nil, longitude: nil)])
     }
 
     /// Regression: the geocoded label used to replace the typed one, defeating the duplicate check.
@@ -373,7 +409,7 @@ final class CityListViewModelTests: XCTestCase {
     }
 
     private func makeViewModel() -> CityListViewModel {
-        CityListViewModel(preferences: preferences.store, geocodingRepository: geocoding.repository, onCityAdded: {})
+        CityListViewModel(preferences: preferences.store, geocodingRepository: geocoding.repository, onCityAdded: { _ in })
     }
 
     func testMyLocationIsCheckedForAMoveAtMostEveryFifteenMinutes() {

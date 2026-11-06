@@ -6,6 +6,10 @@ How adding a city by name works today, and what could make the results more sens
 The same file is in both repos, like NOTES.md: keep the two in step. Its code references are to
 the Android app.
 
+**Status (11-06):** built on iOS (Remote Config keys included, read with in-app defaults); Android
+is to follow, built to this file. Where building it on iOS changed the design, the change is
+written in below and marked 11-06.
+
 ## The current flow
 
 1. **The sheet.** `AddCitySheetContent`
@@ -210,7 +214,8 @@ Places Autocomplete does this well but is paid per request and needs a billed Go
 
 ## Decisions
 
-Reviewed and agreed 11-05; not built yet. The details are in the sections below.
+Reviewed and agreed 11-05; built on iOS 11-06, Android to follow. The details are in the sections
+below.
 
 1. **Open-Meteo for suggestions** (`city_search_provider`, default `open_meteo`), OpenWeather as
    the fallback when it fails, and both off Open-Meteo when `open_meteo_enabled` is. A commercial
@@ -236,7 +241,8 @@ The list sits on a full-screen Add location screen, built 11-06 ahead of the sea
 
 ## Remote Config design
 
-Agreed 11-05, defaults included; not built. Everything about search that we might want to change after release is a
+Agreed 11-05, defaults included; built on iOS 11-06, not yet on Android or in
+`firebase/remoteconfig.template.json`. Everything about search that we might want to change after release is a
 Remote Config key, read on every search (like `open_meteo_enabled` on every forecast fetch), with an
 in-app default and validation, so a bad console value falls back instead of breaking search.
 
@@ -262,7 +268,10 @@ could become a key later if a reason turns up.
    `open_meteo_enabled` is true; otherwise `openweather`.
 2. **Ask for more than we show.** Open-Meteo: `count=20`, so filtering and sorting have room;
    OpenWeather: `limit=5`, its maximum. No `countryCode` filter: it would hide the Paris in France
-   from a US phone. The country only sorts.
+   from a US phone. The country only sorts. With text after a comma, which is matched on the phone,
+   `count=100`, the most Open-Meteo gives (11-06): "Richmond, North Yorkshire" is the 22nd
+   Richmond, so it isn't among the first 20. Only the part before the comma is sent to Open-Meteo;
+   OpenWeather, on the fallback, gets the text as typed and reads "Springfield, IL, US" itself.
 3. **Fall back on failure.** If Open-Meteo fails (network error, timeout, HTTP error), search
    OpenWeather with the same text. An empty answer is an answer, not a failure: "Nashvile" (typo)
    has no prefix match anywhere, and OpenWeather wouldn't find it either.
@@ -295,7 +304,7 @@ The guard with the default 20, against live Open-Meteo results (11-05):
 | Search | Who | First rows | Why |
 |---|---|---|---|
 | Paris | US phone | Paris FR, Paris TX | Texas is 86× smaller |
-| Paris | My Location in Tennessee | Paris FR, Paris TN, Paris TX | Tennessee passes Texas, not France |
+| Paris | My Location in Tennessee | Paris FR, Paris TN, Paris KY | Tennessee passes Texas, not France; Kentucky and Illinois, nearer than Texas, follow |
 | Nas | US phone | Nashville TN, then Nashik IN | Nashik is only 2.2× bigger |
 | Springfield | My Location in Tennessee | Springfield TN first | Missouri is 10× bigger |
 | Portland | My Location in Maine | Portland ME first | Oregon is 9.8× bigger |
@@ -365,12 +374,17 @@ Tennessee, US"), with `admin2` added only to tell two same-label places apart (a
 
 ### Already saved
 
-Decided 11-05. A place already saved is gone to instead of added again when the labels match
-(today's check) **or** the two are within 2 km. Labels alone miss the same place:
-the providers spell some states differently ("Île-de-France Region" against "Ile-de-France"), and
-the county is now added to some labels. Within 2 km the forecasts are effectively the same anyway.
+Decided 11-05, changed 11-06. A place already saved is gone to instead of added again when the two
+are within 2 km. Labels alone miss the same place: the providers spell some states differently
+("Île-de-France Region" against "Ile-de-France"), and the county is now added to some labels.
+Within 2 km the forecasts are effectively the same anyway.
 
 - Name-only locations have no coordinates, so for them only the label counts.
+- With coordinates, a matching label alone doesn't count (11-06): the Richmond in London and the
+  one in North Yorkshire are both "Richmond, England, GB", and the second, found with "Richmond,
+  North Yorkshire", would otherwise be taken for the first. The one added later is saved with its
+  county ("Richmond, North Yorkshire, England, GB"), so the two read differently and the list's
+  own check by label doesn't stop it being added.
 - My Location is left out of the check: it moves, and saving the town you're in as its own
   location is reasonable.
 - Decided 11-06, in place of an "Already in your locations" message after the tap: a saved place
@@ -434,8 +448,8 @@ sorting above.
 - **Already saved** rows say *Saved*; tapping one, or Go to, shows its weather.
 - **Afterwards** the app goes back to where Add location was opened from. Manage Locations
   confirms with "Malmö added"; from the empty weather screen, the new location's weather does.
-- Until the new search lands, results carry no population, so the size check never stops Add:
-  "Nas" adds "Nas, CN", OpenWeather's exact match.
+- Until the new search lands (on Android; iOS has it since 11-06), results carry no population,
+  so the size check never stops Add: "Nas" adds "Nas, CN", OpenWeather's exact match.
 
 ### Where the code goes
 
@@ -454,6 +468,11 @@ sorting above.
   and README's Remote Config table. The iOS app needs the same provider, filter and sort.
 - About: add "Location data based on GeoNames" next to the Open-Meteo credit (always, simpler than
   following the provider).
+- **iOS, for reference** (built 11-06): `Utilities/CitySearch.swift` (what was typed, filtering,
+  labels, sorting, US state codes for "Paris, TX"), `Services/OpenMeteoGeocodingClient.swift`,
+  `Data/GeocodingRepository.swift` (provider and fallback), `Utilities/AddLocationRules.swift`
+  (Add with nothing picked, Already saved), and `CitySearchTests`, which checks this file's worked
+  examples against live Open-Meteo rows (`LiveSearchFixtures`).
 
 ### Rollout
 
@@ -485,7 +504,7 @@ Decided 11-05, the same in both apps:
   never see them. Android strings, approved 11-05 and updated 11-06 for the Add location screen
   (iOS has the same text). All went in with that screen except `location_skip_button`,
   `location_fetch_failed` and the two `notif_onboarding_body` strings, which come with the new
-  search:
+  search (on iOS since 11-06):
 
   | String | Today | New |
   |---|---|---|

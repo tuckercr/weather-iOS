@@ -87,6 +87,17 @@ final class RemoteConfigRepository {
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
     nonisolated static let keyOpenWeatherApiKey = "openweather_api_key"
+    /// Town and city search (SEARCH.md, "Remote Config design"): where suggestions come from, how
+    /// many show, the two sorting rules and their size guard, and the wait after typing.
+    nonisolated static let keyCitySearchProvider = "city_search_provider"
+    nonisolated static let keyCitySearchResults = "city_search_results"
+    nonisolated static let citySearchResultsRange = 3 ... 10
+    nonisolated static let keyCitySearchCountryFirst = "city_search_country_first"
+    nonisolated static let keyCitySearchNearestFirst = "city_search_nearest_first"
+    nonisolated static let keyCitySearchSizeRatio = "city_search_size_ratio"
+    nonisolated static let citySearchSizeRatioRange = 2 ... 1000
+    nonisolated static let keyCitySearchDelayMs = "city_search_delay_ms"
+    nonisolated static let citySearchDelayRangeMs = 100 ... 1000
 
     /// Below this version the app is blocked until it's updated; below the recommended one a
     /// banner asks. Separate from Android's keys. Empty never asks.
@@ -136,6 +147,12 @@ final class RemoteConfigRepository {
             Self.keySeasonalThemes: "" as NSString,
             Self.keyTemperatureUnitsShown: NSNumber(value: Self.defaultTemperatureUnitsShown),
             Self.keyOpenWeatherApiKey: "" as NSString,
+            Self.keyCitySearchProvider: CitySearchPolicy.standard.provider.rawValue as NSString,
+            Self.keyCitySearchResults: NSNumber(value: CitySearchPolicy.standard.results),
+            Self.keyCitySearchCountryFirst: NSNumber(value: CitySearchPolicy.standard.countryFirst),
+            Self.keyCitySearchNearestFirst: NSNumber(value: CitySearchPolicy.standard.nearestFirst),
+            Self.keyCitySearchSizeRatio: NSNumber(value: CitySearchPolicy.standard.sizeRatio),
+            Self.keyCitySearchDelayMs: NSNumber(value: CitySearchPolicy.standard.delayMilliseconds),
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
             Self.keyIosAppStoreURL: "" as NSString,
@@ -225,6 +242,20 @@ final class RemoteConfigRepository {
         case .walkTime: walkTimeNotificationsEnabled
         case .rain: rainNotificationsEnabled
         }
+    }
+
+    /// Read on every search, so a change applies from the next one. Each value is validated, so a bad
+    /// console value falls back to its default instead of breaking search.
+    var citySearchPolicy: CitySearchPolicy {
+        Self.citySearchPolicy(
+            provider: string(Self.keyCitySearchProvider),
+            openMeteoEnabled: Self.openMeteoEnabled,
+            results: number(Self.keyCitySearchResults)?.doubleValue,
+            countryFirst: Self.flag(Self.keyCitySearchCountryFirst, fallback: CitySearchPolicy.standard.countryFirst),
+            nearestFirst: Self.flag(Self.keyCitySearchNearestFirst, fallback: CitySearchPolicy.standard.nearestFirst),
+            sizeRatio: number(Self.keyCitySearchSizeRatio)?.doubleValue,
+            delayMilliseconds: number(Self.keyCitySearchDelayMs)?.doubleValue
+        )
     }
 
     var iosMinSupportedVersion: String? { string(Self.keyIosMinSupportedVersion) }
@@ -340,6 +371,30 @@ final class RemoteConfigRepository {
 
     nonisolated static func rainOutlookMinChance(_ value: Double?) -> Int {
         wholeNumber(value, in: rainOutlookMinChanceRange) ?? defaultRainOutlookMinChance
+    }
+
+    /// `open_meteo_enabled` off forces OpenWeather, so the one licence switch turns off every
+    /// Open-Meteo call. The size ratio is a whole number from 2 to 1000, or 0 for no guard.
+    nonisolated static func citySearchPolicy(
+        provider: String?,
+        openMeteoEnabled: Bool,
+        results: Double?,
+        countryFirst: Bool,
+        nearestFirst: Bool,
+        sizeRatio: Double?,
+        delayMilliseconds: Double?
+    ) -> CitySearchPolicy {
+        let standard = CitySearchPolicy.standard
+        let chosen = provider.flatMap(CitySearchProvider.init(rawValue:)) ?? standard.provider
+        let ratio = sizeRatio == 0 ? 0 : wholeNumber(sizeRatio, in: citySearchSizeRatioRange)
+        return CitySearchPolicy(
+            provider: openMeteoEnabled ? chosen : .openWeather,
+            results: wholeNumber(results, in: citySearchResultsRange) ?? standard.results,
+            countryFirst: countryFirst,
+            nearestFirst: nearestFirst,
+            sizeRatio: ratio ?? standard.sizeRatio,
+            delayMilliseconds: wholeNumber(delayMilliseconds, in: citySearchDelayRangeMs) ?? standard.delayMilliseconds
+        )
     }
 
     /// Nil unless `value` is a whole number in `range`.

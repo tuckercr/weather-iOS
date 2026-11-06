@@ -19,6 +19,9 @@ final class AnalyticsRepository {
     nonisolated static let eventSettingsOpened = "settings_opened"
     nonisolated static let eventWeatherError = "weather_error"
     nonisolated static let paramErrorKey = "error_key"
+    /// `city_added`: how it was added and which search provider found it (`CityAdded`).
+    nonisolated static let paramSource = "source"
+    nonisolated static let paramProvider = "provider"
 
     private let preferences: PreferencesStore
     private let isConfigured: () -> Bool
@@ -42,7 +45,12 @@ final class AnalyticsRepository {
 
     func logOnboardingComplete() { log(Self.eventOnboardingComplete) }
 
-    func logCityAdded() { log(Self.eventCityAdded) }
+    func logCityAdded(_ added: CityAdded) {
+        log(Self.eventCityAdded, parameters: [
+            Self.paramSource: added.source.rawValue,
+            Self.paramProvider: added.provider.rawValue,
+        ])
+    }
 
     func logSettingsOpened() { log(Self.eventSettingsOpened) }
 
