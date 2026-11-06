@@ -5,7 +5,134 @@ import XCTest
 final class WeatherRepositoryTests: XCTestCase {
     private let utc = TimeZone(secondsFromGMT: 0)!
 
-    func testFetchCurrentWeatherWithCoordinatesSendsCoordinatesAndPreservesLocationLabel() async {
+    func testFetchCurrentWeatherWithCoordinatesUsesOpenMeteosReading() async {
+        let api = FakeOpenWeatherAPI()
+        let openMeteo = StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse())
+        let placeNames = StubPlaceNames(name: "Knoxville")
+        let repository = WeatherRepository(
+            client: api, openMeteo: openMeteo, airQuality: StubAirQualityAPI(), placeNames: placeNames, timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(
+            units: .imperial,
+            locationLabel: "Austin, TX, US",
+            latitude: 30.2672,
+            longitude: -97.7431
+        )
+
+        let weather = try? result.get()
+        XCTAssertEqual(weather?.cityName, "Austin, TX, US")
+        XCTAssertEqual(weather?.temperature, 63.3)
+        XCTAssertEqual(weather?.feelsLike, 63.8)
+        XCTAssertEqual(openMeteo.currentRequests.count, 1)
+        XCTAssertEqual(openMeteo.currentRequests.first?.latitude ?? 0, 30.2672, accuracy: 0.0001)
+        XCTAssertEqual(openMeteo.currentRequests.first?.units, .imperial)
+        XCTAssertEqual(api.currentWeatherCallCount, 0)
+        XCTAssertTrue(placeNames.requests.isEmpty, "A saved city keeps its own label")
+    }
+
+    func testFetchCurrentWeatherNamesMyLocationWithThePhone() async {
+        let placeNames = StubPlaceNames(name: "Knoxville")
+        let repository = WeatherRepository(
+            client: FakeOpenWeatherAPI(),
+            openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse()),
+            airQuality: StubAirQualityAPI(),
+            placeNames: placeNames,
+            timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 35.9168, longitude: -83.9597)
+
+        XCTAssertEqual(try? result.get().cityName, "Knoxville")
+        XCTAssertEqual(placeNames.requests.first?.latitude ?? 0, 35.9168, accuracy: 0.0001)
+        XCTAssertEqual(placeNames.requests.first?.longitude ?? 0, -83.9597, accuracy: 0.0001)
+    }
+
+    func testFetchCurrentWeatherCallsMyLocationByItsLabelWhenThePhoneCantNameIt() async {
+        let repository = WeatherRepository(
+            client: FakeOpenWeatherAPI(),
+            openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse()),
+            airQuality: StubAirQualityAPI(),
+            placeNames: StubPlaceNames(name: nil),
+            timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 35.9168, longitude: -83.9597)
+
+        XCTAssertEqual(try? result.get().cityName, "My Location")
+    }
+
+    func testFetchCurrentWeatherFallsBackToOpenWeatherWhenOpenMeteoFails() async {
+        let api = FakeOpenWeatherAPI()
+        let placeNames = StubPlaceNames(name: "Knoxville")
+        let repository = WeatherRepository(
+            client: api,
+            openMeteo: StubOpenMeteoAPI(error: OpenWeatherClientError.network),
+            airQuality: StubAirQualityAPI(),
+            placeNames: placeNames,
+            timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 35.9168, longitude: -83.9597)
+
+        XCTAssertEqual(try? result.get().cityName, "OpenWeather City")
+        XCTAssertEqual(try? result.get().temperature, 72.5)
+        XCTAssertEqual(api.currentWeatherCallCount, 1)
+        XCTAssertTrue(placeNames.requests.isEmpty, "No lookup is spent on a failed reading")
+    }
+
+    func testFetchCurrentWeatherFallsBackToOpenWeatherWithoutATemperature() async {
+        let api = FakeOpenWeatherAPI()
+        let placeNames = StubPlaceNames(name: "Knoxville")
+        let repository = WeatherRepository(
+            client: api,
+            openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse(temperature: nil)),
+            airQuality: StubAirQualityAPI(),
+            placeNames: placeNames,
+            timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 1, longitude: 2)
+
+        XCTAssertEqual(try? result.get().temperature, 72.5)
+        XCTAssertEqual(api.currentWeatherCallCount, 1)
+        XCTAssertTrue(placeNames.requests.isEmpty, "No lookup is spent on an empty reading")
+    }
+
+    func testOpenMeteosReadingNeedsNoOpenWeatherKey() async {
+        let repository = WeatherRepository(
+            client: OpenWeatherClient(apiKey: "   "),
+            openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse()),
+            airQuality: StubAirQualityAPI(),
+            placeNames: StubPlaceNames(name: "Knoxville"),
+            timeZone: utc
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 1, longitude: 2)
+
+        XCTAssertEqual(try? result.get().temperature, 63.3)
+    }
+
+    func testFetchCurrentWeatherUsesOpenWeatherWhenOpenMeteoIsSwitchedOff() async {
+        let api = FakeOpenWeatherAPI()
+        let openMeteo = StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse())
+        let repository = WeatherRepository(
+            client: api,
+            openMeteo: openMeteo,
+            airQuality: StubAirQualityAPI(),
+            placeNames: StubPlaceNames(name: "Knoxville"),
+            timeZone: utc,
+            useOpenMeteo: { false }
+        )
+
+        let result = await repository.fetchCurrentWeather(units: .imperial, latitude: 1, longitude: 2)
+
+        XCTAssertEqual(try? result.get().temperature, 72.5)
+        XCTAssertTrue(openMeteo.currentRequests.isEmpty)
+        XCTAssertEqual(api.currentWeatherCallCount, 1)
+    }
+
+    func testFetchCurrentWeatherFallsBackToOpenWeatherWithCoordinatesAndPreservesLocationLabel() async {
         let api = FakeOpenWeatherAPI()
         let repository = WeatherRepository(client: api, openMeteo: StubOpenMeteoAPI(), airQuality: StubAirQualityAPI(), timeZone: utc)
 

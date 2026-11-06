@@ -86,7 +86,7 @@ final class LocationPermissionViewModel: NSObject, CLLocationManagerDelegate {
                 if let location {
                     state = .located(
                         SavedLocation(
-                            label: "My Location",
+                            label: SavedLocation.myLocationLabel,
                             latitude: location.coordinate.latitude,
                             longitude: location.coordinate.longitude,
                             isCurrentLocation: true
