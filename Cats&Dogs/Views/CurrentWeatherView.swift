@@ -669,10 +669,17 @@ private struct HourlyStrip: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 4) {
-                ForEach(items) { item in
+                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     switch item {
                     case let .hour(slot): hour(slot)
-                    case let .sun(event): SunMarker(event: event, timeZone: timeZone)
+                    case let .sun(event):
+                        SunMarker(
+                            event: event,
+                            timeZone: timeZone,
+                            besideRain: HourlyStripItem.besideRainChance(items, at: index) {
+                                WeatherFormatting.rainChance($0.precipitationChance) != nil
+                            }
+                        )
                     }
                 }
             }
@@ -699,10 +706,13 @@ private struct HourlyStrip: View {
 }
 
 /// A sunrise or sunset between two hours of the strip: half a column, with the time ("6:50"), the
-/// sun on the horizon and a thin line down past the temperatures.
+/// sun on the horizon and a thin line beside the temperatures, running on beside the rain chances
+/// when an hour either side shows one (`besideRain`). It's never taller than the hours beside it, so
+/// the strip doesn't grow for it.
 private struct SunMarker: View {
     let event: SunEvent
     let timeZone: TimeZone
+    let besideRain: Bool
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -716,9 +726,20 @@ private struct SunMarker: View {
                 .scaledToFit()
                 .frame(width: 28, height: 28)
                 .padding(.vertical, 2)
-            Capsule()
-                .fill(Color.secondaryText.opacity(0.4))
-                .frame(width: 1.5, height: 38)
+            // An unseen temperature, and rain chance when there is one beside it, laid out as in an
+            // hour cell, give the line their height whatever the text size; at their own width inside
+            // the line's, they don't widen it.
+            VStack(spacing: 6) {
+                Text(verbatim: "0°")
+                    .fontWeight(.semibold)
+                if besideRain {
+                    PrecipChance(percent: 50)
+                }
+            }
+            .fixedSize()
+            .hidden()
+            .frame(width: 1.5)
+            .overlay(Capsule().fill(Color.secondaryText.opacity(0.4)))
         }
         .padding(.horizontal, 2)
         .accessibilityElement(children: .ignore)
