@@ -68,15 +68,16 @@ struct AirQuality: Codable, Equatable, Sendable {
         mainPollutant.map { "Mostly \($0.name)" }
     }
 
-    /// What the air means for a walk, or for people when there's no dog.
-    func line(hasDog: Bool) -> String {
+    /// What the air means for a walk, or for people when there's no dog. With a dog it follows the
+    /// walk rules (`WalkConditions.airLevel`), so it moves with Remote Config's `walk_bad_air_band`
+    /// and never contradicts the walk card.
+    func line(hasDog: Bool, thresholds: PetWeatherThresholds = .standard) -> String {
         if hasDog {
-            return switch band {
-            case 0: "Good air for a long walk"
-            case 1: "Fine for most walks"
-            case 2: "Short walks for older and flat-faced dogs"
-            case 3, 4: "Potty breaks only today"
-            default: "Stay in. Potty breaks only"
+            return switch WalkConditions.airLevel(band: band, thresholds) {
+            case .stayIn, .danger: "Stay in. Potty breaks only"
+            case .pottyOnly: "Potty breaks only today"
+            case .fine, .wait: "Short walks for older and flat-faced dogs"
+            case .great: band == 0 ? "Good air for a long walk" : "Fine for most walks"
             }
         }
         return switch band {
@@ -96,25 +97,42 @@ struct AirQuality: Codable, Equatable, Sendable {
         case .us:
             index = readings.usAqi
             subIndices = [
-                (.fineParticles, readings.usAqiPm25), (.coarseParticles, readings.usAqiPm10),
+                (.coarseParticles, readings.usAqiPm10), (.fineParticles, readings.usAqiPm25),
                 (.ozone, readings.usAqiOzone), (.nitrogenDioxide, readings.usAqiNitrogenDioxide),
                 (.sulphurDioxide, readings.usAqiSulphurDioxide), (.carbonMonoxide, readings.usAqiCarbonMonoxide),
             ]
         case .european:
             index = readings.europeanAqi
             subIndices = [
-                (.fineParticles, readings.europeanAqiPm25), (.coarseParticles, readings.europeanAqiPm10),
+                (.coarseParticles, readings.europeanAqiPm10), (.fineParticles, readings.europeanAqiPm25),
                 (.ozone, readings.europeanAqiOzone), (.nitrogenDioxide, readings.europeanAqiNitrogenDioxide),
                 (.sulphurDioxide, readings.europeanAqiSulphurDioxide),
             ]
         }
         guard let index else { return nil }
-        // The first listed wins a tie.
+        // The first listed wins a tie. Coarse particles come before fine ones: when PM10 is as bad as
+        // PM2.5 the air is dusty, whereas smoke shows up far more in PM2.5.
         var main: (pollutant: Pollutant, value: Int)?
         for (pollutant, value) in subIndices {
             if let value, value > (main?.value ?? .min) { main = (pollutant, value) }
         }
-        return AirQuality(index: index, scale: scale, mainPollutant: main?.pollutant)
+        var pollutant = main?.pollutant
+        if pollutant == .fineParticles, isDusty(pm25: readings.pm25, pm10: readings.pm10) { pollutant = .coarseParticles }
+        return AirQuality(index: index, scale: scale, mainPollutant: pollutant)
+    }
+
+    /// Fine particles are under this share of PM10 in dust (Riyadh's dust storm on 11-07 was 0.16),
+    /// against 0.5 to 0.7 in city air and 0.8 or more in smoke.
+    static let dustyFineShare = 0.35
+    /// Below this much PM10 (µg/m³) the mix isn't worth naming as dust.
+    static let dustyPm10 = 50
+
+    /// Particles that are mostly coarse, by mass. A dust storm can push PM2.5's index off the top of
+    /// the scale while PM10's has none at all (Open-Meteo gives no US PM10 index above about 600
+    /// µg/m³), so the indices alone would call it smoke.
+    static func isDusty(pm25: Int?, pm10: Int?) -> Bool {
+        guard let pm25, let pm10, pm10 >= dustyPm10 else { return false }
+        return Double(pm25) < dustyFineShare * Double(pm10)
     }
 }
 
@@ -144,9 +162,11 @@ struct AirQualityHourlyResponse: Decodable, Sendable {
         timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
         let hourly = try container.nestedContainer(keyedBy: FieldKey.self, forKey: .hourly)
         let times = try hourly.decode([Int].self, forKey: FieldKey(stringValue: "time"))
+        // Read as numbers and rounded: the indices are whole, the particle masses (µg/m³) aren't.
         var columns: [AirQualityReadings.Field: [Int?]] = [:]
         for field in AirQualityReadings.Field.allCases {
-            columns[field] = try hourly.decodeIfPresent([Int?].self, forKey: FieldKey(stringValue: field.rawValue))
+            columns[field] = try hourly.decodeIfPresent([Double?].self, forKey: FieldKey(stringValue: field.rawValue))?
+                .map { $0.map { Int($0.rounded()) } }
         }
         hours = times.indices.map { row in
             (times[row], AirQualityReadings { field in
@@ -167,7 +187,8 @@ struct AirQualityHourlyResponse: Decodable, Sendable {
     }
 }
 
-/// One hour's indices from Open-Meteo, overall and per pollutant, on both scales.
+/// One hour's indices from Open-Meteo, overall and per pollutant, on both scales, and the particle
+/// masses that tell dust from smoke.
 struct AirQualityReadings: Equatable, Sendable {
     enum Field: String, CaseIterable, Sendable {
         case usAqi = "us_aqi"
@@ -183,6 +204,8 @@ struct AirQualityReadings: Equatable, Sendable {
         case europeanAqiOzone = "european_aqi_ozone"
         case europeanAqiNitrogenDioxide = "european_aqi_nitrogen_dioxide"
         case europeanAqiSulphurDioxide = "european_aqi_sulphur_dioxide"
+        case pm25 = "pm2_5"
+        case pm10
     }
 
     private let values: [Field: Int]
@@ -210,4 +233,7 @@ struct AirQualityReadings: Equatable, Sendable {
     var europeanAqiOzone: Int? { values[.europeanAqiOzone] }
     var europeanAqiNitrogenDioxide: Int? { values[.europeanAqiNitrogenDioxide] }
     var europeanAqiSulphurDioxide: Int? { values[.europeanAqiSulphurDioxide] }
+    /// Particle masses in µg/m³, rounded.
+    var pm25: Int? { values[.pm25] }
+    var pm10: Int? { values[.pm10] }
 }

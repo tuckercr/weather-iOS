@@ -1,7 +1,10 @@
 import Foundation
 
+/// The walk card's headline category: `WalkCheck`'s verdict on now, and whether there's a better
+/// time. `windy` is a gale or worse, `stormy` thunderstorms now or likely, and `danger` hurricane
+/// force wind, which the card shows as a warning even without a dog.
 enum WalkRating: Equatable {
-    case great, okay, poor, pawsHot, tooCold, badAir
+    case great, okay, poor, pawsHot, tooCold, badAir, windy, stormy, danger
 }
 
 /// What changes after a walk window that's open now, for the card's second line.
@@ -23,16 +26,16 @@ enum WalkChange: Equatable {
 /// `bestTimeLabel` is nil when now is a good time, or when there is no good window soon.
 /// `pavementNow` is the estimated pavement temperature for the current hour, in the forecast's
 /// units, when the source provides it. `bestTimeIsTomorrow` is set when the best time falls on the
-/// city's next day, since the label alone ("7 AM") doesn't say which morning. `pavementBand` is what
-/// `pavementNow` means for paws (the Today tile's band), so the caption can say whether the pavement
-/// is the problem. `outlook` is set only when now is a great time.
+/// city's next day, since the label alone ("7 AM") doesn't say which morning. `outlook` is set only
+/// when now is a great time. `now` is the verdict on the hour under way, which `rating` sums up and
+/// whose reason the card's caption gives.
 struct WalkAdvice: Equatable {
     let rating: WalkRating
     let bestTimeLabel: String?
     var pavementNow: Double? = nil
     var bestTimeIsTomorrow = false
-    var pavementBand: TodayDetails.PavementBand? = nil
     var outlook: WalkOutlook? = nil
+    var now = WalkCheck([])
 }
 
 enum WalkAdvisor {
@@ -56,63 +59,67 @@ enum WalkAdvisor {
     /// (the first slot is the current or next forecast hour, so it stands in for "now"). Returns nil
     /// when there are no slots yet (forecast loading or failed), since there is nothing to advise on.
     ///
-    /// `precipitatingNow` is the current observation. The hourly forecast can say the hour in
-    /// progress is dry while it's raining, so when it's raining now, now is never the walk time.
-    /// `sunsetEpoch` is today's sunset, for the "gets dark" line. `darkNow` is the clock's word on
-    /// darkness: the hour in progress keeps its daytime icon for the whole hour the sun sets in, so
-    /// without it now could be "a great time" for up to an hour after dark.
+    /// `conditionNow` is the current observation's condition group ("Rain", "Thunderstorm"). The
+    /// hourly forecast can say the hour in progress is dry while it's raining, so when it's raining
+    /// now, now is never the walk time. `sunsetEpoch` is today's sunset, for the "gets dark" line.
+    /// `darkNow` is the clock's word on darkness: the hour in progress keeps its daytime icon for the
+    /// whole hour the sun sets in, so without it now could be "a great time" for up to an hour after
+    /// dark.
     static func advice(
         currentFeelsLikeC: Double,
         upcoming: [HourlySlot],
         now: Date = Date(),
         timeZone: TimeZone = .current,
         thresholds: PetWeatherThresholds = .standard,
-        precipitatingNow: Bool = false,
+        conditionNow: String? = nil,
         sunsetEpoch: Int? = nil,
         darkNow: Bool = false
     ) -> WalkAdvice? {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
         guard let first = slots.first else { return nil }
-        let notNow = precipitatingNow || darkNow
-        let nowWalkable = !notNow && isWalkable(first, thresholds)
-        let firstGood = (notNow ? Array(slots.dropFirst()) : slots).first { isWalkable($0, thresholds) }
-        let pawsHotNow = (pavementC(first) ?? 0) >= thresholds.hotPavementC
-        let rating: WalkRating = if currentFeelsLikeC >= thresholds.petHotC || pawsHotNow {
-            .pawsHot
-        } else if hasBadAir(first, thresholds) {
-            .badAir
-        } else if currentFeelsLikeC <= thresholds.petColdC {
-            .tooCold
-        } else if nowWalkable {
-            .great
-        } else if firstGood != nil {
-            .okay
-        } else {
-            .poor
-        }
+        let check = WalkConditions.check(
+            first,
+            thresholds: thresholds,
+            feelsLikeC: currentFeelsLikeC,
+            conditionNow: conditionNow,
+            darkNow: darkNow
+        )
+        let firstGood = slots.dropFirst().first { isWalkable($0, thresholds) }
+        let rating = rating(check, hasBetterTime: firstGood != nil)
         let bestSlot = rating == .great ? nil : firstGood
         return WalkAdvice(
             rating: rating,
             bestTimeLabel: bestSlot?.timeLabel,
             pavementNow: first.pavementTemperature,
             bestTimeIsTomorrow: bestSlot.map { isOnALaterDay($0, than: now, in: timeZone) } ?? false,
-            pavementBand: pavementC(first).map {
-                TodayDetails.pavementBand(
-                    pavementC: $0,
-                    groundWet: first.groundWet == true,
-                    feelsLikeC: currentFeelsLikeC,
-                    thresholds: thresholds
-                )
-            },
-            outlook: rating == .great ? outlook(slots, sunsetEpoch: sunsetEpoch, now: now, thresholds) : nil
+            outlook: rating == .great ? outlook(slots, check: check, sunsetEpoch: sunsetEpoch, now: now, thresholds) : nil,
+            now: check
         )
+    }
+
+    /// Potty breaks only or worse says why; otherwise it's a walk now, a later walk, or no walk today.
+    static func rating(_ check: WalkCheck, hasBetterTime: Bool) -> WalkRating {
+        if check.level == .danger { return .danger }
+        if check.level >= .pottyOnly, let reason = check.reason {
+            switch reason {
+            case .pavement, .heat: return .pawsHot
+            case .air: return .badAir
+            case .cold: return .tooCold
+            case .wind: return .windy
+            case .storms: return .stormy
+            case .rain, .snow, .dark: break
+            }
+        }
+        if check.isWalkable { return .great }
+        return hasBetterTime ? .okay : .poor
     }
 
     /// For a walk now: when the good spell ends and why, if that's within a few hours. Otherwise air
     /// that's not quite bad, or sunset coming up.
     private static func outlook(
         _ slots: [HourlySlot],
+        check: WalkCheck,
         sunsetEpoch: Int?,
         now: Date,
         _ thresholds: PetWeatherThresholds
@@ -120,38 +127,31 @@ enum WalkAdvisor {
         let nowEpoch = Int(now.timeIntervalSince1970)
         if let end = slots.dropFirst().first(where: { !isWalkable($0, thresholds) }),
            let epoch = end.epochSeconds, epoch <= nowEpoch + outlookSeconds,
-           let change = change(at: end, thresholds) {
+           let change = change(WalkConditions.check(end, thresholds: thresholds)) {
             return .until(time: end.timeLabel, change: change)
         }
-        let band = slots.first?.airQuality?.band ?? 0
-        if band >= 2, band < thresholds.badAirBand { return .moderateAir }
+        if check.air?.level == .fine { return .moderateAir }
         if let sunsetEpoch, sunsetEpoch > nowEpoch, sunsetEpoch - nowEpoch <= darkSoonSeconds {
             return .darkIn(hours: Int((Double(sunsetEpoch - nowEpoch) / 3600).rounded()))
         }
         return nil
     }
 
-    /// Why `slot` isn't walkable, as something worth saying; nil when it is. Also nil for darkness and
-    /// the end of the walking hours, which the sunset line covers. `isWalkable` is built on this, so
-    /// every walk rule lives here.
-    private static func change(at slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> WalkChange? {
-        guard isDaytime(slot, thresholds) else { return nil }
-        if slot.precipitationChance >= thresholds.maxRainChance {
-            let likely = slot.precipitationChance >= likelyRainChance
-            return switch slot.iconCode.prefix(2) {
-            case "11": likely ? .storms : .maybeStorms
-            case "13": likely ? .snow : .maybeSnow
-            default: likely ? .rain : .maybeRain
-            }
+    /// Why an hour that isn't walkable isn't, as something worth saying. Nil after dark and outside
+    /// the walking hours, which the sunset line covers.
+    private static func change(_ check: WalkCheck) -> WalkChange? {
+        guard !check.factors.contains(where: { $0.reason == .dark }), let reason = check.reason else { return nil }
+        return switch reason {
+        case let .storms(likely): likely ? .storms : .maybeStorms
+        case let .rain(likely): likely ? .rain : .maybeRain
+        case let .snow(likely): likely ? .snow : .maybeSnow
+        case .wind: .wind
+        case .pavement: .hotPavement
+        case .heat: .heat
+        case .air: .badAir
+        case .cold: .cold
+        case .dark: nil
         }
-        if isTooWindy(slot, thresholds) { return .wind }
-        if hasBadAir(slot, thresholds) { return .badAir }
-        if (pavementC(slot) ?? 0) >= thresholds.warmPavementC { return .hotPavement }
-        let feelsLikeC = slot.units.toCelsius(slot.feelsLike)
-        if !thresholds.comfortC.contains(feelsLikeC) {
-            return feelsLikeC > thresholds.comfortC.upperBound ? .heat : .cold
-        }
-        return nil
     }
 
     /// Compared as calendar days in the city's own time zone, not the device's.
@@ -162,35 +162,17 @@ enum WalkAdvisor {
         return !calendar.isDate(Date(timeIntervalSince1970: TimeInterval(epoch)), inSameDayAs: now)
     }
 
-    /// Within the walking hours and in daylight. The walking hours alone are a fixed clock window, so
-    /// on a winter morning 7 AM can be before sunrise; a night icon ("n", the same signal that puts
-    /// the pets to sleep) rules it out.
-    private static func isDaytime(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        (slot.localHour.map(thresholds.walkHours.contains) ?? true) && !slot.iconCode.hasSuffix("n")
-    }
-
-    private static func isTooWindy(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        TodayDetails.windForce(speed: slot.windSpeed, units: slot.units) >= thresholds.windyForce
-    }
-
-    private static func pavementC(_ slot: HourlySlot) -> Double? {
-        slot.pavementTemperature.map(slot.units.toCelsius)
-    }
-
-    /// Air at the Remote Config band or worse (by default Unhealthy, the Air quality tile's "Potty
-    /// breaks only today"). Unknown counts as clean.
-    private static func hasBadAir(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        (slot.airQuality?.band ?? 0) >= thresholds.badAirBand
-    }
-
-    /// Bad air in a walking hour: an hour the walk advice would otherwise have weighed up.
+    /// Bad air (potty breaks only or worse, by default from Unhealthy) in a walking hour: an hour the
+    /// walk advice would otherwise have weighed up. Unknown air counts as clean.
     static func hasBadAirForWalking(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        isDaytime(slot, thresholds) && hasBadAir(slot, thresholds)
+        guard WalkConditions.isWalkingTime(slot, thresholds), let band = slot.airQuality?.band else { return false }
+        return WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly
     }
 
-    /// Feels-like rather than air temperature: humid heat and wind chill are what the dog feels.
-    /// Pavement that's only getting hot already rules an hour out, so the suggested hour is a cooler one.
+    /// `WalkCheck`'s verdict on the hour: fine or better. Feels-like rather than air temperature,
+    /// since humid heat and wind chill are what the dog feels, and pavement that's only getting hot
+    /// already rules an hour out, so the suggested hour is a cooler one.
     static func isWalkable(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        isDaytime(slot, thresholds) && change(at: slot, thresholds) == nil
+        WalkConditions.check(slot, thresholds: thresholds).isWalkable
     }
 }

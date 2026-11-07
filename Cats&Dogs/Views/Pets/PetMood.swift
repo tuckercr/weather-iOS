@@ -164,13 +164,82 @@ enum PetMood: CaseIterable {
         }
     }
 
-    /// Today's caption, chosen by the city's own date and (at night) hour, not the device's.
-    func caption(on date: Date = Date(), timeZone: TimeZone = .current, hasDog: Bool = true) -> String {
+    /// Today's caption, chosen by the city's own date and (at night) hour, not the device's. When
+    /// `walk` says now isn't the time for a walk (for anything but the dark, which the night
+    /// captions allow for), the captions that suggest one are left out, and if that leaves none,
+    /// the captions without a dog stand in.
+    func caption(
+        on date: Date = Date(),
+        timeZone: TimeZone = .current,
+        hasDog: Bool = true,
+        walk: WalkCheck? = nil
+    ) -> String {
+        let calendar = Self.calendar(timeZone)
+        let nightPart = NightPart(hour: calendar.component(.hour, from: date))
+        var options = captions(nightPart: nightPart, hasDog: hasDog)
+        if let walk, walk.factors.contains(where: { $0.reason != .dark && $0.level >= .wait }) {
+            let quiet = options.filter { !Self.walkSuggestions.contains($0) }
+            options = quiet.isEmpty ? noDogCaptions(nightPart: nightPart) ?? options : quiet
+        }
+        return Self.pick(options, on: date, calendar)
+    }
+
+    /// The captions that suggest a walk now, which `caption` leaves out when now isn't the time.
+    static let walkSuggestions: Set<String> = [
+        "Perfect walkies weather! Off we go.",
+        "A bit grey, but Sunny is still keen for a walk.",
+        "No sun, no problem. Still time for a stroll.",
+        "Quiet night. Time for one last stroll before bed?",
+        "Sunny thinks there's time for one more lap of the block.",
+    ]
+
+    /// When `walk` rules out more than a wait for a reason the scene can't show (the air, the
+    /// pavement, a gale or worse), the caption gives the reason instead of the weather: "Smoky air
+    /// today. Quick potty breaks, then back on the sofa." Nil otherwise, and for the pavement without
+    /// a dog. It takes the place of a seasonal theme's caption too.
+    static func walkCaption(
+        _ walk: WalkCheck,
+        hasDog: Bool,
+        on date: Date = Date(),
+        timeZone: TimeZone = .current
+    ) -> String? {
+        walkCaptions(walk, hasDog: hasDog).map { pick($0, on: date, calendar(timeZone)) }
+    }
+
+    static func walkCaptions(_ walk: WalkCheck, hasDog: Bool) -> [String]? {
+        guard let worst = walk.factors.first, worst.level >= .pottyOnly else { return nil }
+        switch worst.reason {
+        case let .wind(force):
+            if force >= WalkConditions.hurricaneForce {
+                return ["Hurricane force winds! Everyone inside, away from the windows."]
+            }
+            if force >= WalkConditions.stormForce {
+                return ["Storm force winds. Everyone stays in today.", "Misty is under the bed until this wind drops."]
+            }
+            return hasDog
+                ? ["Gale force winds! Quick potty breaks, then back in.", "Blowy out there. Misty won't go near the door."]
+                : ["Gale force winds! Misty won't go near the door.", "Blowy out there. Misty is staying put."]
+        case let .air(_, pollutant):
+            let air = WalkReason.airName(pollutant) ?? "Poor air"
+            return hasDog
+                ? ["\(air) today. Quick potty breaks, then back on the sofa.", "The air's not great. Sunny's big walk can wait."]
+                : ["\(air) today. Misty's keeping the windows shut.", "The air's not great. Misty is happy indoors."]
+        case .pavement where hasDog:
+            return ["Hot pavement! Sunny's sticking to the grass today.", "Too hot underfoot. Short trips on the grass."]
+        default:
+            return nil
+        }
+    }
+
+    private static func calendar(_ timeZone: TimeZone) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
-        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
-        let options = captions(nightPart: NightPart(hour: calendar.component(.hour, from: date)), hasDog: hasDog)
-        return options[dayOfYear % options.count]
+        return calendar
+    }
+
+    /// One per day, so the caption varies without changing on refresh.
+    private static func pick(_ options: [String], on date: Date, _ calendar: Calendar) -> String {
+        options[(calendar.ordinality(of: .day, in: .year, for: date) ?? 1) % options.count]
     }
 }
 

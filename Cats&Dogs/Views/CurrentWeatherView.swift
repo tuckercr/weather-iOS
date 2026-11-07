@@ -425,7 +425,7 @@ private struct CurrentWeatherContent: View {
             now: now,
             timeZone: weather.timeZone,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            precipitatingNow: WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
+            conditionNow: weather.conditionMain,
             sunsetEpoch: weatherToday.sunsetEpoch,
             darkNow: StaleWeather.isDark(weatherToday, at: now)
         )
@@ -515,7 +515,8 @@ private struct CurrentWeatherContent: View {
         if showNextRain, let nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
-        if showWalkCard, RemoteConfigRepository.shared.walkCardEnabled, let walkAdvice {
+        // A danger warning shows for everyone, dog or not, whatever Remote Config says of the card.
+        if let walkAdvice, walkAdvice.rating == .danger || (showWalkCard && RemoteConfigRepository.shared.walkCardEnabled) {
             WalkCard(advice: walkAdvice)
         }
     }
@@ -571,12 +572,15 @@ private struct CurrentWeatherContent: View {
         return false
     }
 
-    /// The theme's caption on its day, otherwise the weather's.
+    /// The walk's reason when it's one the scene can't show (bad air, hot pavement, a gale), then the
+    /// theme's caption on its day, otherwise the weather's, leaving out walks when now isn't the time.
     private var heroCaption: String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = weather.timeZone
-        return seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
-            ?? mood.caption(on: now, timeZone: weather.timeZone, hasDog: showWalkCard)
+        let walk = walkAdvice?.now
+        return walk.flatMap { PetMood.walkCaption($0, hasDog: showWalkCard, on: now, timeZone: weather.timeZone) }
+            ?? seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
+            ?? mood.caption(on: now, timeZone: weather.timeZone, hasDog: showWalkCard, walk: walk)
     }
 
     private var heroCard: some View {

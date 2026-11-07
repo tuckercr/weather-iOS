@@ -218,20 +218,24 @@ struct TodayTiles: View {
                 .accessibilityHidden(true)
             // The pollutant behind it is for VoiceOver only: another line would stretch every tile
             // in the grid, which all take the tallest one's height.
+            let line = air.line(hasDog: hasDog, thresholds: thresholds)
             TileNote(
-                air.line(hasDog: hasDog),
+                line,
                 color: airTint(band: air.band),
-                spoken: [air.pollutantLine, air.line(hasDog: hasDog)].compactMap(\.self).joined(separator: ". ")
+                spoken: [air.pollutantLine, line].compactMap(\.self).joined(separator: ". ")
             )
         }
     }
 
-    /// The walk card's shades again: green for good air, amber for so-so, red from unhealthy up.
+    /// The walk card's shades again: green for good air, amber for so-so, red where the walk rules
+    /// say potty breaks only.
     private func airTint(band: Int) -> Color {
-        let (light, dark): (UInt32, UInt32) = switch band {
-        case 0: (0x27500A, 0xC0DD97)
-        case 1, 2: (0x633806, 0xFAC775)
-        default: (0x791F1F, 0xF7C1C1)
+        let (light, dark): (UInt32, UInt32) = if WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly {
+            (0x791F1F, 0xF7C1C1)
+        } else if band == 0 {
+            (0x27500A, 0xC0DD97)
+        } else {
+            (0x633806, 0xFAC775)
         }
         return Color(hex: colorScheme == .dark ? dark : light)
     }

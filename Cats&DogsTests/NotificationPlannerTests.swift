@@ -220,6 +220,10 @@ final class NotificationPlannerTests: XCTestCase {
             body(dry.map { slot($0, air: .nitrogenDioxide) }),
             "High 18°, low 10°. Poor air today, so potty breaks only."
         )
+        XCTAssertEqual(
+            body(dry.map { slot($0, air: .coarseParticles) }),
+            "High 18°, low 10°. Dusty air today, so potty breaks only."
+        )
     }
 
     func testBadAirAtNightOrOnAnotherDayIsNotMentioned() {

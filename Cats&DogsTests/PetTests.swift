@@ -116,22 +116,22 @@ final class PetMoodTests: XCTestCase {
 final class WalkAdvisorTests: XCTestCase {
     func testGreatWhenTheNextSlotIsDryAndComfortable() {
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot("3 PM", 18, rain: 10), slot("6 PM", 16, rain: 80)])
-        XCTAssertEqual(advice, WalkAdvice(rating: .great, bestTimeLabel: nil))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .great, bestTimeLabel: nil))
     }
 
     func testOkayWithTheFirstGoodWindowWhenItIsWetNow() {
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 12, upcoming: [slot("3 PM", 12, rain: 90), slot("6 PM", 13, rain: 10)])
-        XCTAssertEqual(advice, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM"))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM"))
     }
 
     func testPoorWhenThereIsNoGoodWindowInTheLookahead() {
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 12, upcoming: (0..<8).map { slot("\($0)h", 12, rain: 90, hour: 12) })
-        XCTAssertEqual(advice, WalkAdvice(rating: .poor, bestTimeLabel: nil))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .poor, bestTimeLabel: nil))
     }
 
     func testPawsHotAboveTheHeatThresholdPointingAtTheFirstCoolerSlot() {
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 33, upcoming: [slot("3 PM", 33, rain: 0), slot("7 PM", 24, rain: 0)])
-        XCTAssertEqual(advice, WalkAdvice(rating: .pawsHot, bestTimeLabel: "7 PM"))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .pawsHot, bestTimeLabel: "7 PM"))
     }
 
     func testBadAirNowPointsAtTheFirstCleanerHour() {
@@ -139,7 +139,7 @@ final class WalkAdvisorTests: XCTestCase {
             currentFeelsLikeC: 18,
             upcoming: [slot("3 PM", 18, rain: 0, airBand: 3), slot("4 PM", 18, rain: 0, airBand: 4), slot("6 PM", 18, rain: 0, airBand: 2)]
         )
-        XCTAssertEqual(advice, WalkAdvice(rating: .badAir, bestTimeLabel: "6 PM"))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .badAir, bestTimeLabel: "6 PM"))
     }
 
     func testAirThatIsOnlyPoorForSomeStillAllowsAWalk() {
@@ -163,10 +163,15 @@ final class WalkAdvisorTests: XCTestCase {
         XCTAssertEqual(PetWeatherThresholds.validated(badAirBand: 5).badAirBand, 5)
     }
 
-    func testHeatOutranksBadAir() {
+    func testHeatOutranksBadAirAtTheSameLevelButHazardousAirOutranksHeat() {
+        XCTAssertEqual(
+            WalkAdvisor.advice(currentFeelsLikeC: 33, upcoming: [slot("3 PM", 33, rain: 0, airBand: 4)])?.rating,
+            .pawsHot
+        )
+        // The worst band keeps pets inside, which is worse than potty breaks in the heat.
         XCTAssertEqual(
             WalkAdvisor.advice(currentFeelsLikeC: 33, upcoming: [slot("3 PM", 33, rain: 0, airBand: 5)])?.rating,
-            .pawsHot
+            .badAir
         )
     }
 
@@ -185,7 +190,7 @@ final class WalkAdvisorTests: XCTestCase {
             currentFeelsLikeC: 18,
             upcoming: [slot("2 AM", 18, rain: 0), slot("5 AM", 17, rain: 0), slot("8 AM", 16, rain: 0)]
         )
-        XCTAssertEqual(advice, WalkAdvice(rating: .okay, bestTimeLabel: "8 AM"))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "8 AM"))
     }
 
     func testNoSlotsMeansNoAdvice() {
@@ -206,7 +211,9 @@ final class WalkAdvisorTests: XCTestCase {
             currentFeelsLikeC: 24,
             upcoming: [slot("1 PM", 24, rain: 0, pavement: 58), slot("6 PM", 22, rain: 0, pavement: 30)]
         )
-        XCTAssertEqual(advice, WalkAdvice(rating: .pawsHot, bestTimeLabel: "6 PM", pavementNow: 58, pavementBand: .dangerous))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .pawsHot, bestTimeLabel: "6 PM", pavementNow: 58))
+        XCTAssertEqual(advice?.now.reason, .pavement(.dangerous))
+        XCTAssertEqual(advice?.now.level, .stayIn)
     }
 
     func testImperialPavementIsComparedInCelsius() {
@@ -224,23 +231,31 @@ final class WalkAdvisorTests: XCTestCase {
             currentFeelsLikeC: 24,
             upcoming: [slot("2 PM", 24, rain: 0, pavement: 49), slot("6 PM", 22, rain: 0, pavement: 35)]
         )
-        XCTAssertEqual(advice, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM", pavementNow: 49, pavementBand: .warm))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM", pavementNow: 49))
+        XCTAssertEqual(advice?.now.reason, .pavement(.warm))
     }
 
-    func testTooHotAirOnMildPavementIsPawsHotButThePavementBandSaysThePavementIsFine() {
+    func testTooHotAirOnMildPavementIsPawsHotForTheHeatNotThePavement() {
         // A muggy evening: 31C feels-like, pavement no hotter than the air.
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 31, upcoming: [slot("7 PM", 29, rain: 0, pavement: 29)])
         XCTAssertEqual(advice?.rating, .pawsHot)
-        XCTAssertEqual(advice?.pavementBand, .pavementOK)
+        XCTAssertEqual(advice?.now.reason, .heat)
+        XCTAssertNil(advice?.now.pavement)
     }
 
     func testHoursAreJudgedByHowWarmTheyFeel() {
         // 25C air, but 31C in the humidity: past the 27C comfort limit.
-        let humid = slot("2 PM", 25, rain: 0, feelsLike: 31)
-        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 25, upcoming: [humid])?.rating, .poor)
+        XCTAssertFalse(WalkAdvisor.isWalkable(slot("2 PM", 25, rain: 0, feelsLike: 31), .standard))
         // 5C air, but 1C in the wind: under the 3C comfort limit.
-        let windy = slot("2 PM", 5, rain: 0, feelsLike: 1)
-        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 5, upcoming: [windy])?.rating, .poor)
+        XCTAssertFalse(WalkAdvisor.isWalkable(slot("2 PM", 5, rain: 0, feelsLike: 1), .standard))
+        XCTAssertTrue(WalkAdvisor.isWalkable(slot("2 PM", 25, rain: 0), .standard))
+    }
+
+    func testNowIsJudgedByTheCurrentFeelsLikeRatherThanTheForecastHour() {
+        // The forecast hour said 25C; the current reading feels warmer.
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 28, upcoming: [slot("2 PM", 25, rain: 0)])?.rating, .poor)
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 31, upcoming: [slot("2 PM", 25, rain: 0)])?.rating, .pawsHot)
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 25, upcoming: [slot("2 PM", 25, rain: 0)])?.rating, .great)
     }
 
     func testRemoteConfigThresholdsChangeTheWalkAdvice() {
@@ -366,21 +381,21 @@ final class WalkAdvisorTests: XCTestCase {
     func testASlotBeforeSunriseIsNotAWalkTimeEvenInsideTheWalkingHours() {
         // 7 AM is within 7 AM...8 PM, but on a winter morning it can still be dark (a night icon).
         let advice = WalkAdvisor.advice(currentFeelsLikeC: 12, upcoming: [slot("7 AM", 12, rain: 5, icon: "03n"), slot("8 AM", 12, rain: 5, icon: "03d")])
-        XCTAssertEqual(advice, WalkAdvice(rating: .okay, bestTimeLabel: "8 AM"))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "8 AM"))
     }
 
     func testRainingNowMeansNowIsNotTheWalkTimeEvenIfTheForecastHourLooksDry() {
         let slots = [slot("3 PM", 18, rain: 10), slot("4 PM", 18, rain: 10)]
-        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots), WalkAdvice(rating: .great, bestTimeLabel: nil))
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots)?.withoutCheck, WalkAdvice(rating: .great, bestTimeLabel: nil))
         XCTAssertEqual(
-            WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots, precipitatingNow: true),
+            WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots, conditionNow: "Rain")?.withoutCheck,
             WalkAdvice(rating: .okay, bestTimeLabel: "4 PM")
         )
     }
 
     func testRainingNowWithNoDryWindowLaterIsPoor() {
-        let advice = WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot("3 PM", 18, rain: 10), slot("4 PM", 18, rain: 90)], precipitatingNow: true)
-        XCTAssertEqual(advice, WalkAdvice(rating: .poor, bestTimeLabel: nil))
+        let advice = WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot("3 PM", 18, rain: 10), slot("4 PM", 18, rain: 90)], conditionNow: "Drizzle")
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .poor, bestTimeLabel: nil))
     }
 
     func testPrecipitationIsReadFromTheCondition() {
@@ -431,7 +446,7 @@ final class WalkAdvisorTests: XCTestCase {
         let gale = slot("4 PM", 20, rain: 0, epoch: t0 + 3600, wind: 15) // force 7, about 34 mph
         XCTAssertEqual(outlook([calm, gale]), .until(time: "4 PM", change: .wind))
         let windyNow = [slot("3 PM", 20, rain: 0, wind: 15), slot("4 PM", 20, rain: 0)]
-        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: windyNow), WalkAdvice(rating: .okay, bestTimeLabel: "4 PM"))
+        XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: windyNow)?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "4 PM"))
     }
 
     func testHeatHotPavementColdAndBadAirLaterEndTheWindow() {
@@ -535,5 +550,14 @@ final class WalkAdvisorTests: XCTestCase {
         let parts = label.split(separator: " ")
         guard parts.count == 2, let h = Int(parts[0]) else { return nil }
         return h % 12 + (parts[1] == "PM" ? 12 : 0)
+    }
+}
+
+private extension WalkAdvice {
+    /// The advice without the verdict behind it, to compare with an expected rating and time.
+    var withoutCheck: WalkAdvice {
+        var copy = self
+        copy.now = WalkCheck([])
+        return copy
     }
 }

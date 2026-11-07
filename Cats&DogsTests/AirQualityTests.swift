@@ -70,6 +70,28 @@ final class AirQualityTests: XCTestCase {
         XCTAssertEqual(response.byHour[100]?.mainPollutant, .fineParticles)
     }
 
+    func testADustStormIsDustNotSmoke() throws {
+        // Riyadh on 11-07: PM2.5's index off the top of the scale and none for PM10, but six times as
+        // much PM10 as PM2.5 by mass.
+        let json = """
+        {"timezone":"Asia/Riyadh","hourly":{"time":[100,3700],"us_aqi":[504,500],"us_aqi_pm2_5":[504,500],
+        "us_aqi_pm10":[null,500],"pm2_5":[517.8,null],"pm10":[3173.9,null]}}
+        """
+        let response = try JSONDecoder().decode(AirQualityHourlyResponse.self, from: Data(json.utf8))
+
+        XCTAssertEqual(response.byHour[100]?.mainPollutant, .coarseParticles)
+        // Both indices topped out: a tie goes to coarse particles.
+        XCTAssertEqual(response.byHour[3700]?.mainPollutant, .coarseParticles)
+    }
+
+    func testSmokeAndCityAirStayFineParticles() {
+        XCTAssertFalse(AirQuality.isDusty(pm25: 117, pm10: 127)) // Lahore's smoke
+        XCTAssertFalse(AirQuality.isDusty(pm25: 98, pm10: 204)) // New Delhi
+        XCTAssertTrue(AirQuality.isDusty(pm25: 128, pm10: 561)) // Kuwait City's dust
+        XCTAssertFalse(AirQuality.isDusty(pm25: 5, pm10: 30)) // too little to call
+        XCTAssertFalse(AirQuality.isDusty(pm25: nil, pm10: 300))
+    }
+
     func testAnHourWithoutAnIndexHasNoReading() throws {
         let json = #"{"timezone":"America/New_York","hourly":{"time":[100,3700],"us_aqi":[null,30]}}"#
         let response = try JSONDecoder().decode(AirQualityHourlyResponse.self, from: Data(json.utf8))

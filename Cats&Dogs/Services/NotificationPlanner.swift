@@ -268,8 +268,9 @@ enum NotificationPlanner {
     }
 
     /// "Smoky air today" when bad air rules out walking hours from the one under way at `date` to the
-    /// end of that day, named by the worst hour's main pollutant: particles read as smoke, ozone by
-    /// name, anything else as poor air. Nil on a clean day.
+    /// end of that day, named by the worst hour's main pollutant as the hero's caption names it
+    /// (`WalkReason.airName`): fine particles read as smoke, coarse ones as dust, ozone by name,
+    /// anything else as poor air. Nil on a clean day.
     static func badAirPhrase(
         after date: Date,
         slots: [HourlySlot],
@@ -280,11 +281,7 @@ enum NotificationPlanner {
             .filter { WalkAdvisor.hasBadAirForWalking($0, thresholds) }
             .max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
         guard let worst else { return nil }
-        return switch worst.airQuality?.mainPollutant {
-        case .fineParticles, .coarseParticles: "Smoky air today"
-        case .ozone: "High ozone today"
-        default: "Poor air today"
-        }
+        return "\(WalkReason.airName(worst.airQuality?.mainPollutant) ?? "Poor air") today"
     }
 
     /// The forecast hour under way at `date`.
