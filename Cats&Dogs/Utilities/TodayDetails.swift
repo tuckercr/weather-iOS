@@ -31,7 +31,7 @@ enum TodayDetails {
         return start.addingTimeInterval(60 * 60) > now ? ("At today's peak", false) : ("Easing off now", false)
     }
 
-    /// How far you can see, in the bands the Sky tile names.
+    /// How far you can see, in the bands Misty's View names.
     enum VisibilityBand: Equatable {
         case excellent, good, moderate, poor
 
@@ -85,7 +85,7 @@ enum TodayDetails {
         return "\(Int((Double(meters) / 1_000).rounded())) km"
     }
 
-    /// The Sky tile's word for the sky.
+    /// Misty's View's word for the sky.
     enum SkyCondition: String, Equatable {
         case clear = "Clear"
         case partlyCloudy = "Partly cloudy"

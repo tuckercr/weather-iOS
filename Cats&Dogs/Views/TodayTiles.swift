@@ -1,9 +1,9 @@
 import SwiftUI
 
 /// Today's details as a grid of tiles: feels like, wind, humidity, pavement, UV and air quality in pairs (an odd
-/// one out takes the full width), then daylight (with the UV index, when UV has no tile) and the sky across the
-/// full width. Each tile has a plain fact under its number; only the pavement, UV, air and sky tiles speak for
-/// the pets. Remote Config can hide any of them. Same layout as Android's `TodayTiles`.
+/// one out takes the full width), then daylight (with the UV index, when UV has no tile) and Misty's View (the
+/// sky and how far she can see) across the full width. Each tile has a plain fact under its number; only Fluff
+/// Factor, Paw Check, UV, Air Quality and Misty's View speak for the pets. Remote Config can hide any of them. Same layout as Android's `TodayTiles`.
 struct TodayTiles: View {
     let weather: CurrentWeather
     /// True when `weather` is the cached forecast's current hour standing in for an old reading:
@@ -316,7 +316,7 @@ struct TodayTiles: View {
         } else {
             sky.rawValue
         }
-        return Tile(icon: "eye.fill", label: "Sky") {
+        return Tile(icon: "eye.fill", label: "Misty's View") {
             Text(TodayDetails.keepUnitsTogether(headline))
                 .font(.brand(.headline))
             if let band {
