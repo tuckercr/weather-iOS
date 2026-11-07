@@ -117,7 +117,7 @@ enum WalkConditions {
     /// group ("Rain", "Thunderstorm"), since the hour's forecast can say dry while it's raining,
     /// `windForceNow` and `gustForceNow` its wind and gusts (Beaufort), as the Wind tile shows them,
     /// and `darkNow` the clock's word on darkness, since the hour the sun sets in keeps its daytime
-    /// icon.
+    /// icon. Without a dog (`hasDog` false) the pavement isn't weighed at all: it's only paws it burns.
     static func check(
         _ slot: HourlySlot,
         thresholds: PetWeatherThresholds,
@@ -125,7 +125,8 @@ enum WalkConditions {
         conditionNow: String? = nil,
         windForceNow: Int? = nil,
         gustForceNow: Int? = nil,
-        darkNow: Bool = false
+        darkNow: Bool = false,
+        hasDog: Bool = true
     ) -> WalkCheck {
         WalkCheck(factors(
             slot,
@@ -134,7 +135,8 @@ enum WalkConditions {
             conditionNow: conditionNow,
             windForceNow: windForceNow,
             gustForceNow: gustForceNow,
-            darkNow: darkNow
+            darkNow: darkNow,
+            hasDog: hasDog
         ))
     }
 
@@ -153,7 +155,8 @@ enum WalkConditions {
         conditionNow: String? = nil,
         windForceNow: Int? = nil,
         gustForceNow: Int? = nil,
-        darkNow: Bool = false
+        darkNow: Bool = false,
+        hasDog: Bool = true
     ) -> [WalkFactor] {
         let feelsLikeC = feelsLikeC ?? slot.units.toCelsius(slot.feelsLike)
         var factors: [WalkFactor] = []
@@ -170,7 +173,7 @@ enum WalkConditions {
         if thresholds.airQualityEnabled, let air = slot.airQuality {
             add(.air(band: air.band, pollutant: air.mainPollutant), airLevel(band: air.band, thresholds))
         }
-        if let pavement = slot.pavementTemperature {
+        if hasDog, let pavement = slot.pavementTemperature {
             let band = TodayDetails.pavementBand(
                 pavementC: slot.units.toCelsius(pavement),
                 groundWet: slot.groundWet == true,

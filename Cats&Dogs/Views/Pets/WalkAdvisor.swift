@@ -65,7 +65,8 @@ enum WalkAdvisor {
     /// hourly forecast can say the hour in progress is dry while it's raining, so when it's raining
     /// now, now is never the walk time. `windForceNow` and `gustForceNow` are the current reading's
     /// wind and gusts (Beaufort), as the Wind tile shows them. Hurricane force wind forecast in the
-    /// next few hours counts as now. `sunsetEpoch` is today's sunset, for the "gets dark" line.
+    /// next few hours counts as now. Without a dog (`hasDog` false) the verdict on now leaves the
+    /// pavement out. `sunsetEpoch` is today's sunset, for the "gets dark" line.
     /// `darkNow` is the clock's word on darkness: the hour in progress keeps its daytime icon for the
     /// whole hour the sun sets in, so without it now could be "a great time" for up to an hour after
     /// dark.
@@ -79,7 +80,8 @@ enum WalkAdvisor {
         windForceNow: Int? = nil,
         gustForceNow: Int? = nil,
         sunsetEpoch: Int? = nil,
-        darkNow: Bool = false
+        darkNow: Bool = false,
+        hasDog: Bool = true
     ) -> WalkAdvice? {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
@@ -91,7 +93,8 @@ enum WalkAdvisor {
             conditionNow: conditionNow,
             windForceNow: windForceNow,
             gustForceNow: gustForceNow,
-            darkNow: darkNow
+            darkNow: darkNow,
+            hasDog: hasDog
         )
         let soon = Int(now.timeIntervalSince1970) + dangerAheadSeconds
         if check.level < .danger, slots.contains(where: { slot in

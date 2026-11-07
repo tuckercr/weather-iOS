@@ -212,8 +212,8 @@ enum PetMood: CaseIterable {
 
     /// When `walk` rules out more than a wait for a reason the scene can't show (the air, the
     /// pavement, a gale or worse), the caption gives the reason instead of the weather: "Smoky air
-    /// today. Quick potty breaks, then back on the sofa." Nil otherwise, and for the pavement without
-    /// a dog. It takes the place of a seasonal theme's caption too.
+    /// today. Quick potty breaks, then back on the sofa." Nil otherwise. It takes the place of a
+    /// seasonal theme's caption too. Without a dog the check has no pavement in it.
     static func walkCaption(
         _ walk: WalkCheck,
         hasDog: Bool,
@@ -224,9 +224,7 @@ enum PetMood: CaseIterable {
     }
 
     static func walkCaptions(_ walk: WalkCheck, hasDog: Bool) -> [String]? {
-        // Without a dog the pavement is nobody's concern, so the next reason (bad air, a gale) stands.
-        let factors = hasDog ? walk.factors : walk.factors.filter { if case .pavement = $0.reason { false } else { true } }
-        guard let worst = factors.first, worst.level >= .pottyOnly else { return nil }
+        guard let worst = walk.factors.first, worst.level >= .pottyOnly else { return nil }
         switch worst.reason {
         case let .wind(force):
             if force >= WalkConditions.hurricaneForce {

@@ -12,6 +12,7 @@ final class WalkCheckTests: XCTestCase {
         windForceNow: Int? = nil,
         gustForceNow: Int? = nil,
         darkNow: Bool = false,
+        hasDog: Bool = true,
         thresholds: PetWeatherThresholds? = nil
     ) -> WalkCheck {
         WalkConditions.check(
@@ -21,7 +22,8 @@ final class WalkCheckTests: XCTestCase {
             conditionNow: conditionNow,
             windForceNow: windForceNow,
             gustForceNow: gustForceNow,
-            darkNow: darkNow
+            darkNow: darkNow,
+            hasDog: hasDog
         )
     }
 
@@ -177,7 +179,7 @@ final class WalkCheckTests: XCTestCase {
         )
         XCTAssertNotNil(PetMood.walkCaptions(check(slot(wind: 19)), hasDog: true))
         XCTAssertNotNil(PetMood.walkCaptions(check(slot(pavement: 54)), hasDog: true))
-        XCTAssertNil(PetMood.walkCaptions(check(slot(pavement: 54)), hasDog: false))
+        XCTAssertNil(PetMood.walkCaptions(check(slot(pavement: 54), hasDog: false), hasDog: false))
         XCTAssertNil(PetMood.walkCaptions(check(slot(wind: 15)), hasDog: true))
         XCTAssertNil(PetMood.walkCaptions(check(slot(airBand: 2)), hasDog: true))
         // Heat is the scene's to show: the hot mood's captions already say so.
@@ -259,15 +261,21 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(check(slot(rain: 80, icon: "10d"), conditionNow: "Drizzle").reason, .rain(likely: true))
     }
 
-    func testWithoutADogThePavementDoesNotHideTheAir() {
-        // Dangerously hot pavement ranks first, but it's no one's concern without a dog.
-        let smokyAndHot = check(slot(pavement: 60, airBand: 3, pollutant: .fineParticles))
-        XCTAssertEqual(smokyAndHot.reason, .pavement(.dangerous))
+    func testWithoutADogThePavementIsNotWeighed() {
+        // Dangerously hot pavement under smoky air: it leads with a dog, and isn't there without one.
+        let hot = slot(pavement: 60, airBand: 3, pollutant: .fineParticles)
+        XCTAssertEqual(check(hot).reason, .pavement(.dangerous))
+        XCTAssertNil(check(hot, hasDog: false).pavement)
+        XCTAssertEqual(check(hot, hasDog: false).reason, .air(band: 3, pollutant: .fineParticles))
         XCTAssertEqual(
-            PetMood.walkCaptions(smokyAndHot, hasDog: false)?.first,
+            PetMood.walkCaptions(check(hot, hasDog: false), hasDog: false)?.first,
             "Smoky air today. Misty's keeping the windows shut."
         )
-        XCTAssertEqual(PetMood.walkCaptions(smokyAndHot, hasDog: true)?.first, "Hot pavement! Sunny's sticking to the grass today.")
+        XCTAssertEqual(PetMood.walkCaptions(check(hot), hasDog: true)?.first, "Hot pavement! Sunny's sticking to the grass today.")
+        // The advice for now leaves it out too.
+        let advice = WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot(pavement: 60)], hasDog: false)
+        XCTAssertNil(advice?.now.pavement)
+        XCTAssertEqual(advice?.rating, .great)
     }
 
     func testAirQualitySwitchedOffLeavesTheAirOut() {

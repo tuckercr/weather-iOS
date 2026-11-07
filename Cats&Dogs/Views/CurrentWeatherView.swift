@@ -429,7 +429,9 @@ private struct CurrentWeatherContent: View {
             windForceNow: TodayDetails.windForce(speed: weather.windSpeed, units: weather.units),
             gustForceNow: weather.windGust.map { TodayDetails.windForce(speed: $0, units: weather.units) },
             sunsetEpoch: weatherToday.sunsetEpoch,
-            darkNow: StaleWeather.isDark(weatherToday, at: now)
+            darkNow: StaleWeather.isDark(weatherToday, at: now),
+            // Without a dog the pavement isn't weighed: the hero and a danger warning still read it.
+            hasDog: showWalkCard
         )
     }
 
