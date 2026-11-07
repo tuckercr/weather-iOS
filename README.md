@@ -157,7 +157,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - On landscape phones and iPad the pets and walk card sit beside today's details, and the week
      splits into two columns.
    - City tabs appear under the title once two or more cities are saved.
-   - Pull to refresh. Data also refreshes silently whenever the app returns to the foreground
+   - Pull to refresh. On My Location it reads the phone's position first, whatever the 15-minute
+     limit below, so My Location moves (by the usual 1 km rule) before its weather is fetched. My
+     Location otherwise re-reads the position at launch and when the app returns to the foreground,
+     at most every 15 minutes. Data also refreshes silently whenever the app returns to the foreground
      (unless `foreground_refresh_min_minutes` says that city was fetched recently), every 30 minutes
      while the app stays open, and periodically in the background. Each refresh also moves the
      clock on, so hours that have passed drop off and a screen left open overnight keeps up.
@@ -202,8 +205,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      - With a My Location saved, *Follow my location* (off). With it on and "Always" location
        allowed, iOS wakes the app after a significant move, even when it isn't running: My Location
        moves there (by the usual 1 km rule), the weather is refreshed and the notifications are
-       replanned. The background refresh also moves it to the last position iOS has. Otherwise My
-       Location only moves while the app is open. Turning it on explains why, then shows iOS's one
+       replanned; with the app open, the screen follows the move at once. The background refresh
+       also moves it to the last position iOS has. Otherwise My Location only moves while the app is
+       open. Turning it on explains why, then shows iOS's one
        "Change to Always Allow" prompt; after that it opens the iOS Settings app. With "Always"
        already allowed it just turns on. It shows on only while "Always" is allowed. Off, the app
        stops watching for moves.

@@ -16,6 +16,8 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
 
     /// The switch as set.
     private(set) var switchedOn: Bool
+    /// How many times it has moved My Location in this run, so an open screen can take the move up.
+    private(set) var moves = 0
     private(set) var authorization: CLAuthorizationStatus
 
     @ObservationIgnored private let manager = CLLocationManager()
@@ -79,8 +81,10 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
 
     /// For the background refresh: My Location moves to the last position iOS has, when following.
     func followLastKnownPosition() {
-        guard isFollowing, let location = manager.location else { return }
-        preferences.moveMyLocation(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        guard isFollowing, let location = manager.location,
+              preferences.moveMyLocation(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+        else { return }
+        moves += 1
     }
 
     /// A move reported by iOS: My Location follows a real one, then the weather and notifications.
@@ -90,6 +94,7 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
                   latitude: location.coordinate.latitude,
                   longitude: location.coordinate.longitude
               ) else { return }
+        moves += 1
         await refresh()
     }
 

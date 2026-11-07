@@ -71,6 +71,11 @@ struct CurrentWeatherView: View {
         .onChange(of: cityListViewModel.locations.notificationLocation?.cacheKey) { _, _ in
             Task { await WeatherBackgroundRefresher.shared.performRefresh(replan: true) }
         }
+        // Follow my location moves My Location in storage, even while the app is open: the screen
+        // takes the move up, and the new place's weather comes with the active location changing.
+        .onChange(of: MyLocationFollower.shared.moves) { _, _ in
+            cityListViewModel.followStoredMyLocation()
+        }
         .onChange(of: unitOverride) { _, _ in
             // Cached data is in the old units, so this has to be a real refetch.
             refreshActiveLocation()
@@ -272,6 +277,7 @@ struct CurrentWeatherView: View {
             .padding(.bottom, 24)
         }
         .refreshable {
+            await moveMyLocationBeforeRefresh()
             refreshActiveLocation()
             // Keep the pull spinner up until the fetch has finished, rather than dropping it at once.
             while weatherViewModel.isRefreshing {
@@ -305,6 +311,16 @@ struct CurrentWeatherView: View {
             fetchingMyLocationToAdd = true
             locationViewModel.fetchLocation()
         }
+    }
+
+    /// Pull to refresh on My Location reads the phone's position first, whatever the 15-minute
+    /// limit, so My Location moves (by the usual 1 km rule) before its weather is fetched. A drive
+    /// with the screen on never returns to the app, so this is how to catch up by hand.
+    private func moveMyLocationBeforeRefresh() async {
+        guard cityListViewModel.activeLocation?.isCurrentLocation == true,
+              let here = await locationViewModel.currentPosition() else { return }
+        cityListViewModel.noteMyLocationChecked()
+        cityListViewModel.updateCurrentLocation(here)
     }
 
     private func refreshActiveLocation() {

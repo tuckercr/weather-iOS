@@ -101,6 +101,19 @@ final class LocationPermissionViewModel: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// The phone's position now, waited for, for pull to refresh on My Location: nil without
+    /// permission, while another fetch is under way, or without a fix. Leaves `state` alone.
+    func currentPosition() async -> SavedLocation? {
+        guard hasLocationPermission(), state != .locating, continuation == nil,
+              let location = try? await requestLocation() else { return nil }
+        return SavedLocation(
+            label: SavedLocation.myLocationLabel,
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            isCurrentLocation: true
+        )
+    }
+
     private func requestLocation() async throws -> CLLocation? {
         if let locationFetcherOverride {
             return try await locationFetcherOverride()

@@ -45,6 +45,8 @@ final class MyLocationFollowerTests: XCTestCase {
 
         XCTAssertEqual(preferences.store.savedLocations.last?.latitude, 40.1)
         XCTAssertEqual(refreshes, 1)
+        // So an open screen takes the move up.
+        XCTAssertEqual(follower.moves, 1)
     }
 
     func testWobbleWhileFollowingNeitherMovesNorRefreshes() async {
@@ -55,6 +57,7 @@ final class MyLocationFollowerTests: XCTestCase {
 
         XCTAssertEqual(preferences.store.savedLocations.last?.latitude, 40.0)
         XCTAssertEqual(refreshes, 0)
+        XCTAssertEqual(follower.moves, 0)
     }
 
     func testWithoutAlwaysTheSwitchShowsOffAndMovesAreIgnored() async {
