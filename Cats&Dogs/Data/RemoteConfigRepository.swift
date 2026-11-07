@@ -82,7 +82,7 @@ final class RemoteConfigRepository {
     nonisolated static let keySeasonalThemes = "seasonal_themes"
     /// Off shows temperatures as "89°" rather than "89 °F". Units and conversion are unchanged.
     nonisolated static let keyTemperatureUnitsShown = "temperature_units_shown"
-    nonisolated static let defaultTemperatureUnitsShown = true
+    nonisolated static let defaultTemperatureUnitsShown = false
     /// Off sends forecasts for cities with coordinates to OpenWeatherMap instead of Open-Meteo.
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.

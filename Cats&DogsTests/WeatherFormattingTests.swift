@@ -84,10 +84,10 @@ final class WeatherFormattingTests: XCTestCase {
         XCTAssertEqual(WeatherFormatting.rainChance(96), 100)
     }
 
-        func testTemperaturesAreWholeDegrees() {
-        XCTAssertEqual(WeatherFormatting.temperature(56.3, units: .imperial), "56 °F")
-        XCTAssertEqual(WeatherFormatting.temperature(56.5, units: .imperial), "57 °F")
-        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric), "-4 °C")
+    func testTemperaturesAreWholeDegrees() {
+        XCTAssertEqual(WeatherFormatting.temperature(56.3, units: .imperial, showsUnit: true), "56 °F")
+        XCTAssertEqual(WeatherFormatting.temperature(56.5, units: .imperial, showsUnit: true), "57 °F")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric, showsUnit: true), "-4 °C")
     }
 
     func testTemperaturesShowTheUnitWhenSwitchedOn() {
@@ -108,13 +108,13 @@ final class WeatherFormattingTests: XCTestCase {
         XCTAssertEqual(WeatherFormatting.temperature(-0.4, units: .metric, showsUnit: false), "0°")
     }
 
-    func testTemperaturesShowTheUnitByDefault() {
+    func testTemperaturesLeaveOutTheUnitByDefault() {
         // Remote Config's default, which is all there is without Firebase.
         XCTAssertEqual(
             WeatherFormatting.temperature(88.6, units: .imperial),
-            WeatherFormatting.temperature(88.6, units: .imperial, showsUnit: true)
+            WeatherFormatting.temperature(88.6, units: .imperial, showsUnit: false)
         )
-        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric), "-4 °C")
+        XCTAssertEqual(WeatherFormatting.temperature(-3.6, units: .metric), "-4°")
     }
 
     func testDistanceUnitsFollowTheChoiceOrTheMeasurementSystem() {

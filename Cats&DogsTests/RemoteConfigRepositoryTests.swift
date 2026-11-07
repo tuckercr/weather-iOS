@@ -122,9 +122,9 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.rainOutlookMinChance(.infinity), 20)
     }
 
-    func testTemperatureUnitsAreShownByDefault() {
+    func testTemperaturesLeaveOutTheUnitByDefault() {
         XCTAssertEqual(RemoteConfigRepository.keyTemperatureUnitsShown, "temperature_units_shown")
-        XCTAssertTrue(RemoteConfigRepository.defaultTemperatureUnitsShown)
+        XCTAssertFalse(RemoteConfigRepository.defaultTemperatureUnitsShown)
     }
 
     @MainActor
@@ -142,7 +142,7 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookHours, 10)
         XCTAssertEqual(RemoteConfigRepository.shared.rainOutlookMinChance, 20)
         XCTAssertTrue(RemoteConfigRepository.openMeteoEnabled)
-        XCTAssertTrue(RemoteConfigRepository.temperatureUnitsShown)
+        XCTAssertFalse(RemoteConfigRepository.temperatureUnitsShown)
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkTimeNotificationsEnabled)
