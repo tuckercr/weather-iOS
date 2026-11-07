@@ -2,8 +2,8 @@ import Foundation
 
 enum WeatherFormatting {
     /// Whole degrees: forecasts aren't accurate to a tenth, and other weather apps don't show one.
-    /// "89 °F", or "89°" with `temperature_units_shown` off in Remote Config. Every temperature shown
-    /// with its unit comes through here, so that switch is read in this one place.
+    /// "89°", or "89 °F" with `temperature_units_shown` on in Remote Config (off by default). Every
+    /// temperature that can show its unit comes through here, so that switch is read in this one place.
     static func temperature(
         _ value: Double,
         units: WeatherUnits,
