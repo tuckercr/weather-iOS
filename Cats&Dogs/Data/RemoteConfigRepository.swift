@@ -52,8 +52,7 @@ final class RemoteConfigRepository {
 
     /// Hides the "time to walk the dog" card.
     nonisolated static let keyWalkCardEnabled = "walk_card_enabled"
-    /// Hide the HOURLY strip, the "Rain starting around 3:15 PM" line and the rest of the week, each
-    /// with its header.
+    /// Hide the hourly strip, the "Rain starting around 3:15 PM" line and the rest of the week.
     nonisolated static let keyHourlyForecastEnabled = "hourly_forecast_enabled"
     nonisolated static let keyNextRainEnabled = "next_rain_enabled"
     nonisolated static let keyWeekForecastEnabled = "week_forecast_enabled"

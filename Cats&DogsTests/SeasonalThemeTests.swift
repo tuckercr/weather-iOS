@@ -66,9 +66,12 @@ final class SeasonalThemeTests: XCTestCase {
         XCTAssertEqual(theme.caption(night: true, on: date("2026-10-31 22:00"), calendar: utcCalendar()), "Night")
     }
 
-    func testTileHeadersFallBackToTheAccentWhenAThemeLeavesThemOut() throws {
+    func testTilesKeepTheBrandColourWhenAThemeLeavesTheirsOut() throws {
+        // This theme still carries the old accent colours, which are ignored.
         let theme = try XCTUnwrap(SeasonalThemes.parse(Data(halloweenJSON.utf8))?.first)
         XCTAssertNil(theme.colors.tileHeaderLight)
+        XCTAssertNil(theme.tileHeader)
+        XCTAssertNotNil(SeasonalThemes.builtIn.first?.tileHeader)
         XCTAssertEqual(SeasonalThemes.builtIn.first?.colors.tileHeaderLight?.rgb, 0xC25E00)
         XCTAssertEqual(SeasonalThemes.builtIn.first?.colors.tileHeaderDark?.rgb, 0xF5A94E)
     }

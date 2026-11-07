@@ -477,8 +477,8 @@ private struct CurrentWeatherContent: View {
             } else {
                 heroSection(showNextRain: outlook == nil)
             }
+            // No section headers: each card says what it is.
             if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
-                SectionHeader("HOURLY")
                 HourlyStrip(
                     items: HourlyStripItem.strip(
                         hourlySlots,
@@ -490,14 +490,12 @@ private struct CurrentWeatherContent: View {
             }
             // After the hourly strip in either layout: on wide screens Today is already up top.
             if let outlook {
-                SectionHeader("RAIN OUTLOOK")
                 RainOutlookCard(outlook: outlook)
             }
             if !isWide {
                 todaySection
             }
             if RemoteConfigRepository.shared.radarEnabled {
-                SectionHeader("RADAR")
                 RadarCard(location: location, timeZone: weather.timeZone)
             }
             restOfWeek
@@ -524,7 +522,6 @@ private struct CurrentWeatherContent: View {
 
     @ViewBuilder
     private var todaySection: some View {
-        SectionHeader("TODAY")
         detailsCard
     }
 
@@ -532,8 +529,6 @@ private struct CurrentWeatherContent: View {
     private var restOfWeek: some View {
         if RemoteConfigRepository.shared.weekForecastEnabled,
            !upcomingDays.isEmpty || forecastState == .loading || isForecastError {
-            SectionHeader("REST OF WEEK")
-
             if !upcomingDays.isEmpty {
                 // Wide screens show the days in two columns, with matching row heights, rather than
                 // stretched rows.
@@ -657,23 +652,6 @@ private struct CurrentWeatherContent: View {
             distanceInMiles: distanceInMiles,
             switches: RemoteConfigRepository.shared.todayTiles
         )
-    }
-}
-
-private struct SectionHeader: View {
-    let title: String
-    @Environment(\.seasonalTheme) private var seasonalTheme
-
-    init(_ title: String) {
-        self.title = title
-    }
-
-    var body: some View {
-        Text(title)
-            .font(.caption)
-            .foregroundStyle(seasonalTheme?.accent ?? Color.secondaryText)
-            .padding(.top, 4)
-            .accessibilityAddTraits(.isHeader)
     }
 }
 

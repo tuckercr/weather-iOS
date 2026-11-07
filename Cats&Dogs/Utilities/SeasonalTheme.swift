@@ -24,11 +24,9 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
         /// The cards below the hero, in light and dark mode.
         let cardLight: HexColor
         let cardDark: HexColor
-        /// Section headers ("HOURLY", "TODAY").
-        let accentLight: HexColor
-        let accentDark: HexColor
         /// Each tile's icon and label ("Feels like"), in place of the brand blue. Optional: without
-        /// them the tiles take `accent`.
+        /// them the tiles keep the brand colour. `accentLight` and `accentDark`, which coloured the
+        /// old section headers, are ignored if a theme still has them.
         let tileHeaderLight: HexColor?
         let tileHeaderDark: HexColor?
     }
@@ -157,13 +155,10 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
 
     var cardBackground: Color { HexColor.adaptive(light: colors.cardLight, dark: colors.cardDark) }
 
-    var accent: Color { HexColor.adaptive(light: colors.accentLight, dark: colors.accentDark) }
-
-    var tileHeader: Color {
-        HexColor.adaptive(
-            light: colors.tileHeaderLight ?? colors.accentLight,
-            dark: colors.tileHeaderDark ?? colors.accentDark
-        )
+    /// Nil leaves the tiles in the brand colour.
+    var tileHeader: Color? {
+        guard let light = colors.tileHeaderLight, let dark = colors.tileHeaderDark else { return nil }
+        return HexColor.adaptive(light: light, dark: dark)
     }
 }
 

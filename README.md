@@ -479,9 +479,9 @@ Remote Config parameters are defined and deployed from the Android repo
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |
 | `walk_card_enabled` | true | Hides the "Best Walk Time" card for everyone; users can also turn it off in Settings |
-| `hourly_forecast_enabled` | true | Hides the HOURLY strip, header included, for everyone |
+| `hourly_forecast_enabled` | true | Hides the hourly strip for everyone |
 | `next_rain_enabled` | true | Hides the "Rain starting around 3:15 PM" line (from the 15-minute forecast) for everyone |
-| `week_forecast_enabled` | true | Hides the rest of the week, header and day rows, for everyone |
+| `week_forecast_enabled` | true | Hides the rest of the week's day rows for everyone |
 | `rain_outlook_enabled` | true | Hides the Rain outlook card for everyone; the next-rain line then shows on its own as before |
 | `rain_outlook_hours` | 10 (whole number 6–12, otherwise the default) | Hours in the Rain outlook chart, from the hour in progress |
 | `rain_outlook_min_chance` | 20 (whole number 1–100, otherwise the default) | The Rain outlook card only shows when an hour in the chart reaches this chance of rain; the last such hour is the one "Drying out after" names |
