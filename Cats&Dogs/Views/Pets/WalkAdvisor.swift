@@ -47,6 +47,8 @@ enum WalkAdvisor {
     private static let outlookSeconds = 6 * 3600
     /// Sunset this close is worth a mention.
     private static let darkSoonSeconds = 3 * 3600
+    /// Hurricane force wind forecast this soon is a danger now: time to get everyone inside.
+    private static let dangerAheadSeconds = 6 * 3600
     /// A chance of rain at or above this is "rain"; from the walk limit up to it, "maybe rain".
     static let likelyRainChance = 60
 
@@ -61,7 +63,9 @@ enum WalkAdvisor {
     ///
     /// `conditionNow` is the current observation's condition group ("Rain", "Thunderstorm"). The
     /// hourly forecast can say the hour in progress is dry while it's raining, so when it's raining
-    /// now, now is never the walk time. `sunsetEpoch` is today's sunset, for the "gets dark" line.
+    /// now, now is never the walk time. `windForceNow` and `gustForceNow` are the current reading's
+    /// wind and gusts (Beaufort), as the Wind tile shows them. Hurricane force wind forecast in the
+    /// next few hours counts as now. `sunsetEpoch` is today's sunset, for the "gets dark" line.
     /// `darkNow` is the clock's word on darkness: the hour in progress keeps its daytime icon for the
     /// whole hour the sun sets in, so without it now could be "a great time" for up to an hour after
     /// dark.
@@ -72,19 +76,31 @@ enum WalkAdvisor {
         timeZone: TimeZone = .current,
         thresholds: PetWeatherThresholds = .standard,
         conditionNow: String? = nil,
+        windForceNow: Int? = nil,
+        gustForceNow: Int? = nil,
         sunsetEpoch: Int? = nil,
         darkNow: Bool = false
     ) -> WalkAdvice? {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
         guard let first = slots.first else { return nil }
-        let check = WalkConditions.check(
+        var check = WalkConditions.check(
             first,
             thresholds: thresholds,
             feelsLikeC: currentFeelsLikeC,
             conditionNow: conditionNow,
+            windForceNow: windForceNow,
+            gustForceNow: gustForceNow,
             darkNow: darkNow
         )
+        let soon = Int(now.timeIntervalSince1970) + dangerAheadSeconds
+        if check.level < .danger, slots.contains(where: { slot in
+            (slot.epochSeconds ?? 0) <= soon
+                && TodayDetails.windForce(speed: slot.windSpeed, units: slot.units) >= WalkConditions.hurricaneForce
+        }) {
+            let hurricane = WalkFactor(reason: .wind(force: WalkConditions.hurricaneForce), level: .danger)
+            check = WalkCheck(check.factors.filter { if case .wind = $0.reason { false } else { true } } + [hurricane])
+        }
         let firstGood = slots.dropFirst().first { isWalkable($0, thresholds) }
         let rating = rating(check, hasBetterTime: firstGood != nil)
         let bestSlot = rating == .great ? nil : firstGood
@@ -165,7 +181,8 @@ enum WalkAdvisor {
     /// Bad air (potty breaks only or worse, by default from Unhealthy) in a walking hour: an hour the
     /// walk advice would otherwise have weighed up. Unknown air counts as clean.
     static func hasBadAirForWalking(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        guard WalkConditions.isWalkingTime(slot, thresholds), let band = slot.airQuality?.band else { return false }
+        guard thresholds.airQualityEnabled, WalkConditions.isWalkingTime(slot, thresholds), let band = slot.airQuality?.band
+        else { return false }
         return WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly
     }
 
@@ -173,6 +190,6 @@ enum WalkAdvisor {
     /// since humid heat and wind chill are what the dog feels, and pavement that's only getting hot
     /// already rules an hour out, so the suggested hour is a cooler one.
     static func isWalkable(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
-        WalkConditions.check(slot, thresholds: thresholds).isWalkable
+        WalkConditions.isWalkable(slot, thresholds)
     }
 }

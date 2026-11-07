@@ -24,6 +24,8 @@ struct PetWeatherThresholds: Equatable {
     /// Wind at this Beaufort force or more (7, a near gale: about 31 mph or 50 km/h) isn't
     /// suggested for a walk.
     var windyForce: Int = 7
+    /// Remote Config's `air_quality_enabled`: off, the walk rules leave the air out.
+    var airQualityEnabled = true
 
     static let standard = PetWeatherThresholds(
         hotPavementC: 52,

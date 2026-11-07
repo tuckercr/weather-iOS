@@ -426,6 +426,8 @@ private struct CurrentWeatherContent: View {
             timeZone: weather.timeZone,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
             conditionNow: weather.conditionMain,
+            windForceNow: TodayDetails.windForce(speed: weather.windSpeed, units: weather.units),
+            gustForceNow: weather.windGust.map { TodayDetails.windForce(speed: $0, units: weather.units) },
             sunsetEpoch: weatherToday.sunsetEpoch,
             darkNow: StaleWeather.isDark(weatherToday, at: now)
         )
@@ -468,14 +470,16 @@ private struct CurrentWeatherContent: View {
 
     var body: some View {
         let outlook = rainOutlook
+        // Worked out once per update: the hero's caption and the walk card both read it.
+        let walkAdvice = self.walkAdvice
         VStack(alignment: .leading, spacing: 12) {
             if isWide {
                 HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) { heroSection(showNextRain: outlook == nil) }
+                    VStack(alignment: .leading, spacing: 12) { heroSection(showNextRain: outlook == nil, walkAdvice: walkAdvice) }
                     VStack(alignment: .leading, spacing: 12) { todaySection }
                 }
             } else {
-                heroSection(showNextRain: outlook == nil)
+                heroSection(showNextRain: outlook == nil, walkAdvice: walkAdvice)
             }
             // No section headers: each card says what it is.
             if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
@@ -510,13 +514,12 @@ private struct CurrentWeatherContent: View {
 
     /// `showNextRain` is false while the Rain outlook card shows, as its headline says the same.
     @ViewBuilder
-    private func heroSection(showNextRain: Bool) -> some View {
-        heroCard
+    private func heroSection(showNextRain: Bool, walkAdvice: WalkAdvice?) -> some View {
+        heroCard(caption: heroCaption(walk: walkAdvice?.now))
         if showNextRain, let nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
-        // A danger warning shows for everyone, dog or not, whatever Remote Config says of the card.
-        if let walkAdvice, walkAdvice.rating == .danger || (showWalkCard && RemoteConfigRepository.shared.walkCardEnabled) {
+        if let walkAdvice, WalkCard.isShown(walkAdvice, hasDog: showWalkCard, cardEnabled: RemoteConfigRepository.shared.walkCardEnabled) {
             WalkCard(advice: walkAdvice)
         }
     }
@@ -572,18 +575,21 @@ private struct CurrentWeatherContent: View {
         return false
     }
 
-    /// The walk's reason when it's one the scene can't show (bad air, hot pavement, a gale), then the
-    /// theme's caption on its day, otherwise the weather's, leaving out walks when now isn't the time.
-    private var heroCaption: String {
+    /// `PetMood.heroCaption`: the walk's reason, the theme's caption, or the weather's.
+    private func heroCaption(walk: WalkCheck?) -> String {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = weather.timeZone
-        let walk = walkAdvice?.now
-        return walk.flatMap { PetMood.walkCaption($0, hasDog: showWalkCard, on: now, timeZone: weather.timeZone) }
-            ?? seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
-            ?? mood.caption(on: now, timeZone: weather.timeZone, hasDog: showWalkCard, walk: walk)
+        return PetMood.heroCaption(
+            walk: walk,
+            hasDog: showWalkCard,
+            themeCaption: seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar),
+            mood: mood,
+            on: now,
+            timeZone: weather.timeZone
+        )
     }
 
-    private var heroCard: some View {
+    private func heroCard(caption: String) -> some View {
         Button {
             if let today = todayForecast {
                 onDaySelected(today)
@@ -617,7 +623,7 @@ private struct CurrentWeatherContent: View {
                     .fontWeight(.medium)
                     // "H 64°" would be read as the letter H.
                     .accessibilityLabel("High \(high)°, low \(low)°")
-                Text(heroCaption)
+                Text(caption)
                     .font(.brand(.title3))
                     .multilineTextAlignment(.center)
                     .padding(.top, 8)

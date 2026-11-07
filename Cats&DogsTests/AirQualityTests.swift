@@ -1,6 +1,7 @@
 import XCTest
 @testable import Cats_Dogs
 
+@MainActor
 final class AirQualityTests: XCTestCase {
     private func us(_ index: Int) -> AirQuality {
         AirQuality(index: index, scale: .us, mainPollutant: nil)

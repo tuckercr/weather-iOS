@@ -9,10 +9,20 @@ final class WalkCheckTests: XCTestCase {
         _ slot: HourlySlot,
         feelsLikeC: Double? = nil,
         conditionNow: String? = nil,
+        windForceNow: Int? = nil,
+        gustForceNow: Int? = nil,
         darkNow: Bool = false,
-        thresholds: PetWeatherThresholds = .standard
+        thresholds: PetWeatherThresholds? = nil
     ) -> WalkCheck {
-        WalkConditions.check(slot, thresholds: thresholds, feelsLikeC: feelsLikeC, conditionNow: conditionNow, darkNow: darkNow)
+        WalkConditions.check(
+            slot,
+            thresholds: thresholds ?? .standard,
+            feelsLikeC: feelsLikeC,
+            conditionNow: conditionNow,
+            windForceNow: windForceNow,
+            gustForceNow: gustForceNow,
+            darkNow: darkNow
+        )
     }
 
     // MARK: - The verdict
@@ -207,6 +217,96 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(AirQuality(index: 320, scale: .us, mainPollutant: nil).line(hasDog: true), "Stay in. Potty breaks only")
     }
 
+    // MARK: - Fixes from the 11-07 review
+
+    func testNowsWindComesFromTheCurrentReadingNotTheForecastHour() {
+        // The Wind tile shows the reading: a hurricane under a calmer hour, and calm under a gale.
+        XCTAssertEqual(check(slot(wind: 26), windForceNow: 12).level, .danger)
+        XCTAssertEqual(check(slot(wind: 19), windForceNow: 3).level, .great)
+        XCTAssertEqual(
+            WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: [slot(wind: 26)], windForceNow: 12)?.rating,
+            .danger
+        )
+    }
+
+    func testHurricaneForceGustsAreADanger() {
+        XCTAssertEqual(check(slot(wind: 19), gustForceNow: 12).level, .danger)
+        XCTAssertEqual(check(slot(wind: 19), gustForceNow: 12).reason, .wind(force: 12))
+        // Lesser gusts are left to the Wind tile.
+        XCTAssertEqual(check(slot(wind: 19), gustForceNow: 10).level, .pottyOnly)
+    }
+
+    func testHurricaneForceWindInTheNextFewHoursIsADangerNow() {
+        let start = 1_762_516_800
+        let now = Date(timeIntervalSince1970: TimeInterval(start))
+        func advice(hurricaneIn hours: Int) -> WalkAdvice? {
+            WalkAdvisor.advice(
+                currentFeelsLikeC: 18,
+                upcoming: [slot(epoch: start), slot("4 PM", wind: 35, epoch: start + hours * 3600)],
+                now: now
+            )
+        }
+        XCTAssertEqual(advice(hurricaneIn: 3)?.rating, .danger)
+        XCTAssertEqual(advice(hurricaneIn: 3)?.now.reason, .wind(force: 12))
+        XCTAssertNotEqual(advice(hurricaneIn: 9)?.rating, .danger)
+    }
+
+    func testDrizzleNowUnderAnHourOfLikelyThunderstormsIsStorms() {
+        let result = check(slot(rain: 80, icon: "11d"), conditionNow: "Drizzle")
+        XCTAssertEqual(result.reason, .storms(likely: true))
+        XCTAssertEqual(result.level, .stayIn)
+        // A wetter forecast that's no worse leaves what's happening now.
+        XCTAssertEqual(check(slot(rain: 80, icon: "10d"), conditionNow: "Drizzle").reason, .rain(likely: true))
+    }
+
+    func testWithoutADogThePavementDoesNotHideTheAir() {
+        // Dangerously hot pavement ranks first, but it's no one's concern without a dog.
+        let smokyAndHot = check(slot(pavement: 60, airBand: 3, pollutant: .fineParticles))
+        XCTAssertEqual(smokyAndHot.reason, .pavement(.dangerous))
+        XCTAssertEqual(
+            PetMood.walkCaptions(smokyAndHot, hasDog: false)?.first,
+            "Smoky air today. Misty's keeping the windows shut."
+        )
+        XCTAssertEqual(PetMood.walkCaptions(smokyAndHot, hasDog: true)?.first, "Hot pavement! Sunny's sticking to the grass today.")
+    }
+
+    func testAirQualitySwitchedOffLeavesTheAirOut() {
+        var off = PetWeatherThresholds.standard
+        off.airQualityEnabled = false
+        let smoky = slot(airBand: 4, pollutant: .fineParticles)
+        XCTAssertNil(check(smoky, thresholds: off).air)
+        XCTAssertEqual(check(smoky, thresholds: off).level, .great)
+        XCTAssertFalse(WalkAdvisor.hasBadAirForWalking(smoky, off))
+        XCTAssertTrue(WalkAdvisor.hasBadAirForWalking(smoky, .standard))
+    }
+
+    func testIsWalkableAgreesWithTheCheck() {
+        for hour in [slot(), slot(airBand: 2), slot(pavement: 49), slot(wind: 15), slot(rain: 40), slot(icon: "01n")] {
+            XCTAssertEqual(WalkConditions.isWalkable(hour, thresholds), check(hour).isWalkable)
+        }
+    }
+
+    func testTheWalkCardShowsWithADogAndADangerWarningForEveryone() {
+        let okay = WalkAdvice(rating: .okay, bestTimeLabel: "4 PM")
+        let danger = WalkAdvice(rating: .danger, bestTimeLabel: nil)
+        XCTAssertTrue(WalkCard.isShown(okay, hasDog: true, cardEnabled: true))
+        XCTAssertFalse(WalkCard.isShown(okay, hasDog: false, cardEnabled: true))
+        XCTAssertFalse(WalkCard.isShown(okay, hasDog: true, cardEnabled: false))
+        XCTAssertTrue(WalkCard.isShown(danger, hasDog: false, cardEnabled: false))
+    }
+
+    func testTheWalksReasonComesBeforeASeasonalThemesCaption() {
+        let theme = "Happy Halloween from Sunny and Misty!"
+        let smoky = check(slot(airBand: 3, pollutant: .fineParticles))
+        let caption = PetMood.heroCaption(walk: smoky, hasDog: true, themeCaption: theme, mood: .fair, on: noon, timeZone: utc)
+        XCTAssertTrue(PetMood.walkCaptions(smoky, hasDog: true)?.contains(caption) == true, caption)
+        // Without a reason to give, the theme's caption stands.
+        XCTAssertEqual(
+            PetMood.heroCaption(walk: check(slot()), hasDog: true, themeCaption: theme, mood: .fair, on: noon, timeZone: utc),
+            theme
+        )
+    }
+
     // MARK: - Helpers
 
     /// A metric hour at 3 PM, 18C, clear and calm unless told otherwise.
@@ -217,7 +317,8 @@ final class WalkCheckTests: XCTestCase {
         pavement: Double? = nil,
         airBand: Int? = nil,
         pollutant: AirQuality.Pollutant? = nil,
-        wind: Double = 1
+        wind: Double = 1,
+        epoch: Int? = nil
     ) -> HourlySlot {
         var slot = HourlySlot(
             timeLabel: label,
@@ -232,7 +333,8 @@ final class WalkCheckTests: XCTestCase {
             units: .metric,
             precipitationChance: rain,
             pavementTemperature: pavement,
-            localHour: label == "3 PM" ? 15 : 16
+            localHour: label == "3 PM" ? 15 : 16,
+            epochSeconds: epoch
         )
         // The lowest US index in the band.
         slot.airQuality = airBand.map {

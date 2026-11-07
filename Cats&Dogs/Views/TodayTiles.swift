@@ -228,9 +228,10 @@ struct TodayTiles: View {
     }
 
     /// The walk card's shades again: green for good air, amber for so-so, red where the walk rules
-    /// say potty breaks only.
+    /// say potty breaks only, or without a dog (whose line goes by band) from Unhealthy up.
     private func airTint(band: Int) -> Color {
-        let (light, dark): (UInt32, UInt32) = if WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly {
+        let bad = hasDog ? WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly : band >= 3
+        let (light, dark): (UInt32, UInt32) = if bad {
             (0x791F1F, 0xF7C1C1)
         } else if band == 0 {
             (0x27500A, 0xC0DD97)

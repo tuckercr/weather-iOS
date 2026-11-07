@@ -206,7 +206,7 @@ final class RemoteConfigRepository {
     }
 
     var petWeatherThresholds: PetWeatherThresholds {
-        PetWeatherThresholds.validated(
+        var thresholds = PetWeatherThresholds.validated(
             hotPavementC: number(Self.keyWalkHotPavementC)?.doubleValue,
             warmPavementC: number(Self.keyWalkWarmPavementC)?.doubleValue,
             icyPavementC: number(Self.keyWalkIcyPavementC)?.doubleValue,
@@ -220,6 +220,8 @@ final class RemoteConfigRepository {
             petColdC: number(Self.keyPetColdThresholdC)?.doubleValue,
             badAirBand: number(Self.keyWalkBadAirBand)?.intValue
         )
+        thresholds.airQualityEnabled = Self.airQualityEnabled
+        return thresholds
     }
 
     /// Nil when Firebase is off or the key has no value at all, which would otherwise read as 0.
@@ -374,7 +376,7 @@ final class RemoteConfigRepository {
 
     /// `open_meteo_enabled` off forces OpenWeather, so the one licence switch turns off every
     /// Open-Meteo call. The size ratio is a whole number from 2 to 1000, or 0 for no guard.
-    nonisolated static func citySearchPolicy(
+    static func citySearchPolicy(
         provider: String?,
         openMeteoEnabled: Bool,
         results: Double?,

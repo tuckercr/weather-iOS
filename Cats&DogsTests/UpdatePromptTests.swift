@@ -1,6 +1,7 @@
 import XCTest
 @testable import Cats_Dogs
 
+@MainActor
 final class UpdatePromptTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_000_000)
 

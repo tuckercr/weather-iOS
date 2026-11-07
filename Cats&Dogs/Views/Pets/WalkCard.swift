@@ -27,9 +27,14 @@ struct WalkCard: View {
 
     private var caption: String? { Self.caption(advice) }
 
+    /// With a dog, when Remote Config allows the card; a danger warning shows for everyone.
+    static func isShown(_ advice: WalkAdvice, hasDog: Bool, cardEnabled: Bool) -> Bool {
+        advice.rating == .danger || (hasDog && cardEnabled)
+    }
+
     /// The outlook after a walk now; otherwise the reason now isn't the time, when it's worth more
     /// than a wait (or it's the pavement, which says how hot it is now).
-    nonisolated static func caption(_ advice: WalkAdvice) -> String? {
+    static func caption(_ advice: WalkAdvice) -> String? {
         if advice.rating == .great { return advice.outlook.map(outlookLine) }
         guard let reason = advice.now.reason else { return nil }
         let level = advice.now.level

@@ -112,18 +112,49 @@ enum WalkConditions {
     /// Hurricane force (Beaufort 12, 73 mph or 118 km/h and up): a danger to everyone.
     static let hurricaneForce = 12
 
-    /// The verdict on `slot`. For the hour under way, `feelsLikeC` is the current reading's
-    /// feels-like (what the dog feels now, rather than the hour's forecast), `conditionNow` the
-    /// current condition group ("Rain", "Thunderstorm"), since the hour's forecast can say dry while
-    /// it's raining, and `darkNow` the clock's word on darkness, since the hour the sun sets in keeps
-    /// its daytime icon.
+    /// The verdict on `slot`. For the hour under way, the current reading stands in for the hour's
+    /// forecast: `feelsLikeC` is its feels-like (what the dog feels now), `conditionNow` its condition
+    /// group ("Rain", "Thunderstorm"), since the hour's forecast can say dry while it's raining,
+    /// `windForceNow` and `gustForceNow` its wind and gusts (Beaufort), as the Wind tile shows them,
+    /// and `darkNow` the clock's word on darkness, since the hour the sun sets in keeps its daytime
+    /// icon.
     static func check(
         _ slot: HourlySlot,
         thresholds: PetWeatherThresholds,
         feelsLikeC: Double? = nil,
         conditionNow: String? = nil,
+        windForceNow: Int? = nil,
+        gustForceNow: Int? = nil,
         darkNow: Bool = false
     ) -> WalkCheck {
+        WalkCheck(factors(
+            slot,
+            thresholds: thresholds,
+            feelsLikeC: feelsLikeC,
+            conditionNow: conditionNow,
+            windForceNow: windForceNow,
+            gustForceNow: gustForceNow,
+            darkNow: darkNow
+        ))
+    }
+
+    /// Fine or better, without sorting the factors: the hourly look-ahead and the notifications ask
+    /// this of every hour.
+    static func isWalkable(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
+        factors(slot, thresholds: thresholds).allSatisfy { $0.level <= .fine }
+    }
+
+    /// The factors `check` sorts. Hurricane force gusts count as hurricane force wind, since they're
+    /// what makes a storm dangerous; otherwise gusts are left to the Wind tile.
+    private static func factors(
+        _ slot: HourlySlot,
+        thresholds: PetWeatherThresholds,
+        feelsLikeC: Double? = nil,
+        conditionNow: String? = nil,
+        windForceNow: Int? = nil,
+        gustForceNow: Int? = nil,
+        darkNow: Bool = false
+    ) -> [WalkFactor] {
         let feelsLikeC = feelsLikeC ?? slot.units.toCelsius(slot.feelsLike)
         var factors: [WalkFactor] = []
         func add(_ reason: WalkReason, _ level: WalkLevel?) {
@@ -131,9 +162,12 @@ enum WalkConditions {
         }
         if darkNow || !isWalkingTime(slot, thresholds) { add(.dark, .wait) }
         if let (reason, level) = precipitation(slot, conditionNow: conditionNow, thresholds) { add(reason, level) }
-        let force = TodayDetails.windForce(speed: slot.windSpeed, units: slot.units)
+        var force = windForceNow ?? TodayDetails.windForce(speed: slot.windSpeed, units: slot.units)
+        if (gustForceNow ?? 0) >= hurricaneForce { force = max(force, hurricaneForce) }
         add(.wind(force: force), windLevel(force: force, thresholds))
-        if let air = slot.airQuality {
+        // Air quality switched off in Remote Config leaves the air out, even from a forecast cached
+        // before it went off.
+        if thresholds.airQualityEnabled, let air = slot.airQuality {
             add(.air(band: air.band, pollutant: air.mainPollutant), airLevel(band: air.band, thresholds))
         }
         if let pavement = slot.pavementTemperature {
@@ -154,7 +188,7 @@ enum WalkConditions {
         } else if feelsLikeC < thresholds.comfortC.lowerBound {
             add(.cold, .wait)
         }
-        return WalkCheck(factors)
+        return factors
     }
 
     /// The Remote Config band (by default 3, US "Unhealthy" and Europe's "Poor") and up is potty
@@ -185,26 +219,32 @@ enum WalkConditions {
         }
     }
 
-    /// Rain, snow or storms now (`conditionNow`), or a chance of them at or above the walk limit.
-    /// Storms that are happening or likely keep pets inside; the rest is a wait for a dry spell.
+    /// Rain, snow or storms now (`conditionNow`), or a chance of them at or above the walk limit,
+    /// whichever is worse: drizzle now under an hour of likely thunderstorms is storms. Storms that
+    /// are happening or likely keep pets inside; the rest is a wait for a dry spell.
     private static func precipitation(
         _ slot: HourlySlot,
         conditionNow: String?,
         _ thresholds: PetWeatherThresholds
     ) -> (WalkReason, WalkLevel)? {
-        switch conditionNow?.lowercased() {
-        case "thunderstorm": return (.storms(likely: true), .stayIn)
-        case "snow": return (.snow(likely: true), .wait)
-        case "rain", "drizzle": return (.rain(likely: true), .wait)
-        default: break
+        let now: (WalkReason, WalkLevel)? = switch conditionNow?.lowercased() {
+        case "thunderstorm": (.storms(likely: true), .stayIn)
+        case "snow": (.snow(likely: true), .wait)
+        case "rain", "drizzle": (.rain(likely: true), .wait)
+        default: nil
         }
-        guard slot.precipitationChance >= thresholds.maxRainChance else { return nil }
-        let likely = slot.precipitationChance >= WalkAdvisor.likelyRainChance
-        return switch slot.iconCode.prefix(2) {
-        case "11": (.storms(likely: likely), likely ? .stayIn : .wait)
-        case "13": (.snow(likely: likely), .wait)
-        default: (.rain(likely: likely), .wait)
+        var forecast: (WalkReason, WalkLevel)?
+        if slot.precipitationChance >= thresholds.maxRainChance {
+            let likely = slot.precipitationChance >= WalkAdvisor.likelyRainChance
+            forecast = switch slot.iconCode.prefix(2) {
+            case "11": (.storms(likely: likely), likely ? .stayIn : .wait)
+            case "13": (.snow(likely: likely), .wait)
+            default: (.rain(likely: likely), .wait)
+            }
         }
+        guard let now else { return forecast }
+        guard let forecast, forecast.1 > now.1 else { return now }
+        return forecast
     }
 
     /// Within the walking hours and in daylight. The walking hours alone are a fixed clock window, so

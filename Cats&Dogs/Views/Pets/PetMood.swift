@@ -59,7 +59,7 @@ enum PetMood: CaseIterable {
         if !hasDog, let noDog = noDogCaptions(nightPart: nightPart) { return noDog }
         return switch self {
         case .fair: [
-            "Perfect walkies weather! Off we go.",
+            Self.perfectWalkies,
             "Misty has claimed the sunniest windowsill.",
             "Sunshine and tail wags all round.",
         ]
@@ -69,9 +69,9 @@ enum PetMood: CaseIterable {
             "Misty has claimed the sunniest windowsill.",
         ]
         case .cloudy: [
-            "A bit grey, but Sunny is still keen for a walk.",
+            Self.stillKeenForAWalk,
             "Nap weather, says Misty.",
-            "No sun, no problem. Still time for a stroll.",
+            Self.stillTimeForAStroll,
         ]
         case .rain: [
             "Sunny wants puddles. Misty wants a towel.",
@@ -97,8 +97,8 @@ enum PetMood: CaseIterable {
         case .night:
             switch nightPart {
             case .evening: [
-                "Quiet night. Time for one last stroll before bed?",
-                "Sunny thinks there's time for one more lap of the block.",
+                Self.oneLastStroll,
+                Self.oneMoreLap,
             ]
             case .lateNight: [
                 "Sunny and Misty are curled up asleep.",
@@ -185,13 +185,30 @@ enum PetMood: CaseIterable {
     }
 
     /// The captions that suggest a walk now, which `caption` leaves out when now isn't the time.
+    /// Each is written once, here, and `captions` uses the same constant.
+    private static let perfectWalkies = "Perfect walkies weather! Off we go."
+    private static let stillKeenForAWalk = "A bit grey, but Sunny is still keen for a walk."
+    private static let stillTimeForAStroll = "No sun, no problem. Still time for a stroll."
+    private static let oneLastStroll = "Quiet night. Time for one last stroll before bed?"
+    private static let oneMoreLap = "Sunny thinks there's time for one more lap of the block."
     static let walkSuggestions: Set<String> = [
-        "Perfect walkies weather! Off we go.",
-        "A bit grey, but Sunny is still keen for a walk.",
-        "No sun, no problem. Still time for a stroll.",
-        "Quiet night. Time for one last stroll before bed?",
-        "Sunny thinks there's time for one more lap of the block.",
+        perfectWalkies, stillKeenForAWalk, stillTimeForAStroll, oneLastStroll, oneMoreLap,
     ]
+
+    /// The hero's caption: the walk's reason when it's one the scene can't show, then a seasonal
+    /// theme's caption on its day, otherwise the weather's, leaving out walks when now isn't the time.
+    static func heroCaption(
+        walk: WalkCheck?,
+        hasDog: Bool,
+        themeCaption: String?,
+        mood: PetMood,
+        on date: Date,
+        timeZone: TimeZone
+    ) -> String {
+        walk.flatMap { walkCaption($0, hasDog: hasDog, on: date, timeZone: timeZone) }
+            ?? themeCaption
+            ?? mood.caption(on: date, timeZone: timeZone, hasDog: hasDog, walk: walk)
+    }
 
     /// When `walk` rules out more than a wait for a reason the scene can't show (the air, the
     /// pavement, a gale or worse), the caption gives the reason instead of the weather: "Smoky air
@@ -207,7 +224,9 @@ enum PetMood: CaseIterable {
     }
 
     static func walkCaptions(_ walk: WalkCheck, hasDog: Bool) -> [String]? {
-        guard let worst = walk.factors.first, worst.level >= .pottyOnly else { return nil }
+        // Without a dog the pavement is nobody's concern, so the next reason (bad air, a gale) stands.
+        let factors = hasDog ? walk.factors : walk.factors.filter { if case .pavement = $0.reason { false } else { true } }
+        guard let worst = factors.first, worst.level >= .pottyOnly else { return nil }
         switch worst.reason {
         case let .wind(force):
             if force >= WalkConditions.hurricaneForce {
@@ -224,7 +243,7 @@ enum PetMood: CaseIterable {
             return hasDog
                 ? ["\(air) today. Quick potty breaks, then back on the sofa.", "The air's not great. Sunny's big walk can wait."]
                 : ["\(air) today. Misty's keeping the windows shut.", "The air's not great. Misty is happy indoors."]
-        case .pavement where hasDog:
+        case .pavement:
             return ["Hot pavement! Sunny's sticking to the grass today.", "Too hot underfoot. Short trips on the grass."]
         default:
             return nil

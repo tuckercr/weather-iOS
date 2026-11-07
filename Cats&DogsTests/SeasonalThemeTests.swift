@@ -1,6 +1,7 @@
 import XCTest
 @testable import Cats_Dogs
 
+@MainActor
 final class SeasonalThemeTests: XCTestCase {
     private func date(_ text: String, _ zone: String = "UTC") -> Date {
         let formatter = DateFormatter()
