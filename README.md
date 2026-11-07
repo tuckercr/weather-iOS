@@ -15,11 +15,11 @@ Firebase project and the same Remote Config keys, and new features ship on both.
 
 | Pets, walk time & hourly | Today tiles & air quality | Radar & rest of week | Day detail | Settings |
 |---|---|---|---|---|
-| ![Sunny and Misty react to the weather, with best walk time and the hourly strip](./screenshots/current.png) | ![Today's tiles: feels like, wind, humidity, Paw check, air quality across the full width, daylight and Misty's View](./screenshots/today.png) | ![Animated RainViewer radar and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with units, I have a dog and notifications](./screenshots/settings.png) |
+| ![Sunny and Misty in the sun on a clear, mild day, with best walk time and the hourly strip](./screenshots/current.png) | ![Today's tiles: Feels Like, the windsock, Fluff Factor, Paw Check, Air Quality across the full width, Daylight and Misty's View](./screenshots/today.png) | ![Animated RainViewer radar and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with I have a dog, locations, notifications and units](./screenshots/settings.png) |
 
 On iPad and in landscape, the pets sit beside today's details and the week splits into two columns.
-Here Tokyo's air is "Unhealthy", so the walk card says "Bad air. Potty breaks only." and points
-to a cleaner hour:
+Here New Delhi's air is "Unhealthy", so the walk card says "Not a good day for walkies" and
+"Bad air. Potty breaks only.":
 
 ![iPad layout with the pets beside today's details, unhealthy air and the bad-air walk card](./screenshots/tablet.png)
 
@@ -563,18 +563,18 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   name, subtitle, description, keywords and the rest.
 - [`screenshots/app-store/`](screenshots/app-store/) holds the 6.9-inch iPhone screenshots
   (1320 × 2868) and the 13-inch iPad ones (2064 × 2752). App Store Connect requires iPad
-  screenshots because the app runs on iPad. Taken on 10-30 with the status bar at 9:41:
+  screenshots because the app runs on iPad. Taken on 11-07 with the status bar at 9:41:
 
   | File | Shows |
   |---|---|
   | `01-welcome.png` | Onboarding: meet Sunny and Misty |
-  | `02-today.png` | San Francisco (My Location): the pets, "Now is a great time" and the hourly strip |
-  | `03-rain-walk.png` | Bogotá in the rain: the umbrella scene, "Rain stopping around 7:00 PM" and "Tomorrow around 7 AM" |
+  | `02-today.png` | Vienna (My Location) on a clear, mild day: the pets in the sun, "Now is a great time" and the hourly strip |
+  | `03-rain-walk.png` | Kigali in the rain: the umbrella scene, "Tomorrow around 7 AM" and the rain chart, "Rain stopping around 4:00 PM" |
   | `04-radar-week.png` | The animated radar and the rest of the week |
   | `05-day-detail.png` | A day's hour-by-hour detail |
-  | `06-settings.png` | Settings: units, I have a dog, notifications |
-  | `ipad-01-amsterdam.png` | Amsterdam at night, with air quality on Europe's scale |
-  | `ipad-02-tokyo.png` | Tokyo with unhealthy air: "Bad air. Potty breaks only." |
+  | `06-settings.png` | Settings: I have a dog, locations, notifications, units |
+  | `ipad-01-amsterdam.png` | Amsterdam by day, with air quality on Europe's scale and rain on the radar |
+  | `ipad-02-delhi.png` | New Delhi at night with unhealthy air: "Bad air. Potty breaks only." |
 
   Suggested upload order: 02, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
 - Release builds fail if `Cats&Dogs/Secrets.plist` is missing or has no OpenWeather key (the "Check
