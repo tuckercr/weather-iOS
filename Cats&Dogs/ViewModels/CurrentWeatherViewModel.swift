@@ -158,10 +158,13 @@ final class CurrentWeatherViewModel {
     ///   the Settings app, say). Only when there are no cities yet, or access has just changed to
     ///   granted, so someone who removed My Location on purpose doesn't get it back every launch.
     private func updateMyLocation() {
+        // While a read is under way this check is skipped whole, so a grant made meanwhile is still
+        // "newly granted" next time.
+        guard !locating else { return }
         let granted = position.hasLocationPermission()
         let newlyGranted = granted && locationWasGranted == false
         locationWasGranted = granted
-        guard granted, !locating else { return }
+        guard granted else { return }
         let adding: Bool
         if cityList.locations.contains(where: \.isCurrentLocation) {
             guard cityList.claimMyLocationCheck() else { return }

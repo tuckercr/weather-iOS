@@ -7,31 +7,24 @@ private enum AppScreen: Hashable {
 }
 
 struct RootView: View {
-    @State private var welcomeViewModel: WelcomeViewModel
-    @State private var cityListViewModel: CityListViewModel
-    @State private var weatherViewModel: WeatherForecastViewModel
-    @State private var currentWeatherViewModel: CurrentWeatherViewModel
-    @State private var settingsViewModel: SettingsViewModel
+    private let welcomeViewModel: WelcomeViewModel
+    private let cityListViewModel: CityListViewModel
+    private let weatherViewModel: WeatherForecastViewModel
+    private let currentWeatherViewModel: CurrentWeatherViewModel
+    private let settingsViewModel: SettingsViewModel
+    private let updatePrompt: UpdatePromptViewModel
+    private let radarViewModel: RadarViewModel
     @State private var path: [AppScreen] = []
-    @State private var updatePrompt = UpdatePromptViewModel()
-    /// The radar's frames are the same for every city, so one view model holds them for the app.
-    @State private var radarViewModel = RadarViewModel()
     @Environment(\.scenePhase) private var scenePhase
 
-    init() {
-        // Onboarding's answers go to the view models that own them: the dog to Settings, the
-        // location to the city list.
-        let settings = SettingsViewModel()
-        let cityList = CityListViewModel()
-        let weather = WeatherForecastViewModel()
-        _settingsViewModel = State(initialValue: settings)
-        _cityListViewModel = State(initialValue: cityList)
-        _weatherViewModel = State(initialValue: weather)
-        _currentWeatherViewModel = State(initialValue: CurrentWeatherViewModel(cityList: cityList, weather: weather))
-        _welcomeViewModel = State(initialValue: WelcomeViewModel(
-            onDogAnswered: settings.setShowWalkCard,
-            onLocationChosen: { cityList.addLocation($0) }
-        ))
+    init(viewModels: AppViewModels) {
+        welcomeViewModel = viewModels.welcome
+        cityListViewModel = viewModels.cityList
+        weatherViewModel = viewModels.weather
+        currentWeatherViewModel = viewModels.currentWeather
+        settingsViewModel = viewModels.settings
+        updatePrompt = viewModels.updatePrompt
+        radarViewModel = viewModels.radar
     }
 
     var body: some View {
@@ -111,5 +104,5 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView()
+    RootView(viewModels: AppViewModels())
 }

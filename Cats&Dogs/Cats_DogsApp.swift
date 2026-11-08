@@ -13,10 +13,13 @@ private let splashDuration: Duration = .seconds(1.5)
 struct Cats_DogsApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showSplash = true
+    /// Made once, after start-up has set up Firebase and Remote Config, which they read.
+    @State private var viewModels: AppViewModels
 
     init() {
         BrandAppearance.apply()
         AppStartup.launch()
+        _viewModels = State(initialValue: AppViewModels())
     }
 
     var body: some Scene {
@@ -31,7 +34,7 @@ struct Cats_DogsApp: App {
                         }
                     }
             } else {
-                RootView()
+                RootView(viewModels: viewModels)
                     .transition(.opacity)
                     // Set explicitly: on iOS 27 the asset catalog's global accent colour
                     // (NSAccentColorName) isn't applied, and controls fall back to system blue.

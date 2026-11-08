@@ -125,6 +125,8 @@ final class WeatherForecastViewModel {
         Task {
             let cached = repository.cachedWeather(for: location)
             currentWeather = cached.map { .success($0) } ?? .loading
+            // The plan is renewed from the cache too, so a week of briefings keeps going offline.
+            if cached != nil { notificationsNeedReplanning() }
 
             let result = await repository.refreshWeather(for: location)
 
@@ -168,6 +170,7 @@ final class WeatherForecastViewModel {
         Task {
             let cached = repository.cachedForecast(for: location)
             forecast = cached.map { .success($0) } ?? .loading
+            if cached != nil { notificationsNeedReplanning() }
 
             let result = await repository.refreshForecast(for: location)
 

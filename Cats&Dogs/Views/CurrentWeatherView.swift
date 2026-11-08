@@ -12,8 +12,9 @@ struct CurrentWeatherView: View {
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
-    /// What the screen does when: refreshes, My Location and the notification city. Made once, by
-    /// RootView: a view's initialiser runs on every redraw of its parent.
+    /// What the screen does when: refreshes, My Location and the notification city. Made once, with
+    /// the app's other view models (`AppViewModels`): a view's initialiser runs on every redraw of
+    /// its parent.
     let viewModel: CurrentWeatherViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false

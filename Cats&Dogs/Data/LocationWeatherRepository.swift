@@ -33,10 +33,12 @@ final class LocationWeatherRepository {
     }
 
     /// Fetches `location`'s current reading and caches it. A fetch the screen has since moved on
-    /// from is still cached: it's that location's weather.
+    /// from is still cached (it's that location's weather), unless the units changed meanwhile.
     func refreshWeather(for location: SavedLocation) async -> Result<CurrentWeather, Error> {
+        let units = units
         let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
-        if case .success(let weather) = result {
+        // Not cached if the units changed while it was fetched: the cache stays in the new ones.
+        if case .success(let weather) = result, self.units == units {
             preferences.setCachedWeather(weather, for: location.cacheKey)
         }
         return result
@@ -49,8 +51,9 @@ final class LocationWeatherRepository {
 
     /// Fetches `location`'s forecast and caches it, with when it was fetched.
     func refreshForecast(for location: SavedLocation) async -> Result<[DayForecast], Error> {
+        let units = units
         let result = await weatherRepository.fetchForecast(for: location, units: units)
-        if case .success(let days) = result {
+        if case .success(let days) = result, self.units == units {
             preferences.setCachedForecast(days, for: location.cacheKey)
         }
         return result

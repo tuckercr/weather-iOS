@@ -98,7 +98,8 @@ enum WalkAdvisor {
         )
         let soon = Int(now.timeIntervalSince1970) + dangerAheadSeconds
         if check.level < .danger, slots.contains(where: { slot in
-            (slot.epochSeconds ?? 0) <= soon
+            // An hour without a time (a forecast cached before they were kept) isn't counted as soon.
+            (slot.epochSeconds ?? .max) <= soon
                 && TodayDetails.windForce(speed: slot.windSpeed, units: slot.units) >= WalkConditions.hurricaneForce
         }) {
             let hurricane = WalkFactor(reason: .wind(force: WalkConditions.hurricaneForce), level: .danger)

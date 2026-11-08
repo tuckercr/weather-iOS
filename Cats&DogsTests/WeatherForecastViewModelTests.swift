@@ -87,6 +87,26 @@ final class WeatherForecastViewModelTests: XCTestCase {
         XCTAssertEqual(replans, 1)
     }
 
+    func testCachedWeatherReplansEvenWhenTheFetchFails() async {
+        // Offline with a cache: the week of briefings is still renewed from it.
+        preferences.store.setCachedWeather(sampleWeather(), for: austin.cacheKey)
+        api.onCurrent = { _ in throw self.offline }
+        viewModel.refreshCurrent(location: austin)
+        await waitUntil(timeout: 4) { self.replans == 1 }
+    }
+
+    func testAFetchInUnitsSinceChangedIsNotCached() async {
+        api.onCurrent = { [unowned self] request in
+            // The user switches to imperial while the metric fetch is out.
+            preferences.store.setUnitOverride(.imperial)
+            return weatherResponse(name: "Austin")
+        }
+        viewModel.refreshCurrent(location: austin)
+        await waitUntil { self.api.completedCurrentRequests == 1 }
+        await settle()
+        XCTAssertNil(preferences.store.cachedWeather(for: austin.cacheKey))
+    }
+
     func testAFailedRefreshDoesNotReplan() async {
         api.onCurrent = { _ in throw self.offline }
         viewModel.refreshCurrent(location: austin)
