@@ -263,6 +263,7 @@ struct CurrentWeatherView: View {
                         forecastState: weatherViewModel.forecast,
                         location: cityListViewModel.activeLocation,
                         showWalkCard: showWalkCard,
+                        walkAdvice: weatherViewModel.walkAdvice(for: forecastNow ?? cached, at: now, hasDog: showWalkCard),
                         now: now,
                         onDaySelected: { selectedDay = $0 },
                         onForecastRetry: refreshActiveLocation
@@ -365,6 +366,8 @@ private struct CurrentWeatherContent: View {
     let forecastState: LoadingState<[DayForecast]>
     let location: SavedLocation?
     let showWalkCard: Bool
+    /// The view model's walk verdict for `weather` now; nil while the forecast is loading or failed.
+    let walkAdvice: WalkAdvice?
     let now: Date
     let onDaySelected: (DayForecast) -> Void
     let onForecastRetry: () -> Void
@@ -415,26 +418,6 @@ private struct CurrentWeatherContent: View {
     /// tile and the walk card follow the clock as the hero does.
     private var weatherToday: CurrentWeather { StaleWeather.withSunTimesToday(weather, at: now) }
 
-    /// Nil while the forecast is loading or failed, which hides the card rather than giving advice
-    /// with nothing to base it on.
-    private var walkAdvice: WalkAdvice? {
-        let weatherToday = weatherToday
-        return WalkAdvisor.advice(
-            currentFeelsLikeC: feelsLikeC,
-            upcoming: upcomingSlots,
-            now: now,
-            timeZone: weather.timeZone,
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            conditionNow: weather.conditionMain,
-            windForceNow: TodayDetails.windForce(speed: weather.windSpeed, units: weather.units),
-            gustForceNow: weather.windGust.map { TodayDetails.windForce(speed: $0, units: weather.units) },
-            sunsetEpoch: weatherToday.sunsetEpoch,
-            darkNow: StaleWeather.isDark(weatherToday, at: now),
-            // Without a dog the pavement isn't weighed: the hero and a danger warning still read it.
-            hasDog: showWalkCard
-        )
-    }
-
     /// From the hour in progress on, however old the forecast on screen is.
     private var upcomingSlots: [HourlySlot] {
         forecastDays.flatMap(\.hourlySlots).upcoming(from: now)
@@ -472,16 +455,14 @@ private struct CurrentWeatherContent: View {
 
     var body: some View {
         let outlook = rainOutlook
-        // Worked out once per update: the hero's caption and the walk card both read it.
-        let walkAdvice = self.walkAdvice
         VStack(alignment: .leading, spacing: 12) {
             if isWide {
                 HStack(alignment: .top, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 12) { heroSection(showNextRain: outlook == nil, walkAdvice: walkAdvice) }
+                    VStack(alignment: .leading, spacing: 12) { heroSection(showNextRain: outlook == nil) }
                     VStack(alignment: .leading, spacing: 12) { todaySection }
                 }
             } else {
-                heroSection(showNextRain: outlook == nil, walkAdvice: walkAdvice)
+                heroSection(showNextRain: outlook == nil)
             }
             // No section headers: each card says what it is.
             if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
@@ -516,7 +497,7 @@ private struct CurrentWeatherContent: View {
 
     /// `showNextRain` is false while the Rain outlook card shows, as its headline says the same.
     @ViewBuilder
-    private func heroSection(showNextRain: Bool, walkAdvice: WalkAdvice?) -> some View {
+    private func heroSection(showNextRain: Bool) -> some View {
         heroCard(caption: heroCaption(walk: walkAdvice?.now))
         if showNextRain, let nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)

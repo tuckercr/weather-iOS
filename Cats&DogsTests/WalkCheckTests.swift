@@ -294,6 +294,25 @@ final class WalkCheckTests: XCTestCase {
         }
     }
 
+    func testAdviceForAReadingTakesNowFromTheReading() {
+        // A hurricane in the reading, under a calm forecast hour: the reading is what's happening.
+        let reading = CurrentWeather(
+            cityName: "Austin", conditionMain: "Clear", description: "Clear sky", iconCode: "01d",
+            temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 20, humidityPercent: 50, pressureHpa: 1013,
+            windSpeed: 35, windDeg: 90, visibilityMeters: 10_000, cloudPercent: 0, units: .metric,
+            sunriseEpoch: nil, sunsetEpoch: nil
+        )
+        let start = Int(noon.timeIntervalSince1970)
+        let day = DayForecast(
+            dateLabel: "Fri, Nov 7", conditionMain: "Clear", description: "clear", iconCode: "01d",
+            temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 20, units: .metric,
+            hourlySlots: [slot(epoch: start), slot("4 PM", epoch: start + 3600)]
+        )
+        let advice = WalkAdvisor.advice(for: reading, forecast: [day], at: noon, thresholds: thresholds, hasDog: true)
+        XCTAssertEqual(advice?.rating, .danger)
+        XCTAssertNil(WalkAdvisor.advice(for: reading, forecast: [], at: noon, thresholds: thresholds, hasDog: true))
+    }
+
     func testTheWalkCardShowsWithADogAndADangerWarningForEveryone() {
         let okay = WalkAdvice(rating: .okay, bestTimeLabel: "4 PM")
         let danger = WalkAdvice(rating: .danger, bestTimeLabel: nil)

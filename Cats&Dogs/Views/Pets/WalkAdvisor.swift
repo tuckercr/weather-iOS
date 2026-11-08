@@ -117,6 +117,33 @@ enum WalkAdvisor {
         )
     }
 
+    /// The advice for `weather` (the reading on screen, or the forecast hour standing in for an old
+    /// one) at `now`: the reading for the hour under way (feels-like, condition, wind and gusts,
+    /// darkness by today's sunset) and `forecast`'s hours from then on. What the weather view model
+    /// gives the screen; nil when the forecast has no hours left.
+    static func advice(
+        for weather: CurrentWeather,
+        forecast: [DayForecast],
+        at now: Date,
+        thresholds: PetWeatherThresholds,
+        hasDog: Bool
+    ) -> WalkAdvice? {
+        let today = StaleWeather.withSunTimesToday(weather, at: now)
+        return advice(
+            currentFeelsLikeC: weather.units.toCelsius(weather.feelsLike),
+            upcoming: forecast.flatMap(\.hourlySlots).upcoming(from: now),
+            now: now,
+            timeZone: weather.timeZone,
+            thresholds: thresholds,
+            conditionNow: weather.conditionMain,
+            windForceNow: TodayDetails.windForce(speed: weather.windSpeed, units: weather.units),
+            gustForceNow: weather.windGust.map { TodayDetails.windForce(speed: $0, units: weather.units) },
+            sunsetEpoch: today.sunsetEpoch,
+            darkNow: StaleWeather.isDark(today, at: now),
+            hasDog: hasDog
+        )
+    }
+
     /// Potty breaks only or worse says why; otherwise it's a walk now, a later walk, or no walk today.
     static func rating(_ check: WalkCheck, hasBetterTime: Bool) -> WalkRating {
         if check.level == .danger { return .danger }

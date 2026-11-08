@@ -16,6 +16,7 @@ final class WeatherForecastViewModel {
     private let onError: @MainActor (_ errorKey: String) -> Void
     private let onSettingsOpened: @MainActor () -> Void
     private let foregroundRefreshMinInterval: () -> TimeInterval
+    private let petWeatherThresholds: () -> PetWeatherThresholds
     private let now: () -> Date
 
     /// When each city's data last arrived, for throttling the silent foreground refresh.
@@ -35,6 +36,7 @@ final class WeatherForecastViewModel {
         onError: (@MainActor (_ errorKey: String) -> Void)? = nil,
         onSettingsOpened: (@MainActor () -> Void)? = nil,
         foregroundRefreshMinInterval: (() -> TimeInterval)? = nil,
+        petWeatherThresholds: (() -> PetWeatherThresholds)? = nil,
         now: (() -> Date)? = nil
     ) {
         // Optional closures filled in here rather than closure default values: Swift 6.1 (CI's
@@ -46,7 +48,17 @@ final class WeatherForecastViewModel {
         self.foregroundRefreshMinInterval = foregroundRefreshMinInterval ?? {
             RemoteConfigRepository.shared.foregroundRefreshMinInterval
         }
+        self.petWeatherThresholds = petWeatherThresholds ?? { RemoteConfigRepository.shared.petWeatherThresholds }
         self.now = now ?? { Date() }
+    }
+
+    /// The walk verdict for `weather` (the reading on screen, or the forecast hour standing in for an
+    /// old one) at the screen's `now`, from the forecast's hours. Nil while the forecast is loading
+    /// or failed, which hides the walk card rather than advising on nothing. The hero's caption and
+    /// the walk card both read it.
+    func walkAdvice(for weather: CurrentWeather, at now: Date, hasDog: Bool) -> WalkAdvice? {
+        guard let days = forecast.successValue else { return nil }
+        return WalkAdvisor.advice(for: weather, forecast: days, at: now, thresholds: petWeatherThresholds(), hasDog: hasDog)
     }
 
     /// The silent refresh on returning to the foreground. Remote Config can make it skip a city that

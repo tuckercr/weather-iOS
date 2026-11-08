@@ -38,6 +38,23 @@ final class WeatherForecastViewModelTests: XCTestCase {
         preferences.destroy()
     }
 
+    // MARK: - Walk advice
+
+    func testWalkAdviceComesFromTheLoadedForecastAndIsNilUntilThen() async {
+        let reading = CurrentWeather(
+            cityName: "Austin", conditionMain: "Clear", description: "Clear sky", iconCode: "01d",
+            temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 20, humidityPercent: 50, pressureHpa: 1013,
+            windSpeed: 2, windDeg: 90, visibilityMeters: 10_000, cloudPercent: 0, units: .metric,
+            sunriseEpoch: nil, sunsetEpoch: nil
+        )
+        XCTAssertNil(viewModel.walkAdvice(for: reading, at: clock, hasDog: true))
+
+        viewModel.refreshForecast(location: pinned)
+        await waitUntil { self.viewModel.forecast.successValue != nil }
+        let firstHour = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
+        XCTAssertNotNil(viewModel.walkAdvice(for: reading, at: firstHour, hasDog: true))
+    }
+
     // MARK: - Request routing
 
     func testCurrentWeatherWithCoordinatesPassesLatLonAndNilCityQuery() async {
