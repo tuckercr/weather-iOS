@@ -100,6 +100,14 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(first?.body, "High 18°, low 10°.")
     }
 
+    func testTheBriefingsHighAndLowTakeInTheHoursTemperatureAsTheHeroDoes() {
+        // Colder at 8:30 than the day's forecast low, as the hero's would show it.
+        let cold = plan([day(dry.map { slot($0, temp: $0 == 8 ? 7 : 15) })]).first { $0.identifier == "briefing_0" }
+
+        XCTAssertEqual(cold?.title, "7° and clear in London")
+        XCTAssertEqual(cold?.body, "High 18°, low 7°.")
+    }
+
     func testTheDaysRainChanceIsMentionedFrom40PercentRounded() {
         let wet = plan([day(dry.map { slot($0) }, rainChance: 57)]).first { $0.identifier == "briefing_0" }
         XCTAssertEqual(wet?.body, "High 18°, low 10°, 60% chance of rain.")

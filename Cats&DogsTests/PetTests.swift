@@ -3,6 +3,20 @@ import XCTest
 
 @MainActor
 final class PetMoodTests: XCTestCase {
+    // MARK: - Shared moods
+
+    func testTheReadingsMoodGoesDayOrNightByTheClock() {
+        // A clear reading taken at noon, still cached at 10 PM: the night pets, as on the hero.
+        let noon = fixtureDayStart + 12 * 3600
+        var weather = sampleWeather()
+        weather.observedAtEpoch = noon
+        weather.sunriseEpoch = fixtureDayStart + 7 * 3600
+        weather.sunsetEpoch = fixtureDayStart + 17 * 3600
+        let late = Date(timeIntervalSince1970: TimeInterval(noon + 10 * 3600))
+
+        XCTAssertEqual(PetMood.forReading(weather, at: late, thresholds: .standard), .night)
+    }
+
     private func mood(_ main: String, _ icon: String, _ tempC: Double) -> PetMood {
         PetMood.forConditions(conditionMain: main, iconCode: icon, feelsLikeC: tempC)
     }

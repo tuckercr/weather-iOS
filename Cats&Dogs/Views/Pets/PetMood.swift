@@ -10,6 +10,27 @@ enum PetMood: CaseIterable {
     /// temperature, since humid heat and wind chill are what pets feel, and a clear day is warm by
     /// the Feels Like tile's bands (above the walk comfort range). Same rules as Android's
     /// `PetMood.forConditions`.
+    /// The pets' mood for `weather` at `now`: day or night by the clock, so a reading cached before
+    /// sunset doesn't show the daytime pets. What the hero shows.
+    static func forReading(_ weather: CurrentWeather, at now: Date, thresholds: PetWeatherThresholds) -> PetMood {
+        forConditions(
+            conditionMain: weather.conditionMain,
+            iconCode: StaleWeather.iconCode(weather, at: now),
+            feelsLikeC: weather.units.toCelsius(weather.feelsLike),
+            thresholds: thresholds
+        )
+    }
+
+    /// The pets' mood in the forecast hour `slot`, for a briefing planned ahead for it.
+    static func forHour(_ slot: HourlySlot, thresholds: PetWeatherThresholds) -> PetMood {
+        forConditions(
+            conditionMain: StaleWeather.conditionMain(forIcon: slot.iconCode),
+            iconCode: slot.iconCode,
+            feelsLikeC: slot.units.toCelsius(slot.feelsLike),
+            thresholds: thresholds
+        )
+    }
+
     static func forConditions(
         conditionMain: String,
         iconCode: String,

@@ -82,8 +82,10 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   codes, so moods and icons work the same for both. `ForecastAggregator` groups slots into the
   city's local days.
 - **Cache first.** `PreferencesStore` (UserDefaults) holds the cities, settings and the last weather
-  and forecast per city. Cached data shows at once and stays on screen if a refresh fails;
-  `Utilities/StaleWeather` decides how an old reading is shown.
+  and forecast per city. `LocationWeatherRepository` is the one way to a saved location's weather:
+  its cache, and refreshes that fetch in the user's units and cache the result. The screen, the
+  background refresh and the notifications all use it. Cached data shows at once and stays on
+  screen if a refresh fails; `Utilities/StaleWeather` decides how an old reading is shown.
 - **Time zones.** Everything shown for a city uses the city's time zone (`CurrentWeather.timeZone`),
   including "today", night captions and seasonal themes. Only the 8:30 notifications use the
   device clock.
@@ -94,8 +96,10 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   briefing and the walk nudges, with `PetWeatherThresholds` (Remote Config, validated, always °C).
 - **Notifications.** iOS can't run code at a set time, so `NotificationPlanner` (pure, unit tested)
   plans everything ahead from the cache: a week of 8:30 briefings, walk nudges and the next rain
-  alert, worded by how old the forecast is. `WeatherNotificationScheduler` replaces the whole queue
-  whenever the app or a background refresh gets new data or a setting changes, and
+  alert, worded by how old the forecast is. It finds today, the high and low and the pets' mood
+  with the same functions as the screen (`isDay(of:in:)`, `TodayDetails.highLow`, `PetMood`).
+  `WeatherNotificationScheduler` replaces the whole queue whenever the weather view model or a
+  background refresh gets new data or a setting changes, and
   `WeatherBackgroundRefresher` (`BGAppRefreshTask`) refreshes the notification city's cache. The
   notification city is My Location when saved, otherwise the first city.
 - **Remote Config.** `RemoteConfigRepository` reads every key with an in-app default and validation,

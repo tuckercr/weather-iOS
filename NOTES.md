@@ -228,6 +228,14 @@ noted. Checked against the code, not fixed yet.
 
 ## Walk planner and pet safety
 
+- [ ] **Paw Check's orange paw is too mild for 115 °F.** A pavement estimate of about 115 °F
+      (46 °C) shows the orange "Getting hot" paw, though that's already too hot for paws. The bands
+      are Remote Config `walk_*_pavement_c`: green below 45 °C (113 °F), orange "Getting hot" from
+      45, red "Too hot for paws" from 52 (126 °F), maroon "Dangerously hot" from 57.2 (135 °F),
+      blue below 0. Common advice is that asphalt can burn paws from about 120 °F (49 °C), so
+      `walk_hot_pavement_c` should probably come down to about 49 and `walk_warm_pavement_c` to
+      about 43, with the walk advice following. Change the defaults in both apps and the template
+      together; a console change would do it without a release, but ask first. (11-07)
 - [ ] Retune the pavement heat model after an outdoor check of your own. (10-27)
 - [ ] **Hurricane warnings ahead are faked as now.** When hurricane force is forecast in the next 6
       hours, the walk verdict on now gets a force-12 wind factor, so the card says "Hurricane force

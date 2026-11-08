@@ -15,7 +15,6 @@ struct CurrentWeatherView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
-    @State private var rescheduleTask: Task<Void, Never>?
     /// "Now" for the hourly strip, walk advice, captions and moon. Moved on when the app becomes
     /// active and every half hour while it stays open, so a screen left on overnight keeps up.
     @State private var locationViewModel = LocationPermissionViewModel()
@@ -56,8 +55,6 @@ struct CurrentWeatherView: View {
         }
         .onChange(of: cityListViewModel.activeLocation?.cacheKey) { _, _ in
             refreshActiveLocation()
-            // Also covers removing the last city, which must clear its notifications.
-            rescheduleNotificationsSoon()
         }
         // Notifications are for My Location, otherwise the first city, whichever tab is showing. When
         // that changes (reordered, added, removed, or My Location moved), its weather may not be
@@ -102,12 +99,6 @@ struct CurrentWeatherView: View {
                 guard !Task.isCancelled else { return }
                 weatherViewModel.tick()
             }
-        }
-        .onChange(of: weatherViewModel.currentWeather) { _, state in
-            if case .success = state { rescheduleNotificationsSoon() }
-        }
-        .onChange(of: weatherViewModel.forecast) { _, state in
-            if case .success = state { rescheduleNotificationsSoon() }
         }
         .task {
             refreshActiveLocation()
@@ -309,18 +300,6 @@ struct CurrentWeatherView: View {
         guard let location = cityListViewModel.activeLocation else { return }
         weatherViewModel.refreshCurrent(location: location)
         weatherViewModel.refreshForecast(location: location)
-    }
-
-    /// Notification text is built from the cache, so reschedule once fresh data has landed. One
-    /// refresh changes state up to four times (cached then fresh, for current and forecast), so the
-    /// calls are coalesced into a single run.
-    private func rescheduleNotificationsSoon() {
-        rescheduleTask?.cancel()
-        rescheduleTask = Task {
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            await WeatherNotificationScheduler.shared.scheduleNotifications()
-        }
     }
 
     private func backgroundRefreshActiveLocation() {

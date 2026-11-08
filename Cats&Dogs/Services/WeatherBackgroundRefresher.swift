@@ -17,7 +17,7 @@ final class WeatherBackgroundRefresher {
     /// Remote Config's `weather_refresh_interval_minutes`, as on Android. iOS treats it as a minimum.
     private let refreshInterval: () -> TimeInterval
     private let preferences: PreferencesStore
-    private let weatherRepository: WeatherRepository
+    private let repository: LocationWeatherRepository
     private let notificationsAuthorized: () async -> Bool
     private let scheduleNotifications: () async -> Void
     private let submitRefreshRequest: (_ earliestBegin: Date) -> Void
@@ -26,7 +26,7 @@ final class WeatherBackgroundRefresher {
     init(
         refreshInterval: (() -> TimeInterval)? = nil,
         preferences: PreferencesStore? = nil,
-        weatherRepository: WeatherRepository? = nil,
+        repository: LocationWeatherRepository? = nil,
         notificationsAuthorized: @escaping () async -> Bool = {
             await WeatherNotificationScheduler.shared.isAuthorized()
         },
@@ -43,7 +43,7 @@ final class WeatherBackgroundRefresher {
     ) {
         self.refreshInterval = refreshInterval ?? { RemoteConfigRepository.shared.refreshInterval }
         self.preferences = preferences ?? .shared
-        self.weatherRepository = weatherRepository ?? WeatherRepository()
+        self.repository = repository ?? LocationWeatherRepository(preferences: preferences)
         self.notificationsAuthorized = notificationsAuthorized
         self.scheduleNotifications = scheduleNotifications
         self.submitRefreshRequest = submitRefreshRequest
@@ -78,23 +78,8 @@ final class WeatherBackgroundRefresher {
 
         let logic = NotificationWorkerLogic(
             getSavedLocations: { locations },
-            getUnits: { [preferences] in
-                WeatherUnitsResolver.resolve(override: preferences.unitOverride)
-            },
-            fetchCurrentWeather: { [preferences, weatherRepository] units, location in
-                let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
-                if case .success(let weather) = result {
-                    preferences.setCachedWeather(weather, for: location.cacheKey)
-                }
-                return result
-            },
-            fetchForecast: { [preferences, weatherRepository] units, location in
-                let result = await weatherRepository.fetchForecast(for: location, units: units)
-                if case .success(let days) = result {
-                    preferences.setCachedForecast(days, for: location.cacheKey)
-                }
-                return result
-            },
+            refreshWeather: { [repository] in await repository.refreshWeather(for: $0) },
+            refreshForecast: { [repository] in await repository.refreshForecast(for: $0) },
             hasNotificationPermission: { authorized },
             onRefreshed: { refreshed = true }
         )
@@ -108,21 +93,9 @@ final class WeatherBackgroundRefresher {
         // and not part of the result. Same as Android's background refresh.
         let activeIndex = preferences.activeLocationIndex
         if locations.indices.contains(activeIndex), locations[activeIndex].cacheKey != cacheKey {
-            await refreshCache(for: locations[activeIndex])
+            _ = await repository.refreshWeather(for: locations[activeIndex])
+            _ = await repository.refreshForecast(for: locations[activeIndex])
         }
         return result
-    }
-
-    /// Fetches `location`'s weather and forecast and caches whatever comes back, as the foreground
-    /// refresh does.
-    private func refreshCache(for location: SavedLocation) async {
-        let units = WeatherUnitsResolver.resolve(override: preferences.unitOverride)
-        if case .success(let weather) = await weatherRepository.fetchCurrentWeather(for: location, units: units) {
-            preferences.setCachedWeather(weather, for: location.cacheKey)
-        }
-        let forecast = await weatherRepository.fetchForecast(for: location, units: units)
-        if case .success(let days) = forecast {
-            preferences.setCachedForecast(days, for: location.cacheKey)
-        }
     }
 }

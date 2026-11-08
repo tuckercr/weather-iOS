@@ -370,6 +370,12 @@ enum TodayDetails {
     /// is used whenever there is one, widened to take in the temperature now.
     static func highLow(current: CurrentWeather, today: DayForecast?) -> (high: Double, low: Double) {
         guard let today else { return (current.tempMax, current.tempMin) }
-        return (max(today.tempMax, current.temperature), min(today.tempMin, current.temperature))
+        return highLow(temperature: current.temperature, today: today)
+    }
+
+    /// `today`'s forecast high and low, widened to take in `temperature` (the temperature now, or
+    /// at the hour a briefing is for). The hero and the morning briefing both give these.
+    static func highLow(temperature: Double, today: DayForecast) -> (high: Double, low: Double) {
+        (max(today.tempMax, temperature), min(today.tempMin, temperature))
     }
 }

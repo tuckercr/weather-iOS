@@ -49,30 +49,22 @@ final class WeatherNotificationScheduler {
     /// allows. Callers run this after a refresh has written the cache, so it never needs the network.
     func scheduleNotifications(preferences: PreferencesStore? = nil) async {
         let preferences = preferences ?? .shared
+        let repository = LocationWeatherRepository(preferences: preferences)
         await removePendingNotifications()
         guard let location = preferences.savedLocations.notificationLocation, await isAuthorized() else { return }
-        let weather = preferences.cachedWeather(for: location.cacheKey)
-        let settings = NotificationSettings(
-            morningBriefing: preferences.notifyMorningBriefing,
-            walkTime: preferences.notifyWalkTime,
-            rain: preferences.notifyRain,
-            hasDog: preferences.showWalkCard,
-            briefingRemotelyEnabled: RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled,
-            walkTimeRemotelyEnabled: RemoteConfigRepository.shared.walkTimeNotificationsEnabled,
-            rainRemotelyEnabled: RemoteConfigRepository.shared.rainNotificationsEnabled
-        )
+        let settings = NotificationSettings(preferences: preferences, remoteConfig: .shared)
         let now = Date()
         let calendar = Calendar.current
         let walkNudgesGoneOff = preferences.walkNudgeDates.filter { $0 <= now }
         let plan = NotificationPlanner.plan(
-            weather: weather,
-            forecast: preferences.cachedForecast(for: location.cacheKey) ?? [],
+            weather: repository.cachedWeather(for: location),
+            forecast: repository.cachedForecast(for: location) ?? [],
             now: now,
             settings: settings,
             thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
             lastRainAlert: preferences.lastRainAlert,
             walkNudgesGoneOff: walkNudgesGoneOff,
-            forecastFetchedAt: preferences.cachedForecastFetchedAt(for: location.cacheKey)
+            forecastFetchedAt: repository.forecastFetchedAt(for: location)
         )
         // Today's that have gone off stay on record, so a later replan doesn't send a second.
         preferences.setWalkNudgeDates(
@@ -127,7 +119,7 @@ final class WeatherNotificationScheduler {
         // They follow "I have a dog", and use the notification city's name, as the real ones do.
         let hasDog = preferences.showWalkCard
         let location = preferences.savedLocations.notificationLocation
-        let city = location.flatMap { preferences.cachedWeather(for: $0.cacheKey)?.cityName }
+        let city = location.flatMap { LocationWeatherRepository(preferences: preferences).cachedWeather(for: $0)?.cityName }
             ?? location.flatMap { $0.isCurrentLocation ? nil : $0.label }
             ?? "Knoxville"
         let walk = hasDog ? " Sunny's picked 1 PM for a walk." : ""
@@ -219,5 +211,20 @@ final class WeatherNotificationScheduler {
         let pending = await center.pendingNotificationRequests()
         let ours = pending.map(\.identifier).filter { id in Self.identifierPrefixes.contains { id.hasPrefix($0) } }
         center.removePendingNotificationRequests(withIdentifiers: ours)
+    }
+}
+
+extension NotificationSettings {
+    /// The user's switches in Settings and Remote Config's for everyone.
+    init(preferences: PreferencesStore, remoteConfig: RemoteConfigRepository) {
+        self.init(
+            morningBriefing: preferences.notifyMorningBriefing,
+            walkTime: preferences.notifyWalkTime,
+            rain: preferences.notifyRain,
+            hasDog: preferences.showWalkCard,
+            briefingRemotelyEnabled: remoteConfig.dailyWeatherNotificationsEnabled,
+            walkTimeRemotelyEnabled: remoteConfig.walkTimeNotificationsEnabled,
+            rainRemotelyEnabled: remoteConfig.rainNotificationsEnabled
+        )
     }
 }

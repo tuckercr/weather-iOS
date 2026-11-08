@@ -178,12 +178,7 @@ struct WeatherScreenState {
         self.hasDog = hasDog
         weatherToday = StaleWeather.withSunTimesToday(weather, at: now)
         iconCodeNow = StaleWeather.iconCode(weather, at: now)
-        mood = PetMood.forConditions(
-            conditionMain: weather.conditionMain,
-            iconCode: iconCodeNow,
-            feelsLikeC: weather.units.toCelsius(weather.feelsLike),
-            thresholds: config.thresholds
-        )
+        mood = PetMood.forReading(weather, at: now, thresholds: config.thresholds)
         seasonalTheme = SeasonalThemes.theme(on: now, timeZone: timeZone, in: config.seasonalThemes)
         let today = days.first.flatMap { $0.isDay(of: now, in: timeZone) ? $0 : nil }
         self.today = today
@@ -251,18 +246,5 @@ struct WeatherScreenState {
             case .idle, .success: nil
             }
         }
-    }
-}
-
-extension DayForecast {
-    /// Whether this is `date`'s day in `timeZone` (the city's): by its hours' timestamps, or by its
-    /// label for a forecast cached before they were recorded.
-    func isDay(of date: Date, in timeZone: TimeZone) -> Bool {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone
-        if let start = hourlySlots.lazy.compactMap(\.date).first {
-            return calendar.isDate(start, inSameDayAs: date)
-        }
-        return dateLabel == WeatherFormatting.todayLabel(timeZone: timeZone, on: date)
     }
 }
