@@ -72,7 +72,8 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   View models are `@Observable` on the main actor. `WeatherForecastViewModel` holds the screen's
   clock (`now`, moved on by `tick()` on refreshes, returning to the app and a 30-minute timer, so
   past hours drop off) and builds a `WeatherScreen` (`ViewModels/WeatherScreen.swift`) that
-  `CurrentWeatherView` only draws.
+  `CurrentWeatherView` only draws. `CurrentWeatherViewModel` runs the screen's steps (refreshes,
+  My Location, the notification city); the view only tells it what happened.
 - **Data.** Repositories in `Data/` sit over the API clients in `Services/` (`OpenWeatherAPI`,
   `OpenMeteoAPI`, `GeocodingAPI` protocols, faked in tests). Cities with coordinates get their
   current reading and forecast from Open-Meteo (hourly, UV, pavement heat, the 15-minute
