@@ -30,6 +30,7 @@ final class WeatherForecastViewModelTests: XCTestCase {
             onError: { [unowned self] in loggedErrors.append($0) },
             onSettingsOpened: { [unowned self] in settingsOpenedCount += 1 },
             foregroundRefreshMinInterval: { [unowned self] in foregroundRefreshWindow },
+            config: { WeatherScreenConfig() },
             now: { [unowned self] in clock }
         )
     }
@@ -38,21 +39,40 @@ final class WeatherForecastViewModelTests: XCTestCase {
         preferences.destroy()
     }
 
-    // MARK: - Walk advice
+    // MARK: - Clock and screen
+
+    func testTheClockOnlyMovesOnWithTick() {
+        let start = viewModel.now
+        clock = clock.addingTimeInterval(3_600)
+        XCTAssertEqual(viewModel.now, start)
+        viewModel.tick()
+        XCTAssertEqual(viewModel.now, clock)
+    }
+
+    func testTheScreenLoadsThenShowsTheReadingAtTheClock() async {
+        guard case .loading = viewModel.screen(hasDog: true) else { return XCTFail("expected loading") }
+
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(state) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertEqual(state.now, viewModel.now)
+        XCTAssertEqual(state.weather.cityName, "Austin, Texas, US")
+        XCTAssertNil(state.stale)
+    }
 
     func testWalkAdviceComesFromTheLoadedForecastAndIsNilUntilThen() async {
-        let reading = CurrentWeather(
-            cityName: "Austin", conditionMain: "Clear", description: "Clear sky", iconCode: "01d",
-            temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 20, humidityPercent: 50, pressureHpa: 1013,
-            windSpeed: 2, windDeg: 90, visibilityMeters: 10_000, cloudPercent: 0, units: .metric,
-            sunriseEpoch: nil, sunsetEpoch: nil
-        )
-        XCTAssertNil(viewModel.walkAdvice(for: reading, at: clock, hasDog: true))
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(before) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertNil(before.walkAdvice)
+        XCTAssertFalse(before.showsWalkCard)
 
         viewModel.refreshForecast(location: pinned)
         await waitUntil { self.viewModel.forecast.successValue != nil }
-        let firstHour = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
-        XCTAssertNotNil(viewModel.walkAdvice(for: reading, at: firstHour, hasDog: true))
+        clock = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
+        viewModel.tick()
+        guard case let .weather(after) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertNotNil(after.walkAdvice)
     }
 
     // MARK: - Request routing

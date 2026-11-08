@@ -53,12 +53,12 @@ enum WeatherFormatting {
         }
     }
 
-    static func todayLabel(timeZone: TimeZone = .current) -> String {
+    static func todayLabel(timeZone: TimeZone = .current, on date: Date = Date()) -> String {
         let formatter = DateFormatter()
         formatter.timeZone = timeZone
         formatter.locale = .current
         formatter.dateFormat = "EEE, MMM d"
-        return formatter.string(from: Date())
+        return formatter.string(from: date)
     }
 
     /// The WHO exposure category for a UV index, e.g. "High" for 6.

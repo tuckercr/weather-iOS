@@ -10,14 +10,17 @@ final class WeatherForecastViewModel {
     /// Set when a refresh fails while weather is already on screen, so the screen can say the data
     /// is old and why; nil once a refresh succeeds or the user moves to another city.
     private(set) var staleErrorKey: String?
+    /// The screen's clock: what "now" is for everything shown. It moves on with `tick()` (on
+    /// refreshes, returning to the app and a regular timer), so past hours drop off together.
+    private(set) var now: Date
 
     private let preferences: PreferencesStore
     private let weatherRepository: WeatherRepository
     private let onError: @MainActor (_ errorKey: String) -> Void
     private let onSettingsOpened: @MainActor () -> Void
     private let foregroundRefreshMinInterval: () -> TimeInterval
-    private let petWeatherThresholds: () -> PetWeatherThresholds
-    private let now: () -> Date
+    private let config: () -> WeatherScreenConfig
+    private let clock: () -> Date
 
     /// When each city's data last arrived, for throttling the silent foreground refresh.
     private var currentFetchedAt: [String: Date] = [:]
@@ -36,7 +39,7 @@ final class WeatherForecastViewModel {
         onError: (@MainActor (_ errorKey: String) -> Void)? = nil,
         onSettingsOpened: (@MainActor () -> Void)? = nil,
         foregroundRefreshMinInterval: (() -> TimeInterval)? = nil,
-        petWeatherThresholds: (() -> PetWeatherThresholds)? = nil,
+        config: (() -> WeatherScreenConfig)? = nil,
         now: (() -> Date)? = nil
     ) {
         // Optional closures filled in here rather than closure default values: Swift 6.1 (CI's
@@ -48,17 +51,29 @@ final class WeatherForecastViewModel {
         self.foregroundRefreshMinInterval = foregroundRefreshMinInterval ?? {
             RemoteConfigRepository.shared.foregroundRefreshMinInterval
         }
-        self.petWeatherThresholds = petWeatherThresholds ?? { RemoteConfigRepository.shared.petWeatherThresholds }
-        self.now = now ?? { Date() }
+        self.config = config ?? { .live }
+        let clock = now ?? { Date() }
+        self.clock = clock
+        self.now = clock()
     }
 
-    /// The walk verdict for `weather` (the reading on screen, or the forecast hour standing in for an
-    /// old one) at the screen's `now`, from the forecast's hours. Nil while the forecast is loading
-    /// or failed, which hides the walk card rather than advising on nothing. The hero's caption and
-    /// the walk card both read it.
-    func walkAdvice(for weather: CurrentWeather, at now: Date, hasDog: Bool) -> WalkAdvice? {
-        guard let days = forecast.successValue else { return nil }
-        return WalkAdvisor.advice(for: weather, forecast: days, at: now, thresholds: petWeatherThresholds(), hasDog: hasDog)
+    /// Moves the screen's clock on to the time now.
+    func tick() {
+        now = clock()
+    }
+
+    /// What the screen shows for the active city at the screen's clock: the reading (or the
+    /// forecast hour standing in for an old one), the hero, the walk verdict, the tiles and the
+    /// sections the settings switch on.
+    func screen(hasDog: Bool) -> WeatherScreen {
+        WeatherScreen.make(
+            current: currentWeather,
+            forecast: forecast,
+            staleErrorKey: staleErrorKey,
+            now: now,
+            hasDog: hasDog,
+            config: config()
+        )
     }
 
     /// The silent refresh on returning to the foreground. Remote Config can make it skip a city that
@@ -71,7 +86,7 @@ final class WeatherForecastViewModel {
             if let target = currentTargetKey, target != location.cacheKey { return }
             switch result {
             case .success(let weather):
-                currentFetchedAt[location.cacheKey] = now()
+                currentFetchedAt[location.cacheKey] = clock()
                 currentWeather = .success(weather)
                 staleErrorKey = nil
                 preferences.setLastCity(weather.cityName)
@@ -91,7 +106,7 @@ final class WeatherForecastViewModel {
             let result = await weatherRepository.fetchForecast(for: location, units: units)
             if let target = forecastTargetKey, target != location.cacheKey { return }
             if case .success(let days) = result {
-                forecastFetchedAt[location.cacheKey] = now()
+                forecastFetchedAt[location.cacheKey] = clock()
                 forecast = .success(days)
                 preferences.setCachedForecast(days, for: location.cacheKey)
             }
@@ -120,7 +135,7 @@ final class WeatherForecastViewModel {
                 preferences.setCachedWeather(weather, for: location.cacheKey)
                 currentWeather = .success(weather)
                 staleErrorKey = nil
-                currentFetchedAt[location.cacheKey] = now()
+                currentFetchedAt[location.cacheKey] = clock()
             case .failure(let error):
                 let errorKey = WeatherErrorMessages.errorKey(for: error)
                 onError(errorKey)
@@ -162,7 +177,7 @@ final class WeatherForecastViewModel {
             case .success(let days):
                 preferences.setCachedForecast(days, for: location.cacheKey)
                 forecast = .success(days)
-                forecastFetchedAt[location.cacheKey] = now()
+                forecastFetchedAt[location.cacheKey] = clock()
             case .failure(let error):
                 let errorKey = WeatherErrorMessages.errorKey(for: error)
                 onError(errorKey)
@@ -201,7 +216,7 @@ final class WeatherForecastViewModel {
     private func wasFetchedRecently(_ fetchedAt: Date?) -> Bool {
         guard let fetchedAt else { return false }
         let window = foregroundRefreshMinInterval()
-        return window > 0 && now().timeIntervalSince(fetchedAt) < window
+        return window > 0 && clock().timeIntervalSince(fetchedAt) < window
     }
 
     private func resolvedUnits() -> WeatherUnits {
