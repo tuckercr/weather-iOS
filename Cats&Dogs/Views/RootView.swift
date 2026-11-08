@@ -7,48 +7,53 @@ private enum AppScreen: Hashable {
 }
 
 struct RootView: View {
-    @State private var welcomeViewModel = WelcomeViewModel()
-    @State private var cityListViewModel = CityListViewModel()
+    @State private var welcomeViewModel: WelcomeViewModel
+    @State private var cityListViewModel: CityListViewModel
     @State private var weatherViewModel = WeatherForecastViewModel()
-    @State private var settingsViewModel = SettingsViewModel()
+    @State private var settingsViewModel: SettingsViewModel
     @State private var path: [AppScreen] = []
     @State private var updatePrompt = UpdatePromptViewModel()
     /// The radar's frames are the same for every city, so one view model holds them for the app.
     @State private var radarViewModel = RadarViewModel()
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        // Onboarding's answers go to the view models that own them: the dog to Settings, the
+        // location to the city list.
+        let settings = SettingsViewModel()
+        let cityList = CityListViewModel()
+        _settingsViewModel = State(initialValue: settings)
+        _cityListViewModel = State(initialValue: cityList)
+        _welcomeViewModel = State(initialValue: WelcomeViewModel(
+            onDogAnswered: settings.setShowWalkCard,
+            onLocationChosen: { cityList.addLocation($0) }
+        ))
+    }
+
     var body: some View {
         Group {
             if updatePrompt.prompt == .required {
                 UpdateRequiredView(storeURL: updatePrompt.storeURL)
-            } else if let state = welcomeViewModel.onboardingState {
-                if !state.hasSeenWelcome {
-                    WelcomeView {
-                        welcomeViewModel.completeWelcome()
-                    }
-                } else if welcomeViewModel.isAskingAboutDog {
-                    OnboardingDogView { hasDog in
-                        // The walk card only shows when there's a dog.
-                        settingsViewModel.setShowWalkCard(hasDog)
-                        welcomeViewModel.completeDogQuestion()
-                    }
-                } else if !state.notificationOnboardingDone {
+            } else {
+                switch welcomeViewModel.step {
+                case nil:
+                    ProgressView()
+                case .welcome:
+                    WelcomeView(onGetStarted: welcomeViewModel.completeWelcome)
+                case .dog:
+                    OnboardingDogView(onAnswered: welcomeViewModel.answerDogQuestion)
+                case .notifications:
                     OnboardingNotificationView(
                         text: welcomeViewModel.notificationOnboardingText,
                         onAllow: welcomeViewModel.allowNotifications,
                         onNotNow: welcomeViewModel.completeNotificationOnboarding
                     )
-                } else if !state.locationOnboardingDone {
+                case .location:
                     OnboardingLocationView(
-                        onLocationResolved: { location in
-                            cityListViewModel.addLocation(location)
-                            welcomeViewModel.completeLocationOnboarding()
-                        },
-                        onSkip: {
-                            welcomeViewModel.completeLocationOnboarding()
-                        }
+                        onLocationResolved: welcomeViewModel.chooseLocation,
+                        onSkip: welcomeViewModel.completeLocationOnboarding
                     )
-                } else {
+                case .done:
                     NavigationStack(path: $path) {
                         CurrentWeatherView(
                             cityListViewModel: cityListViewModel,
@@ -92,8 +97,6 @@ struct RootView: View {
                         path = [.settings, .notifications]
                     }
                 }
-            } else {
-                ProgressView()
             }
         }
         .environment(radarViewModel)

@@ -51,7 +51,7 @@ final class WelcomeViewModelTests: XCTestCase {
         viewModel.completeWelcome()
         XCTAssertTrue(viewModel.isAskingAboutDog)
 
-        viewModel.completeDogQuestion()
+        viewModel.answerDogQuestion(true)
         XCTAssertFalse(viewModel.isAskingAboutDog)
         XCTAssertFalse(
             WelcomeViewModel(preferences: preferences.reopened()).isAskingAboutDog,
@@ -130,5 +130,37 @@ final class WelcomeViewModelTests: XCTestCase {
             XCTAssertEqual(planned, granted ? 1 : 0)
             XCTAssertEqual(viewModel.onboardingState?.notificationOnboardingDone, true)
         }
+    }
+
+    // MARK: - Steps
+
+    func testTheStepsGoWelcomeDogNotificationsLocationThenTheApp() async {
+        var dog: Bool?
+        var chosen: SavedLocation?
+        let viewModel = WelcomeViewModel(
+            preferences: preferences.store,
+            onOnboardingComplete: {},
+            requestNotificationAuthorization: { false },
+            onDogAnswered: { dog = $0 },
+            onLocationChosen: { chosen = $0 }
+        )
+        XCTAssertEqual(viewModel.step, .welcome)
+        viewModel.completeWelcome()
+        XCTAssertEqual(viewModel.step, .dog)
+        viewModel.answerDogQuestion(false)
+        XCTAssertEqual(dog, false)
+        XCTAssertEqual(viewModel.step, .notifications)
+        await viewModel.allowNotifications()
+        XCTAssertEqual(viewModel.step, .location)
+        let austin = SavedLocation(label: "Austin", latitude: 30.27, longitude: -97.74)
+        viewModel.chooseLocation(austin)
+        XCTAssertEqual(chosen, austin)
+        XCTAssertEqual(viewModel.step, .done)
+    }
+
+    func testWithoutAnotherViewModelTheDogAnswerIsSaved() {
+        let viewModel = WelcomeViewModel(preferences: preferences.store)
+        viewModel.answerDogQuestion(false)
+        XCTAssertFalse(preferences.store.showWalkCard)
     }
 }

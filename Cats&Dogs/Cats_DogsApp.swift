@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UserNotifications
 
 private let splashDuration: Duration = .seconds(1.5)
 
@@ -17,23 +16,7 @@ struct Cats_DogsApp: App {
 
     init() {
         BrandAppearance.apply()
-        FirebaseSetup.configureIfAvailable()
-        AnalyticsRepository.shared.applyUsageSharingPreference()
-        // Start the Remote Config fetch early so the values are ready by the next launch.
-        _ = RemoteConfigRepository.shared
-        // Set before launch finishes, so a tap on the iOS Settings link that opened the app arrives.
-        UNUserNotificationCenter.current().delegate = NotificationSettingsLink.shared
-        UNUserNotificationCenter.current().setNotificationCategories(WeatherNotificationScheduler.categories)
-        Task { await WeatherNotificationScheduler.shared.refreshAuthorizationOptions() }
-        // Follow my location: watching for moves has to restart at every launch, including the
-        // relaunch iOS makes to report one.
-        MyLocationFollower.shared.start()
-        #if DEBUG
-        // xcrun simctl launch <device> com.fangjet.weather -sendSampleNotifications
-        if ProcessInfo.processInfo.arguments.contains("-sendSampleNotifications") {
-            Task { await WeatherNotificationScheduler.shared.sendSamples() }
-        }
-        #endif
+        AppStartup.launch()
     }
 
     var body: some Scene {
@@ -56,12 +39,10 @@ struct Cats_DogsApp: App {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
-                WeatherBackgroundRefresher.shared.scheduleNextRefresh()
-            }
+            if phase == .background { AppStartup.enteredBackground() }
         }
         .backgroundTask(.appRefresh(WeatherBackgroundRefresher.taskIdentifier)) {
-            await WeatherBackgroundRefresher.shared.handleAppRefresh()
+            await AppStartup.backgroundRefresh()
         }
     }
 }
