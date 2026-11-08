@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Observation
 
@@ -5,7 +6,8 @@ import Observation
 /// instance holds it. `load()` fetches it the first time and again once it's stale, so an app that
 /// sat in the background for hours doesn't replay old frames labelled "Now". While the screen stays
 /// open, frames are only kept current while the radar is in view, so a radar scrolled out of sight
-/// doesn't keep fetching frames nobody watches.
+/// doesn't keep fetching frames nobody watches. It also holds the images for the city on screen:
+/// the map behind the radar and each frame's overlay, loaded through `RadarTileLoader`.
 @MainActor
 @Observable
 final class RadarViewModel {
@@ -20,8 +22,16 @@ final class RadarViewModel {
     nonisolated static let recheckInterval: Duration = .seconds(60)
 
     private(set) var timeline: LoadingState<RadarTimeline> = .idle
+    /// The OpenStreetMap tiles around the city on screen; nil until they load.
+    private(set) var baseMap: CGImage?
+    /// Each frame's stitched overlay by frame path, kept so replays are smooth.
+    private(set) var overlays: [String: CGImage] = [:]
 
     private let fetchTimeline: @Sendable () async throws -> RadarTimeline
+    private let loadBaseMap: @Sendable (RadarTile) async -> CGImage?
+    private let loadOverlay: @Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?
+    @ObservationIgnored private var baseMapTile: RadarTile?
+    @ObservationIgnored private var overlaysTile: RadarTile?
     private let now: () -> Date
     private var loadedAt: Date?
     private var isRefreshing = false
@@ -31,11 +41,57 @@ final class RadarViewModel {
     init(
         frameInterval: Duration? = nil,
         fetchTimeline: (@Sendable () async throws -> RadarTimeline)? = nil,
+        loadBaseMap: (@Sendable (RadarTile) async -> CGImage?)? = nil,
+        loadOverlay: (@Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?)? = nil,
         now: (() -> Date)? = nil
     ) {
         self.frameInterval = frameInterval ?? RemoteConfigRepository.shared.radarFrameInterval
         self.fetchTimeline = fetchTimeline ?? { try await RadarRepository().timeline() }
+        self.loadBaseMap = loadBaseMap ?? { await RadarTileLoader.baseMap(for: $0) }
+        self.loadOverlay = loadOverlay ?? { await RadarTileLoader.overlay(for: $2, in: $1, tile: $0) }
         self.now = now ?? { Date() }
+    }
+
+    /// Loads the map behind the radar for `tile`. A new tile clears the old map first.
+    func loadBaseMap(for tile: RadarTile) async {
+        if baseMapTile != tile { baseMap = nil }
+        baseMapTile = tile
+        let image = await loadBaseMap(tile)
+        guard !Task.isCancelled, baseMapTile == tile else { return }
+        baseMap = image
+    }
+
+    /// Prefetches every frame's overlay for `tile` and the current timeline, frames nearest "now"
+    /// first, a few at a time. A new tile starts from scratch; a refreshed timeline keeps the
+    /// overlays it shares with the old one and drops the rest.
+    func loadOverlays(for tile: RadarTile) async {
+        guard let timeline = timeline.successValue else { return }
+        if overlaysTile != tile {
+            overlays = [:]
+            overlaysTile = tile
+        } else {
+            let paths = Set(timeline.frames.map(\.path))
+            overlays = overlays.filter { paths.contains($0.key) }
+        }
+        let now = timeline.frames.lastIndex { !$0.isForecast } ?? 0
+        let order = timeline.frames.indices
+            .sorted { abs($0 - now) < abs($1 - now) }
+            .map { timeline.frames[$0] }
+            .filter { overlays[$0.path] == nil }
+        let load = loadOverlay
+        await withTaskGroup(of: (path: String, image: CGImage?).self) { group in
+            var pending = order.makeIterator()
+            func startNext() {
+                guard let frame = pending.next() else { return }
+                group.addTask { (frame.path, await load(tile, timeline, frame)) }
+            }
+            for _ in 0 ..< RadarTiles.concurrentFrames { startNext() }
+            for await result in group {
+                guard !Task.isCancelled, overlaysTile == tile else { return }
+                if let image = result.image { overlays[result.path] = image }
+                startNext()
+            }
+        }
     }
 
     /// Fetches the timeline the first time, and refreshes it once it's stale. Safe to call often:
