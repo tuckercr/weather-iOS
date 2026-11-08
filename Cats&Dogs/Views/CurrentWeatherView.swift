@@ -230,11 +230,6 @@ struct CurrentWeatherView: View {
     }
 }
 
-extension EnvironmentValues {
-    /// Whether distances (visibility) read in miles rather than kilometres.
-    @Entry var distanceInMiles = false
-}
-
 private struct CurrentWeatherContent: View {
     @Environment(\.distanceInMiles) private var distanceInMiles
     /// Everything shown, worked out by the view model at its clock.

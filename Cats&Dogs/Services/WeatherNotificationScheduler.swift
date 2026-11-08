@@ -1,5 +1,4 @@
 import Foundation
-import SwiftUI
 import UserNotifications
 
 @MainActor
@@ -184,14 +183,9 @@ final class WeatherNotificationScheduler {
         }
     }
 
-    /// A PNG of the pets in `mood`.
+    /// A PNG of the pets in `mood`, drawn by the view that draws them on screen.
     private func petsPicture(mood: PetMood, southernHemisphere: Bool) -> Data? {
-        let renderer = ImageRenderer(
-            content: PetSceneIcon(mood: mood, southernHemisphere: southernHemisphere)
-                .frame(width: 120, height: 120)
-        )
-        renderer.scale = 3
-        return renderer.uiImage?.pngData()
+        PetSceneIcon.png(mood: mood, southernHemisphere: southernHemisphere)
     }
 
     /// Each notification needs its own file: iOS moves an attachment's file into its own store.

@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 /// A look for a day or a stretch of days: the pets' props, the hero card's colours and caption, and
 /// a warmer tint on the cards below. Themes are data, not code: the app ships them in
@@ -140,10 +140,6 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
     }
     #endif
 
-    func heroBackground(night: Bool) -> Color { (night ? colors.heroNight : colors.heroDay).color }
-
-    func heroInk(night: Bool) -> Color { (night ? colors.inkNight : colors.inkDay).color }
-
     /// One caption per day, picked by the city's date; nil when the theme has none, so the
     /// weather's own caption shows.
     func caption(night: Bool, on date: Date, calendar: Calendar) -> String? {
@@ -153,13 +149,6 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
         return options[day % options.count]
     }
 
-    var cardBackground: Color { HexColor.adaptive(light: colors.cardLight, dark: colors.cardDark) }
-
-    /// Nil leaves the tiles in the brand colour.
-    var tileHeader: Color? {
-        guard let light = colors.tileHeaderLight, let dark = colors.tileHeaderDark else { return nil }
-        return HexColor.adaptive(light: light, dark: dark)
-    }
 }
 
 /// The extras a theme can ask the pet scene for. Adding one means drawing it in `PetScene` (and
@@ -186,14 +175,6 @@ struct HexColor: Decodable, Equatable {
             throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Not #RRGGBB: \(text)"))
         }
         rgb = value
-    }
-
-    var color: Color { Color(hex: rgb) }
-
-    static func adaptive(light: HexColor, dark: HexColor) -> Color {
-        let lightColor = UIColor(light.color)
-        let darkColor = UIColor(dark.color)
-        return Color(UIColor { $0.userInterfaceStyle == .dark ? darkColor : lightColor })
     }
 }
 
@@ -231,21 +212,4 @@ enum SeasonalThemes {
         calendar.timeZone = timeZone
         return themes.first { $0.dates.contains(date, in: calendar) }
     }
-}
-
-private struct SeasonalThemeKey: EnvironmentKey {
-    static let defaultValue: SeasonalTheme? = nil
-}
-
-extension EnvironmentValues {
-    /// Today's theme for the city on screen, or nil. Set by `CurrentWeatherView`.
-    var seasonalTheme: SeasonalTheme? {
-        get { self[SeasonalThemeKey.self] }
-        set { self[SeasonalThemeKey.self] = newValue }
-    }
-}
-
-extension Color {
-    /// A card's background, warmed by today's theme when there is one.
-    static func card(_ theme: SeasonalTheme?) -> Color { theme?.cardBackground ?? .surfaceVariant }
 }

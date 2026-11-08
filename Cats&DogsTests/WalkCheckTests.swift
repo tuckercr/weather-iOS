@@ -316,10 +316,10 @@ final class WalkCheckTests: XCTestCase {
     func testTheWalkCardShowsWithADogAndADangerWarningForEveryone() {
         let okay = WalkAdvice(rating: .okay, bestTimeLabel: "4 PM")
         let danger = WalkAdvice(rating: .danger, bestTimeLabel: nil)
-        XCTAssertTrue(WalkCard.isShown(okay, hasDog: true, cardEnabled: true))
-        XCTAssertFalse(WalkCard.isShown(okay, hasDog: false, cardEnabled: true))
-        XCTAssertFalse(WalkCard.isShown(okay, hasDog: true, cardEnabled: false))
-        XCTAssertTrue(WalkCard.isShown(danger, hasDog: false, cardEnabled: false))
+        XCTAssertTrue(okay.showsCard(hasDog: true, cardEnabled: true))
+        XCTAssertFalse(okay.showsCard(hasDog: false, cardEnabled: true))
+        XCTAssertFalse(okay.showsCard(hasDog: true, cardEnabled: false))
+        XCTAssertTrue(danger.showsCard(hasDog: false, cardEnabled: false))
     }
 
     func testTheWalksReasonComesBeforeASeasonalThemesCaption() {

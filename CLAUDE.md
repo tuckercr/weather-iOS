@@ -90,6 +90,9 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 - **Time zones.** Everything shown for a city uses the city's time zone (`CurrentWeather.timeZone`),
   including "today", night captions and seasonal themes. Only the 8:30 notifications use the
   device clock.
+- **Layers.** `Domain/` holds the rules with no UI in them (`PetMood`, `WalkAdvisor`, `WalkCheck`,
+  `PetWeatherThresholds`, `SeasonalTheme`); their colours are view extensions (`PetMood+Colors`,
+  `SeasonalTheme+Colors`). Only `Views/` imports SwiftUI.
 - **Pets.** `PetMood.forConditions` maps conditions to one of 9 moods, which choose the hero card's
   colour, ink and caption; `PetScene` draws the pets in code. A `SeasonalTheme` (built-in
   `SeasonalThemes.json`, replaceable from Remote Config `seasonal_themes`) can override the hero

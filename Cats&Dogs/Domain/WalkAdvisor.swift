@@ -223,3 +223,11 @@ enum WalkAdvisor {
         WalkConditions.isWalkable(slot, thresholds)
     }
 }
+
+extension WalkAdvice {
+    /// Whether the walk card shows: with a dog, when Remote Config allows the card; a danger warning
+    /// shows for everyone. Same as Android's `walkCardShown`.
+    func showsCard(hasDog: Bool, cardEnabled: Bool) -> Bool {
+        rating == .danger || (hasDog && cardEnabled)
+    }
+}

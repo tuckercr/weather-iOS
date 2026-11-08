@@ -433,3 +433,16 @@ private struct Painter {
         .padding()
     }
 }
+
+extension PetSceneIcon {
+    /// The icon as a PNG, for a notification's picture: the scheduler gets the pets without drawing
+    /// views itself.
+    static func png(mood: PetMood, southernHemisphere: Bool) -> Data? {
+        let renderer = ImageRenderer(
+            content: PetSceneIcon(mood: mood, southernHemisphere: southernHemisphere)
+                .frame(width: 120, height: 120)
+        )
+        renderer.scale = 3
+        return renderer.uiImage?.pngData()
+    }
+}

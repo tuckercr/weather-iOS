@@ -207,7 +207,7 @@ struct WeatherScreenState {
             ? nil
             : WalkAdvisor.advice(for: weather, forecast: days, at: now, thresholds: config.thresholds, hasDog: hasDog)
         self.walkAdvice = walkAdvice
-        showsWalkCard = walkAdvice.map { WalkCard.isShown($0, hasDog: hasDog, cardEnabled: config.walkCardEnabled) } ?? false
+        showsWalkCard = walkAdvice?.showsCard(hasDog: hasDog, cardEnabled: config.walkCardEnabled) ?? false
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         heroCaption = PetMood.heroCaption(
