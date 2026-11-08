@@ -210,6 +210,7 @@ final class WeatherNotificationScheduler {
 
 extension NotificationSettings {
     /// The user's switches in Settings and Remote Config's for everyone.
+    @MainActor
     init(preferences: PreferencesStore, remoteConfig: RemoteConfigRepository) {
         self.init(
             morningBriefing: preferences.notifyMorningBriefing,
