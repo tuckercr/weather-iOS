@@ -30,8 +30,8 @@ final class NotificationWorkerLogicTests: XCTestCase {
         for locations in [[london, here], [paris, london]] {
             _ = await makeLogic(
                 savedLocations: locations,
-                fetchCurrentWeather: { _, _, latitude, _ in
-                    latitudes.append(latitude)
+                fetchCurrentWeather: { _, location in
+                    latitudes.append(location.latitude)
                     return .failure(OpenWeatherClientError.network)
                 }
             ).doWork()
@@ -42,7 +42,7 @@ final class NotificationWorkerLogicTests: XCTestCase {
     func testReturnsRetryWhenWeatherFetchFails() async {
         var refreshed = 0
         let logic = makeLogic(
-            fetchCurrentWeather: { _, _, _, _ in .failure(OpenWeatherClientError.network) },
+            fetchCurrentWeather: { _, _ in .failure(OpenWeatherClientError.network) },
             onRefreshed: { refreshed += 1 }
         )
 
@@ -56,7 +56,7 @@ final class NotificationWorkerLogicTests: XCTestCase {
         var refreshed = 0
         var forecastFetched = false
         let logic = makeLogic(
-            fetchForecast: { _, _, _, _ in
+            fetchForecast: { _, _ in
                 forecastFetched = true
                 return .success([])
             },
@@ -83,10 +83,10 @@ final class NotificationWorkerLogicTests: XCTestCase {
     private func makeLogic(
         savedLocations: [SavedLocation]? = nil,
         fetchCurrentWeather: (
-            (WeatherUnits, String, Double?, Double?) async -> Result<CurrentWeather, Error>
+            (WeatherUnits, SavedLocation) async -> Result<CurrentWeather, Error>
         )? = nil,
         fetchForecast: (
-            (WeatherUnits, String, Double?, Double?) async -> Result<[DayForecast], Error>
+            (WeatherUnits, SavedLocation) async -> Result<[DayForecast], Error>
         )? = nil,
         hasNotificationPermission: @escaping () -> Bool = { true },
         onRefreshed: @escaping () -> Void = {}
@@ -94,8 +94,8 @@ final class NotificationWorkerLogicTests: XCTestCase {
         NotificationWorkerLogic(
             getSavedLocations: { savedLocations ?? [self.london] },
             getUnits: { .metric },
-            fetchCurrentWeather: fetchCurrentWeather ?? { _, _, _, _ in .success(sampleWeather()) },
-            fetchForecast: fetchForecast ?? { _, _, _, _ in .success([]) },
+            fetchCurrentWeather: fetchCurrentWeather ?? { _, _ in .success(sampleWeather()) },
+            fetchForecast: fetchForecast ?? { _, _ in .success([]) },
             hasNotificationPermission: hasNotificationPermission,
             onRefreshed: onRefreshed
         )

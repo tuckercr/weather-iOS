@@ -30,6 +30,34 @@ struct WeatherRepository {
         self.useAirQuality = useAirQuality ?? { RemoteConfigRepository.airQualityEnabled }
     }
 
+    /// `location`'s current reading: by coordinates when it has them, otherwise by name. My Location
+    /// has no label of its own, so the phone's place lookup (or the provider) names it. The screen,
+    /// the background refresh and the notifications all fetch by this rule.
+    func fetchCurrentWeather(for location: SavedLocation, units: WeatherUnits) async -> Result<CurrentWeather, Error> {
+        await fetchCurrentWeather(
+            units: units,
+            locationLabel: location.isCurrentLocation ? "" : location.label,
+            cityQuery: Self.cityQuery(for: location),
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+    }
+
+    /// `location`'s forecast: by coordinates when it has them, otherwise by name.
+    func fetchForecast(for location: SavedLocation, units: WeatherUnits) async -> Result<[DayForecast], Error> {
+        await fetchForecast(
+            units: units,
+            cityQuery: Self.cityQuery(for: location),
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+    }
+
+    /// A city saved without coordinates is looked up by its name.
+    private static func cityQuery(for location: SavedLocation) -> String? {
+        location.latitude == nil || location.longitude == nil ? location.label : nil
+    }
+
     /// With coordinates, Open-Meteo's reading for the exact spot, which agrees with the hourly strip.
     /// OpenWeather's is the backup: when Open-Meteo fails or Remote Config switches it off, and for
     /// name-only cities. An empty `locationLabel` (My Location) is named by the phone.

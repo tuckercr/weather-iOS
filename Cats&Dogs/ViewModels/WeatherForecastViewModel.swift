@@ -67,7 +67,7 @@ final class WeatherForecastViewModel {
         guard !wasFetchedRecently(currentFetchedAt[location.cacheKey]) else { return }
         Task {
             let units = resolvedUnits()
-            let result = await fetchCurrent(for: location, units: units)
+            let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
             if let target = currentTargetKey, target != location.cacheKey { return }
             switch result {
             case .success(let weather):
@@ -88,7 +88,7 @@ final class WeatherForecastViewModel {
         guard !wasFetchedRecently(forecastFetchedAt[location.cacheKey]) else { return }
         Task {
             let units = resolvedUnits()
-            let result = await fetchForecast(for: location, units: units)
+            let result = await weatherRepository.fetchForecast(for: location, units: units)
             if let target = forecastTargetKey, target != location.cacheKey { return }
             if case .success(let days) = result {
                 forecastFetchedAt[location.cacheKey] = now()
@@ -111,7 +111,7 @@ final class WeatherForecastViewModel {
             currentWeather = cached.map { .success($0) } ?? .loading
 
             let units = resolvedUnits()
-            let result = await fetchCurrent(for: location, units: units)
+            let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
 
             guard fetchId == currentFetchGeneration else { return }
             switch result {
@@ -155,7 +155,7 @@ final class WeatherForecastViewModel {
             forecast = cached.map { .success($0) } ?? .loading
 
             let units = resolvedUnits()
-            let result = await fetchForecast(for: location, units: units)
+            let result = await weatherRepository.fetchForecast(for: location, units: units)
 
             guard fetchId == forecastFetchGeneration else { return }
             switch result {
@@ -210,48 +210,5 @@ final class WeatherForecastViewModel {
 
     private func updateRefreshingState() {
         isRefreshing = currentRefreshing || forecastRefreshing
-    }
-
-    private func fetchCurrent(
-        for location: SavedLocation,
-        units: WeatherUnits
-    ) async -> Result<CurrentWeather, Error> {
-        let label = location.isCurrentLocation ? "" : location.label
-        if let latitude = location.latitude, let longitude = location.longitude {
-            return await weatherRepository.fetchCurrentWeather(
-                units: units,
-                locationLabel: label,
-                cityQuery: nil,
-                latitude: latitude,
-                longitude: longitude
-            )
-        }
-        return await weatherRepository.fetchCurrentWeather(
-            units: units,
-            locationLabel: label,
-            cityQuery: location.label,
-            latitude: nil,
-            longitude: nil
-        )
-    }
-
-    private func fetchForecast(
-        for location: SavedLocation,
-        units: WeatherUnits
-    ) async -> Result<[DayForecast], Error> {
-        if let latitude = location.latitude, let longitude = location.longitude {
-            return await weatherRepository.fetchForecast(
-                units: units,
-                cityQuery: nil,
-                latitude: latitude,
-                longitude: longitude
-            )
-        }
-        return await weatherRepository.fetchForecast(
-            units: units,
-            cityQuery: location.label,
-            latitude: nil,
-            longitude: nil
-        )
     }
 }

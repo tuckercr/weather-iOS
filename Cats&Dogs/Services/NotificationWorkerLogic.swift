@@ -8,18 +8,10 @@ enum NotificationWorkerResult: Equatable {
 struct NotificationWorkerLogic {
     let getSavedLocations: () async -> [SavedLocation]
     let getUnits: () async -> WeatherUnits
-    let fetchCurrentWeather: (
-        _ units: WeatherUnits,
-        _ label: String,
-        _ latitude: Double?,
-        _ longitude: Double?
-    ) async -> Result<CurrentWeather, Error>
-    let fetchForecast: (
-        _ units: WeatherUnits,
-        _ label: String,
-        _ latitude: Double?,
-        _ longitude: Double?
-    ) async -> Result<[DayForecast], Error>
+    /// Fetches (and caches) `location`'s current reading, as `WeatherRepository.fetchCurrentWeather(for:units:)`.
+    let fetchCurrentWeather: (_ units: WeatherUnits, _ location: SavedLocation) async -> Result<CurrentWeather, Error>
+    /// Fetches (and caches) `location`'s forecast.
+    let fetchForecast: (_ units: WeatherUnits, _ location: SavedLocation) async -> Result<[DayForecast], Error>
     let hasNotificationPermission: () -> Bool
     /// The caches are fresh and notifications are allowed: time to replan them.
     let onRefreshed: () -> Void
@@ -30,20 +22,10 @@ struct NotificationWorkerLogic {
         guard let location = await getSavedLocations().notificationLocation else { return .success }
 
         let units = await getUnits()
-        let weatherResult = await fetchCurrentWeather(
-            units,
-            location.label,
-            location.latitude,
-            location.longitude
-        )
+        let weatherResult = await fetchCurrentWeather(units, location)
         guard case .success = weatherResult else { return .retry }
 
-        _ = await fetchForecast(
-            units,
-            location.label,
-            location.latitude,
-            location.longitude
-        )
+        _ = await fetchForecast(units, location)
 
         guard hasNotificationPermission() else { return .success }
         onRefreshed()

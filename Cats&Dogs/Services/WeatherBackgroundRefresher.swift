@@ -71,10 +71,7 @@ final class WeatherBackgroundRefresher {
         // With Follow my location on, My Location first moves to where the phone was last seen.
         followMyLocation()
         let locations = preferences.savedLocations
-        let notificationLocation = locations.notificationLocation
-        let cacheKey = notificationLocation?.cacheKey
-        // Same display-name rule as the foreground refresh in WeatherForecastViewModel.
-        let usesApiCityName = notificationLocation?.isCurrentLocation == true
+        let cacheKey = locations.notificationLocation?.cacheKey
 
         let authorized = await notificationsAuthorized()
         var refreshed = false
@@ -84,28 +81,17 @@ final class WeatherBackgroundRefresher {
             getUnits: { [preferences] in
                 WeatherUnitsResolver.resolve(override: preferences.unitOverride)
             },
-            fetchCurrentWeather: { [preferences, weatherRepository] units, label, latitude, longitude in
-                let result = await weatherRepository.fetchCurrentWeather(
-                    units: units,
-                    locationLabel: usesApiCityName ? "" : label,
-                    cityQuery: latitude == nil || longitude == nil ? label : nil,
-                    latitude: latitude,
-                    longitude: longitude
-                )
-                if case .success(let weather) = result, let cacheKey {
-                    preferences.setCachedWeather(weather, for: cacheKey)
+            fetchCurrentWeather: { [preferences, weatherRepository] units, location in
+                let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
+                if case .success(let weather) = result {
+                    preferences.setCachedWeather(weather, for: location.cacheKey)
                 }
                 return result
             },
-            fetchForecast: { [preferences, weatherRepository] units, label, latitude, longitude in
-                let result = await weatherRepository.fetchForecast(
-                    units: units,
-                    cityQuery: latitude == nil || longitude == nil ? label : nil,
-                    latitude: latitude,
-                    longitude: longitude
-                )
-                if case .success(let days) = result, let cacheKey {
-                    preferences.setCachedForecast(days, for: cacheKey)
+            fetchForecast: { [preferences, weatherRepository] units, location in
+                let result = await weatherRepository.fetchForecast(for: location, units: units)
+                if case .success(let days) = result {
+                    preferences.setCachedForecast(days, for: location.cacheKey)
                 }
                 return result
             },
@@ -131,23 +117,10 @@ final class WeatherBackgroundRefresher {
     /// refresh does.
     private func refreshCache(for location: SavedLocation) async {
         let units = WeatherUnitsResolver.resolve(override: preferences.unitOverride)
-        let cityQuery = location.latitude == nil || location.longitude == nil ? location.label : nil
-        let weather = await weatherRepository.fetchCurrentWeather(
-            units: units,
-            locationLabel: location.isCurrentLocation ? "" : location.label,
-            cityQuery: cityQuery,
-            latitude: location.latitude,
-            longitude: location.longitude
-        )
-        if case .success(let weather) = weather {
+        if case .success(let weather) = await weatherRepository.fetchCurrentWeather(for: location, units: units) {
             preferences.setCachedWeather(weather, for: location.cacheKey)
         }
-        let forecast = await weatherRepository.fetchForecast(
-            units: units,
-            cityQuery: cityQuery,
-            latitude: location.latitude,
-            longitude: location.longitude
-        )
+        let forecast = await weatherRepository.fetchForecast(for: location, units: units)
         if case .success(let days) = forecast {
             preferences.setCachedForecast(days, for: location.cacheKey)
         }
