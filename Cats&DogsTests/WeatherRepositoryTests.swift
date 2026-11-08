@@ -31,6 +31,30 @@ final class WeatherRepositoryTests: XCTestCase {
         XCTAssertTrue(placeNames.requests.isEmpty, "A saved city keeps its own label")
     }
 
+    func testASavedLocationIsFetchedByCoordinatesOrByNameAndMyLocationIsNamedByThePhone() async {
+        let api = FakeOpenWeatherAPI()
+        let placeNames = StubPlaceNames(name: "Knoxville")
+        let repository = WeatherRepository(
+            client: api,
+            openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse()),
+            airQuality: StubAirQualityAPI(),
+            placeNames: placeNames,
+            timeZone: utc,
+            useOpenMeteo: { true }
+        )
+        // A city saved by name only goes to OpenWeather by its name.
+        _ = await repository.fetchCurrentWeather(for: SavedLocation(label: "Austin", latitude: nil, longitude: nil), units: .metric)
+        XCTAssertEqual(api.lastCurrentCityQuery, "Austin")
+        _ = await repository.fetchForecast(for: SavedLocation(label: "Austin", latitude: nil, longitude: nil), units: .metric)
+        XCTAssertEqual(api.lastForecastCityQuery, "Austin")
+        // A saved city keeps its label; My Location is named by the phone.
+        let paris = await repository.fetchCurrentWeather(for: SavedLocation(label: "Paris, FR", latitude: 48.9, longitude: 2.4), units: .metric)
+        XCTAssertEqual(try? paris.get().cityName, "Paris, FR")
+        let here = SavedLocation(label: "My Location", latitude: 35.9, longitude: -83.9, isCurrentLocation: true)
+        let mine = await repository.fetchCurrentWeather(for: here, units: .metric)
+        XCTAssertEqual(try? mine.get().cityName, "Knoxville")
+    }
+
     func testFetchCurrentWeatherNamesMyLocationWithThePhone() async {
         let placeNames = StubPlaceNames(name: "Knoxville")
         let repository = WeatherRepository(

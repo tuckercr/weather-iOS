@@ -2,7 +2,7 @@ import XCTest
 @testable import Cats_Dogs
 
 @MainActor
-final class CityListViewModelTests: XCTestCase {
+final class CityRepositoryTests: XCTestCase {
     private let austin = SavedLocation(label: "Austin", latitude: 30.27, longitude: -97.74)
     private let denver = SavedLocation(label: "Denver", latitude: 39.74, longitude: -104.99)
     private let seattle = SavedLocation(label: "Seattle", latitude: 47.61, longitude: -122.33)
@@ -94,7 +94,7 @@ final class CityListViewModelTests: XCTestCase {
         viewModel.noteMyLocationChecked(now: pulled)
 
         XCTAssertFalse(viewModel.claimMyLocationCheck(now: pulled.addingTimeInterval(60)))
-        XCTAssertTrue(viewModel.claimMyLocationCheck(now: pulled.addingTimeInterval(CityListViewModel.myLocationCheckInterval)))
+        XCTAssertTrue(viewModel.claimMyLocationCheck(now: pulled.addingTimeInterval(CityRepository.myLocationCheckInterval)))
     }
 
     // MARK: - init
@@ -261,7 +261,7 @@ final class CityListViewModelTests: XCTestCase {
     func testOnlyANewCityIsReportedAsAdded() {
         preferences.store.setSavedLocations([austin])
         var added: [CityAdded] = []
-        let viewModel = CityListViewModel(
+        let viewModel = CityRepository(
             preferences: preferences.store,
             geocodingRepository: geocoding.repository,
             onCityAdded: { added.append($0) }
@@ -279,7 +279,7 @@ final class CityListViewModelTests: XCTestCase {
         var added: [CityAdded] = []
         var policy = CitySearchPolicy.standard
         policy.provider = .openWeather
-        let viewModel = CityListViewModel(
+        let viewModel = CityRepository(
             preferences: preferences.store,
             geocodingRepository: geocoding.repository,
             onCityAdded: { added.append($0) },
@@ -450,18 +450,18 @@ final class CityListViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.locations, [austin, denver, seattle])
     }
 
-    private func makeViewModel() -> CityListViewModel {
-        CityListViewModel(preferences: preferences.store, geocodingRepository: geocoding.repository, onCityAdded: { _ in })
+    private func makeViewModel() -> CityRepository {
+        CityRepository(preferences: preferences.store, geocodingRepository: geocoding.repository, onCityAdded: { _ in })
     }
 
     func testMyLocationIsCheckedForAMoveAtMostEveryFifteenMinutes() {
-        let viewModel = CityListViewModel(preferences: preferences.store)
+        let viewModel = CityRepository(preferences: preferences.store)
         let start = Date(timeIntervalSince1970: 1_000_000)
 
         XCTAssertTrue(viewModel.claimMyLocationCheck(now: start))
         XCTAssertFalse(viewModel.claimMyLocationCheck(now: start.addingTimeInterval(60)))
-        XCTAssertFalse(viewModel.claimMyLocationCheck(now: start.addingTimeInterval(CityListViewModel.myLocationCheckInterval - 1)))
-        XCTAssertTrue(viewModel.claimMyLocationCheck(now: start.addingTimeInterval(CityListViewModel.myLocationCheckInterval)))
+        XCTAssertFalse(viewModel.claimMyLocationCheck(now: start.addingTimeInterval(CityRepository.myLocationCheckInterval - 1)))
+        XCTAssertTrue(viewModel.claimMyLocationCheck(now: start.addingTimeInterval(CityRepository.myLocationCheckInterval)))
     }
 
 }

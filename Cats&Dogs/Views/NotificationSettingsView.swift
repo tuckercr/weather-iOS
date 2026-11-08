@@ -1,4 +1,3 @@
-import CoreLocation
 import SwiftUI
 import UIKit
 
@@ -55,7 +54,7 @@ struct NotificationSettingsView: SettingsScreen {
                         )
                     }
                     if settingsViewModel.hasMyLocation {
-                        FollowMyLocationToggle()
+                        FollowMyLocationToggle(settingsViewModel: settingsViewModel)
                     }
                 }
             }
@@ -63,7 +62,7 @@ struct NotificationSettingsView: SettingsScreen {
             #if DEBUG
             Section {
                 Button("Send sample notifications") {
-                    Task { await WeatherNotificationScheduler.shared.sendSamples() }
+                    Task { await settingsViewModel.sendSampleNotifications() }
                 }
             } header: {
                 sectionHeader("Debug")
@@ -90,30 +89,23 @@ struct NotificationSettingsView: SettingsScreen {
 /// without that explains first, then asks for "Always", which iOS only shows once; after that it opens the
 /// Settings app. Same as Android's `FollowMyLocationRow`.
 private struct FollowMyLocationToggle: SettingsScreen {
-    private let follower = MyLocationFollower.shared
-    @State private var explaining = false
+    let settingsViewModel: SettingsViewModel
     @Environment(\.openURL) private var openURL
 
     var body: some View {
         switchRow(
             "Follow my location",
             summary: "Notifications for wherever you are, even when the app is closed",
-            isOn: follower.isFollowing,
-            set: { turnOn in
-                if !turnOn {
-                    follower.turnOff()
-                } else if follower.authorization == .authorizedAlways {
-                    // Already "Always": nothing to ask, so nothing to explain.
-                    follower.turnOn {}
-                } else {
-                    explaining = true
-                }
-            }
+            isOn: settingsViewModel.followsMyLocation,
+            set: settingsViewModel.setFollowMyLocation
         )
-        .alert("Follow your location?", isPresented: $explaining) {
+        .alert("Follow your location?", isPresented: Binding(
+            get: { settingsViewModel.isExplainingFollowMyLocation },
+            set: { if !$0 { settingsViewModel.dismissFollowMyLocationExplanation() } }
+        )) {
             Button("Not now", role: .cancel) {}
             Button("Continue") {
-                follower.turnOn {
+                settingsViewModel.confirmFollowMyLocation {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
             }

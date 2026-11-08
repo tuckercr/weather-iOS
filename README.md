@@ -63,7 +63,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      The card shows the city, temperature, today's high and low (from
      the forecast, over the whole day and taking in the temperature now) and a caption in the
      pets' voice ("Sunny wants puddles. Misty wants a towel."). One caption is picked per day; at
-     night it follows the city's time of night (evening, late night, before dawn). The moon shows
+     night it follows the city's time of night (evening, late night, before dawn). The caption
+     follows the walk verdict (see **One walk verdict** below): when now isn't the time for a walk,
+     captions that suggest one ("Perfect walkies weather! Off we go.") are left out, and when the
+     reason is one the scene can't show it speaks to that instead, in place of a seasonal theme's
+     caption too: bad air by its pollutant ("Smoky air today. Quick potty breaks, then back on the
+     sofa."), hot pavement, or a gale and worse. The moon shows
      its real phase, lit from the other side in the southern hemisphere. Tap the card for today's
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
    - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
@@ -71,12 +76,33 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      in the next 24 hours qualifies. A good hour is under 30% rain chance, at a comfortable
      feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 45 °C
      (113 °F), and when it is raining now, now never counts, whatever the hourly forecast says. The
-     paw is tinted by the rating, and a caption explains hot pavement (estimated 52 °C / 125 °F,
-     even on a mild day, and named only when it is the reason) or freezing weather.
-     Hours with unhealthy air (US AQI above 150, or Europe's "Poor" and worse; the band is
-     `walk_bad_air_band` in Remote Config) are never suggested, and when the air is bad now the card
-     says "Bad air. Potty breaks only." Heat still outranks it.
-     It can be turned off in Settings.
+     paw is tinted by the rating, and a caption gives the reason when it's more than a wait: the
+     pavement now ("Paw check: about 55° now. Too hot for paws."), heat or cold, the air by its
+     pollutant ("Smoky air. Potty breaks only.", "High ozone", "Dusty air"), a gale ("Gale force
+     winds. Potty breaks only.") or thunderstorms. Hours with unhealthy air (US AQI above 150, or
+     Europe's "Poor" and worse; the band is `walk_bad_air_band` in Remote Config) are never
+     suggested. At hurricane force the card becomes a "Danger" warning ("Hurricane force winds. Stay
+     inside, away from the windows."), shown even without a dog. It can be turned off in Settings.
+   - **One walk verdict**: `WalkConditions.check` (`WalkCheck.swift`) judges an hour once, and the
+     hero's caption, the walk card, the Air Quality tile's note and the notifications all read it,
+     so they can't disagree. The screen gets it from `WeatherForecastViewModel.walkAdvice`. Each factor has a small rule and a level, and the worst one wins:
+
+     | Level | When |
+     |---|---|
+     | Great | Nothing in the way |
+     | Fine | A walk, with a caveat: air one band short of bad, for older and flat-faced dogs |
+     | Wait | Rain or snow, a near gale (Beaufort 7), pavement getting hot, feels-like outside the comfort range, dark or outside the walking hours |
+     | Potty breaks only | Pavement too hot, too hot or too cold for pets, bad air (`walk_bad_air_band`), a gale (Beaufort 8) |
+     | Stay in | Dangerously hot pavement, the worst air band, thunderstorms, storm force wind (Beaufort 10) |
+     | Danger | Hurricane force wind (Beaufort 12) or gusts, or hurricane force wind forecast in the next 6 hours |
+
+     The reason carries its detail (the pollutant, the wind's force, the pavement's band) for each
+     screen to word. At the same level storms come first, then rain and snow, wind, the pavement,
+     heat, the air, cold and the dark. A walk now is fine or better; the hour under way is judged
+     by the current reading's feels-like, condition, wind and gusts (with the worse of rain now and
+     the hour's storms), the rest by the forecast. With `air_quality_enabled` off the air is left
+     out, even from a forecast cached before it went off, and without a dog (*I have a dog* off)
+     so is the pavement.
    - **Next rain**: one line under the top card, only when rain or snow is due in the next 2 hours:
      "Rain starting around 3:15 PM", "Rain stopping around 4:30 PM" or "Rain for the next 2 hours",
      from Open-Meteo's 15-minute forecast (0.1 mm in 15 minutes counts; it stops after 30 dry
@@ -136,7 +162,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      for cities on a European clock and the US AQI everywhere else: the number, its band ("Good" to
      "Hazardous", with "Poor for some" for the US "Unhealthy for sensitive groups"), a six-colour bar
      and a line about walks with a dog ("Fine for most walks") or about people without one. VoiceOver
-     also reads the main pollutant ("Mostly ozone"). It comes with the forecast, in the same request
+     also reads the main pollutant ("Mostly ozone"): the one with the highest index, except that
+     particles are dust ("coarse particles") when PM2.5 is under a third of PM10 by mass, since a
+     dust storm can push PM2.5's index off the scale while PM10 gets none. The walk card, hero and
+     notifications name it ("Smoky air", "Dusty air", "High ozone"). It comes with the forecast, in the same request
      the walk planner uses, so it's cached and shows offline. `air_quality_enabled` in Remote Config
      turns it off.
    - The small tiles sit in pairs; when there's an odd one out (Air quality, with Paw check showing)
@@ -412,13 +441,15 @@ Shared with Android (the same cases on both platforms):
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
+- `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
-- `CityListViewModelTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
+- `CityRepositoryTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
 - `WeatherForecastViewModelTests`: request routing, cache-first display, error mapping, silent background refresh, the foreground-refresh window, analytics events, and races between overlapping requests
 - `GeoLocationViewModelTests`: debounced search, latest-input-wins, a failed search told apart from finding nothing
 - `AddLocationRulesTests`: Add location's button: the first row named what was typed (accents ignored), the size check that stops "Nas" adding Nås, saved places (label or within 2 km, never My Location) gone to, and failed or empty searches
-- `LocationPermissionViewModelTests`: denied, located and failed states
+- `LocationPermissionViewModelTests`: denied, located and failed states, and `LocationRepository`'s position reads
+- `WeatherScreenStepsTests`: the weather screen's refreshes, My Location and the notification city
 - `SettingsViewModelTests`: unit override persistence, clear cache, permission requests, usage-sharing opt-out, the walk card setting
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event
 - `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK
@@ -499,7 +530,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_comfort_min_c` / `walk_comfort_max_c` | 3 (−20–20) / 27 (15–40) | Comfortable walking temperatures (feels-like); above the maximum, a clear day's hero turns from fair to sunny |
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
-| `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which hours aren't suggested for a walk and the walk card says "Bad air". 3 is US "Unhealthy" and Europe's "Poor" |
+| `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which a walk is potty breaks only: hours aren't suggested, the walk card and hero say why, and the Air Quality tile says "Potty breaks only today". 3 is US "Unhealthy" and Europe's "Poor"; the worst band (5) keeps pets inside whatever this is |
 | `open_meteo_enabled` | true | Off sends the current reading and forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo, and town and city search to OpenWeather |
 | `city_search_provider` | `open_meteo` | Where search suggestions come from: `open_meteo` (prefix search) or `openweather` (whole names, at most 5). Anything else uses the default; `open_meteo_enabled` off forces `openweather` |
 | `city_search_results` | 8 (3–10) | Most suggestions shown |

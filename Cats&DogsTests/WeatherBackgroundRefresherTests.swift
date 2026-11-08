@@ -167,12 +167,15 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         WeatherBackgroundRefresher(
             refreshInterval: { [refreshInterval] in refreshInterval },
             preferences: preferences,
-            weatherRepository: WeatherRepository(
-                client: api ?? FakeOpenWeatherAPI(),
-                openMeteo: StubOpenMeteoAPI(response: openMeteoResponse(hours: 1)),
-                airQuality: StubAirQualityAPI(),
-                timeZone: TimeZone(identifier: "UTC")!,
-                now: { Date(timeIntervalSince1970: TimeInterval(fixtureDayStart)) }
+            repository: LocationWeatherRepository(
+                weatherRepository: WeatherRepository(
+                    client: api ?? FakeOpenWeatherAPI(),
+                    openMeteo: StubOpenMeteoAPI(response: openMeteoResponse(hours: 1)),
+                    airQuality: StubAirQualityAPI(),
+                    timeZone: TimeZone(identifier: "UTC")!,
+                    now: { Date(timeIntervalSince1970: TimeInterval(fixtureDayStart)) }
+                ),
+                preferences: preferences
             ),
             notificationsAuthorized: { authorized },
             scheduleNotifications: { onSchedule() },

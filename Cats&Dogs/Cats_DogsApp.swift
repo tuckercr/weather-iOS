@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UserNotifications
 
 private let splashDuration: Duration = .seconds(1.5)
 
@@ -14,26 +13,13 @@ private let splashDuration: Duration = .seconds(1.5)
 struct Cats_DogsApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showSplash = true
+    /// Made once, after start-up has set up Firebase and Remote Config, which they read.
+    @State private var viewModels: AppViewModels
 
     init() {
         BrandAppearance.apply()
-        FirebaseSetup.configureIfAvailable()
-        AnalyticsRepository.shared.applyUsageSharingPreference()
-        // Start the Remote Config fetch early so the values are ready by the next launch.
-        _ = RemoteConfigRepository.shared
-        // Set before launch finishes, so a tap on the iOS Settings link that opened the app arrives.
-        UNUserNotificationCenter.current().delegate = NotificationSettingsLink.shared
-        UNUserNotificationCenter.current().setNotificationCategories(WeatherNotificationScheduler.categories)
-        Task { await WeatherNotificationScheduler.shared.refreshAuthorizationOptions() }
-        // Follow my location: watching for moves has to restart at every launch, including the
-        // relaunch iOS makes to report one.
-        MyLocationFollower.shared.start()
-        #if DEBUG
-        // xcrun simctl launch <device> com.fangjet.weather -sendSampleNotifications
-        if ProcessInfo.processInfo.arguments.contains("-sendSampleNotifications") {
-            Task { await WeatherNotificationScheduler.shared.sendSamples() }
-        }
-        #endif
+        AppStartup.launch()
+        _viewModels = State(initialValue: AppViewModels())
     }
 
     var body: some Scene {
@@ -48,7 +34,7 @@ struct Cats_DogsApp: App {
                         }
                     }
             } else {
-                RootView()
+                RootView(viewModels: viewModels)
                     .transition(.opacity)
                     // Set explicitly: on iOS 27 the asset catalog's global accent colour
                     // (NSAccentColorName) isn't applied, and controls fall back to system blue.
@@ -56,12 +42,10 @@ struct Cats_DogsApp: App {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
-                WeatherBackgroundRefresher.shared.scheduleNextRefresh()
-            }
+            if phase == .background { AppStartup.enteredBackground() }
         }
         .backgroundTask(.appRefresh(WeatherBackgroundRefresher.taskIdentifier)) {
-            await WeatherBackgroundRefresher.shared.handleAppRefresh()
+            await AppStartup.backgroundRefresh()
         }
     }
 }

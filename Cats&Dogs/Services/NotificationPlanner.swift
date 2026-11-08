@@ -108,7 +108,7 @@ enum NotificationPlanner {
                        calendar: calendar
                    ) {
                     content = hourly
-                    mood = slot(at: date, in: slots).map { briefingMood($0, thresholds: thresholds) }
+                    mood = slot(at: date, in: slots).map { PetMood.forHour($0, thresholds: thresholds) }
                 } else if let weather, age < dailyForecastTrustedFor {
                     content = forecastBriefingContent(at: date, weather: weather, forecast: forecast)
                 }
@@ -192,10 +192,12 @@ enum NotificationPlanner {
         thresholds: PetWeatherThresholds,
         calendar: Calendar = .current
     ) -> (title: String, body: String)? {
+        // Forecast days are the city's, so today is the city's date at the briefing, not the device's.
         guard let slot = slot(at: date, in: slots),
-              let day = forecast.first(where: { $0.hourlySlots.contains(slot) }) else { return nil }
+              let day = forecast.day(of: date, in: weather.timeZone) else { return nil }
         let title = "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName)"
-        var body = highLowLine(day)
+        // As on the hero: the day's high and low, taking in the hour's temperature.
+        var body = highLowLine(TodayDetails.highLow(temperature: slot.temperature, today: day), rainChance: day.precipitationChance)
         if hasDog {
             // Bad-air hours are left out of the walk silently, so the briefing says why.
             let air = badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
@@ -221,31 +223,20 @@ enum NotificationPlanner {
     ) -> (title: String, body: String)? {
         // Forecast days are the city's, so "today" is the city's date at the briefing, not the
         // device's: a city to the west would otherwise get its day before.
-        var cityCalendar = Calendar(identifier: .gregorian)
-        cityCalendar.timeZone = weather.timeZone
-        guard let day = forecast.first(where: { day in
-            day.hourlySlots.contains { $0.date.map { cityCalendar.isDate($0, inSameDayAs: date) } ?? false }
-        }) else { return nil }
-        return ("Today's forecast for \(weather.cityName)", highLowLine(day))
+        guard let day = forecast.day(of: date, in: weather.timeZone) else { return nil }
+        return (
+            "Today's forecast for \(weather.cityName)",
+            highLowLine((day.tempMax, day.tempMin), rainChance: day.precipitationChance)
+        )
     }
 
     /// "High 70°, low 45°, 60% chance of rain.", the rain only from `briefingRainChance`.
-    private static func highLowLine(_ day: DayForecast) -> String {
-        var line = "High \(Int(day.tempMax.rounded()))°, low \(Int(day.tempMin.rounded()))°"
-        if let chance = WeatherFormatting.rainChance(day.precipitationChance), chance >= briefingRainChance {
+    private static func highLowLine(_ highLow: (high: Double, low: Double), rainChance: Int) -> String {
+        var line = "High \(Int(highLow.high.rounded()))°, low \(Int(highLow.low.rounded()))°"
+        if let chance = WeatherFormatting.rainChance(rainChance), chance >= briefingRainChance {
             line += ", \(chance)% chance of rain"
         }
         return line + "."
-    }
-
-    /// The pets' mood in the forecast hour `slot`, for a briefing's picture.
-    static func briefingMood(_ slot: HourlySlot, thresholds: PetWeatherThresholds) -> PetMood {
-        PetMood.forConditions(
-            conditionMain: StaleWeather.conditionMain(forIcon: slot.iconCode),
-            iconCode: slot.iconCode,
-            feelsLikeC: slot.units.toCelsius(slot.feelsLike),
-            thresholds: thresholds
-        )
     }
 
     /// The first walkable hour from the one under way at `date` to the end of that day.
@@ -268,8 +259,9 @@ enum NotificationPlanner {
     }
 
     /// "Smoky air today" when bad air rules out walking hours from the one under way at `date` to the
-    /// end of that day, named by the worst hour's main pollutant: particles read as smoke, ozone by
-    /// name, anything else as poor air. Nil on a clean day.
+    /// end of that day, named by the worst hour's main pollutant as the hero's caption names it
+    /// (`WalkReason.airName`): fine particles read as smoke, coarse ones as dust, ozone by name,
+    /// anything else as poor air. Nil on a clean day.
     static func badAirPhrase(
         after date: Date,
         slots: [HourlySlot],
@@ -280,11 +272,7 @@ enum NotificationPlanner {
             .filter { WalkAdvisor.hasBadAirForWalking($0, thresholds) }
             .max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
         guard let worst else { return nil }
-        return switch worst.airQuality?.mainPollutant {
-        case .fineParticles, .coarseParticles: "Smoky air today"
-        case .ozone: "High ozone today"
-        default: "Poor air today"
-        }
+        return "\(WalkReason.airName(worst.airQuality?.mainPollutant) ?? "Poor air") today"
     }
 
     /// The forecast hour under way at `date`.

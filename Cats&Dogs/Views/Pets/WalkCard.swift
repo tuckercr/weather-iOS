@@ -1,10 +1,9 @@
 import SwiftUI
 
-/// "Best walk time" card: when to take the dog out. The sentence carries the advice; the paw icon is
-/// tinted by the rating as a glance cue (deliberately not a chip, which read as a button), and a
-/// short caption says why when it's too hot or too cold, naming the pavement only when that's the reason.
+/// "Best walk time" card: when to take the dog out, as `WalkCardContent` words it. The paw icon is
+/// tinted by the rating as a glance cue (deliberately not a chip, which read as a button).
 struct WalkCard: View {
-    let advice: WalkAdvice
+    let content: WalkCardContent
     @Environment(\.seasonalTheme) private var seasonalTheme
     @Environment(\.colorScheme) private var colorScheme
     /// Baloo 2 leaves about 6 points under its baseline, against 3 above the small title's
@@ -12,68 +11,14 @@ struct WalkCard: View {
     /// by half the difference.
     @ScaledMetric(relativeTo: .headline) private var headlineLastOffset: CGFloat = 2
 
-    private var detail: String {
-        if advice.rating == .great { return "Now is a great time" }
-        if let best = advice.bestTimeLabel {
-            return advice.bestTimeIsTomorrow ? "Tomorrow around \(best)" : "Around \(best)"
-        }
-        return "Not a good day for walkies"
-    }
-
-    private var caption: String? {
-        if advice.rating == .great { return advice.outlook.map(Self.outlookLine) }
-        if let pavement = advice.pavementNow.map({ Int($0.rounded()) }) {
-            switch (advice.rating, advice.pavementBand) {
-            case (.pawsHot, .dangerous): return "Paw check: about \(pavement)°. Dangerously hot."
-            case (.pawsHot, .tooHot): return "Paw check: about \(pavement)°. Too hot for paws."
-            case (.okay, .warm): return "Paw check: about \(pavement)°. Getting hot."
-            default: break
-            }
-        }
-        // Hot or cold air, not the pavement.
-        return switch advice.rating {
-        case .pawsHot: "Too hot for paws."
-        case .tooCold: "Too cold for paws."
-        case .badAir: "Bad air. Potty breaks only."
-        default: nil
-        }
-    }
-
-    /// After a walk now: when the good spell ends and why, sunset coming up, or so-so air.
-    nonisolated static func outlookLine(_ outlook: WalkOutlook) -> String {
-        switch outlook {
-        case let .until(time, change): "Good until \(time), then \(changePhrase(change))."
-        case .darkIn(0): "Getting dark soon."
-        case .darkIn(1): "Gets dark in about an hour."
-        case let .darkIn(hours): "Gets dark in about \(hours) hours."
-        case .moderateAir: "Air's not great. Short walks for older and flat-faced dogs."
-        }
-    }
-
-    private nonisolated static func changePhrase(_ change: WalkChange) -> String {
-        switch change {
-        case .storms: "storms"
-        case .maybeStorms: "maybe storms"
-        case .rain: "rain"
-        case .maybeRain: "maybe rain"
-        case .snow: "snow"
-        case .maybeSnow: "maybe snow"
-        case .wind: "very windy"
-        case .heat: "too hot"
-        case .hotPavement: "hot pavement"
-        case .cold: "too cold"
-        case .badAir: "bad air"
-        }
-    }
-
     /// The dark shade on the light theme's card and the pale one on the dark theme's, so the paw and
     /// the caption stay clear (at least 4.5:1) on either.
     private var tint: Color {
-        let (light, dark): (UInt32, UInt32) = switch advice.rating {
+        let (light, dark): (UInt32, UInt32) = switch content.rating {
         case .great: (0x27500A, 0xC0DD97)
         case .okay: (0x633806, 0xFAC775)
         case .poor: (0x444441, 0xD3D1C7)
-        case .pawsHot, .badAir: (0x791F1F, 0xF7C1C1)
+        case .pawsHot, .badAir, .windy, .stormy, .danger: (0x791F1F, 0xF7C1C1)
         case .tooCold: (0x0C447C, 0xB5D4F4)
         }
         return Color(hex: colorScheme == .dark ? dark : light)
@@ -81,22 +26,22 @@ struct WalkCard: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "pawprint.fill")
+            Image(systemName: content.isDanger ? "exclamationmark.triangle.fill" : "pawprint.fill")
                 .foregroundStyle(tint)
                 .font(.title3)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Best Walk Time")
+                Text(content.title)
                     .font(.caption)
                     .foregroundStyle(Color.secondaryText)
-                Text(detail)
+                Text(content.headline)
                     .font(.brand(.headline))
-                if let caption {
+                if let caption = content.caption {
                     Text(caption)
                         .font(.caption)
                         .foregroundStyle(tint)
                 }
             }
-            .offset(y: caption == nil ? headlineLastOffset : 0)
+            .offset(y: content.caption == nil ? headlineLastOffset : 0)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -108,12 +53,27 @@ struct WalkCard: View {
 
 #Preview {
     VStack(spacing: 12) {
-        WalkCard(advice: WalkAdvice(rating: .great, bestTimeLabel: nil))
-        WalkCard(advice: WalkAdvice(rating: .great, bestTimeLabel: nil, outlook: .until(time: "6 PM", change: .storms)))
-        WalkCard(advice: WalkAdvice(rating: .okay, bestTimeLabel: "6 PM"))
-        WalkCard(advice: WalkAdvice(rating: .pawsHot, bestTimeLabel: "7 PM", pavementNow: 55, pavementBand: .tooHot))
-        WalkCard(advice: WalkAdvice(rating: .poor, bestTimeLabel: nil))
-        WalkCard(advice: WalkAdvice(rating: .tooCold, bestTimeLabel: "11 AM"))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .great, bestTimeLabel: nil)))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .great, bestTimeLabel: nil, outlook: .until(time: "6 PM", change: .storms))))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .okay, bestTimeLabel: "6 PM")))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(
+            rating: .pawsHot,
+            bestTimeLabel: "7 PM",
+            pavementNow: 55,
+            now: WalkCheck([WalkFactor(reason: .pavement(.tooHot), level: .pottyOnly)])
+        )))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(
+            rating: .badAir,
+            bestTimeLabel: "6 PM",
+            now: WalkCheck([WalkFactor(reason: .air(band: 3, pollutant: .fineParticles), level: .pottyOnly)])
+        )))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(
+            rating: .danger,
+            bestTimeLabel: nil,
+            now: WalkCheck([WalkFactor(reason: .wind(force: 12), level: .danger)])
+        )))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .poor, bestTimeLabel: nil)))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .tooCold, bestTimeLabel: "11 AM")))
     }
     .padding()
 }

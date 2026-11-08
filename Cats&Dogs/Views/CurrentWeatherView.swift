@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct CurrentWeatherView: View {
-    @Bindable var cityListViewModel: CityListViewModel
-    @Bindable var weatherViewModel: WeatherForecastViewModel
     /// Read here rather than passed in as values: if RootView read them, every change would rebuild
     /// the navigation stack, Settings screen included, under the user's finger.
     let settingsViewModel: SettingsViewModel
@@ -12,29 +10,27 @@ struct CurrentWeatherView: View {
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
+    /// What the screen shows, and what it does when: refreshes, My Location and the notification
+    /// city. Made once, with the app's other view models (`AppViewModels`): a view's initialiser
+    /// runs on every redraw of its parent.
+    let viewModel: WeatherForecastViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
-    @State private var rescheduleTask: Task<Void, Never>?
-    /// "Now" for the hourly strip, walk advice, captions and moon. Moved on when the app becomes
-    /// active and every half hour while it stays open, so a screen left on overnight keeps up.
-    @State private var now = Date()
-    @State private var locationViewModel = LocationPermissionViewModel()
-    /// Location access at the last check, to spot it being granted later in the Settings app.
-    @State private var locationWasGranted: Bool?
-    /// Whether the fetch under way is to add My Location, rather than to move a saved one.
-    @State private var fetchingMyLocationToAdd = false
 
-    private static let autoRefreshInterval: Duration = .seconds(30 * 60)
-
-    private var forecastDays: [DayForecast] {
-        if case .success(let days) = weatherViewModel.forecast { return days }
-        return []
+    init(
+        viewModel: WeatherForecastViewModel,
+        settingsViewModel: SettingsViewModel,
+        onOpenSettings: @escaping () -> Void
+    ) {
+        self.viewModel = viewModel
+        self.settingsViewModel = settingsViewModel
+        self.onOpenSettings = onOpenSettings
     }
 
     var body: some View {
         Group {
-            if cityListViewModel.locations.isEmpty {
+            if viewModel.locations.isEmpty {
                 emptyState
             } else {
                 weatherContent
@@ -56,88 +52,46 @@ struct CurrentWeatherView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if cityListViewModel.locations.count >= 2 {
+            if viewModel.locations.count >= 2 {
                 cityTabs
             }
         }
-        .onChange(of: cityListViewModel.activeLocation?.cacheKey) { _, _ in
-            refreshActiveLocation()
-            // Also covers removing the last city, which must clear its notifications.
-            rescheduleNotificationsSoon()
+        // The view only says what happened; the view model does the steps.
+        .onChange(of: viewModel.activeLocation?.cacheKey) { _, _ in
+            viewModel.activeCityChanged()
         }
-        // Notifications are for My Location, otherwise the first city, whichever tab is showing. When
-        // that changes (reordered, added, removed, or My Location moved), its weather may not be
-        // cached yet: fetch it, then replan.
-        .onChange(of: cityListViewModel.locations.notificationLocation?.cacheKey) { _, _ in
-            Task { await WeatherBackgroundRefresher.shared.performRefresh(replan: true) }
+        .onChange(of: viewModel.locations.notificationLocation?.cacheKey) { _, _ in
+            Task { await viewModel.notificationCityChanged() }
         }
-        // Follow my location moves My Location in storage, even while the app is open: the screen
-        // takes the move up, and the new place's weather comes with the active location changing.
-        .onChange(of: MyLocationFollower.shared.moves) { _, _ in
-            cityListViewModel.followStoredMyLocation()
+        .onChange(of: viewModel.myLocationMoves) { _, _ in
+            viewModel.myLocationMoved()
         }
         .onChange(of: unitOverride) { _, _ in
-            // Cached data is in the old units, so this has to be a real refetch.
-            refreshActiveLocation()
+            viewModel.unitsChanged()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                now = Date()
-                backgroundRefreshActiveLocation()
-                updateMyLocation()
-                cityListViewModel.fillInMissingCoordinates()
-            }
+            if phase == .active { viewModel.becameActive() }
         }
-        // The same quiet refresh every half hour while the app stays in the foreground. Restarted
-        // (and so only running) while the scene is active.
+        // Restarted (and so only running) while the scene is active.
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: Self.autoRefreshInterval)
-                guard !Task.isCancelled else { return }
-                now = Date()
-                backgroundRefreshActiveLocation()
-            }
+            await viewModel.refreshWhileActive()
         }
-        // While refreshes keep failing, re-read the clock every few minutes so old weather gives way
-        // to the forecast once it passes the cutoff.
-        .task(id: weatherViewModel.staleErrorKey) {
-            guard weatherViewModel.staleErrorKey != nil else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: StaleWeather.recheckInterval)
-                guard !Task.isCancelled else { return }
-                now = Date()
-            }
-        }
-        .onChange(of: weatherViewModel.currentWeather) { _, state in
-            if case .success = state { rescheduleNotificationsSoon() }
-        }
-        .onChange(of: weatherViewModel.forecast) { _, state in
-            if case .success = state { rescheduleNotificationsSoon() }
+        .task(id: viewModel.staleErrorKey) {
+            await viewModel.recheckWhileStale()
         }
         .task {
-            refreshActiveLocation()
-            updateMyLocation()
-        }
-        .onChange(of: locationViewModel.state) { _, state in
-            guard case .located(let location) = state else { return }
-            if cityListViewModel.locations.contains(where: \.isCurrentLocation) {
-                cityListViewModel.updateCurrentLocation(location)
-            } else if fetchingMyLocationToAdd {
-                // A position read only to move My Location, arriving after it was removed, adds nothing.
-                cityListViewModel.addLocation(location)
-            }
-            fetchingMyLocationToAdd = false
+            viewModel.appeared()
         }
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(
-                savedLocations: cityListViewModel.locations,
+                savedLocations: viewModel.locations,
                 onAdd: { location, _, added in
-                    cityListViewModel.addLocation(location, added: added)
+                    viewModel.addCity(location, added: added)
                     showAddLocation = false
                 },
                 onGoTo: { index in
-                    cityListViewModel.setActiveIndex(index)
+                    viewModel.selectCity(index)
                     showAddLocation = false
                 },
                 onClose: { showAddLocation = false }
@@ -149,23 +103,22 @@ struct CurrentWeatherView: View {
         }
         // The moon (hero scene and night icons) is lit from the other side down south.
         .environment(\.southernHemisphere, isSouthernHemisphere)
-        .environment(\.distanceInMiles, WeatherFormatting.usesMiles(override: unitOverride))
     }
 
     private var isSouthernHemisphere: Bool {
-        (cityListViewModel.activeLocation?.latitude ?? 0) < 0
+        (viewModel.activeLocation?.latitude ?? 0) < 0
     }
 
     private var navigationTitle: String {
-        cityListViewModel.activeLocation?.label ?? "Sunny & Misty"
+        viewModel.activeLocation?.label ?? "Sunny & Misty"
     }
 
     private var cityTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Array(cityListViewModel.locations.enumerated()), id: \.offset) { index, location in
+                ForEach(Array(viewModel.locations.enumerated()), id: \.offset) { index, location in
                     Button {
-                        cityListViewModel.setActiveIndex(index)
+                        viewModel.selectCity(index)
                     } label: {
                         HStack(spacing: 4) {
                             if location.isCurrentLocation {
@@ -178,7 +131,7 @@ struct CurrentWeatherView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
-                            index == cityListViewModel.activeIndex
+                            index == viewModel.activeIndex
                                 ? Color.accent.opacity(0.2)
                                 : Color.clear
                         )
@@ -189,7 +142,7 @@ struct CurrentWeatherView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityAddTraits(index == cityListViewModel.activeIndex ? .isSelected : [])
+                    .accessibilityAddTraits(index == viewModel.activeIndex ? .isSelected : [])
                 }
             }
             .padding(.horizontal, 16)
@@ -224,8 +177,11 @@ struct CurrentWeatherView: View {
     private var weatherContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                switch weatherViewModel.currentWeather {
-                case .idle, .loading:
+                switch viewModel.screen(
+                    hasDog: showWalkCard,
+                    distanceInMiles: WeatherFormatting.usesMiles(override: unitOverride)
+                ) {
+                case .loading:
                     HStack {
                         Spacer()
                         ProgressView()
@@ -233,144 +189,53 @@ struct CurrentWeatherView: View {
                         Spacer()
                     }
 
-                case .success(let cached):
-                    // Past the cutoff the old reading isn't shown as "now": the cached forecast's
-                    // current hour stands in, or the error if it doesn't cover now.
-                    let staleErrorKey = weatherViewModel.staleErrorKey
-                    let tooOld = staleErrorKey != nil && StaleWeather.isTooOldToShowAsNow(cached, now: now)
-                    let forecastNow: CurrentWeather? = tooOld ? weatherViewModel.forecast.successValue.flatMap {
-                        StaleWeather.forecastAsCurrent(cached, forecast: $0, now: now)
-                    } : nil
-                    if tooOld && forecastNow == nil {
-                        WeatherErrorStateView(
-                            errorKey: staleErrorKey ?? "generic",
-                            canRetry: true,
-                            onRetry: refreshActiveLocation,
-                            lastUpdated: StaleWeather.readingTime(cached, now: now)
-                        )
-                    } else {
-                    if let staleErrorKey {
+                case let .error(errorKey, canRetry, lastUpdated):
+                    WeatherErrorStateView(
+                        errorKey: errorKey,
+                        canRetry: canRetry,
+                        onRetry: viewModel.retry,
+                        lastUpdated: lastUpdated
+                    )
+
+                case let .weather(state):
+                    if let stale = state.stale {
                         StaleWeatherBanner(
-                            weather: cached,
-                            errorKey: staleErrorKey,
-                            showingForecast: forecastNow != nil,
-                            now: now
+                            weather: stale.reading,
+                            errorKey: stale.errorKey,
+                            showingForecast: state.showingForecast,
+                            now: state.now
                         )
                     }
                     CurrentWeatherContent(
-                        weather: forecastNow ?? cached,
-                        showingForecast: forecastNow != nil,
-                        forecastState: weatherViewModel.forecast,
-                        location: cityListViewModel.activeLocation,
-                        showWalkCard: showWalkCard,
-                        now: now,
+                        state: state,
+                        location: viewModel.activeLocation,
                         onDaySelected: { selectedDay = $0 },
-                        onForecastRetry: refreshActiveLocation
+                        onForecastRetry: viewModel.retry
                     )
-                    }
-
-                case .error(let errorKey, let canRetry):
-                    WeatherErrorStateView(errorKey: errorKey, canRetry: canRetry, onRetry: refreshActiveLocation)
                 }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
         .refreshable {
-            await moveMyLocationBeforeRefresh()
-            refreshActiveLocation()
-            // Keep the pull spinner up until the fetch has finished, rather than dropping it at once.
-            while weatherViewModel.isRefreshing {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
+            await viewModel.pulledToRefresh()
         }
         .overlay(alignment: .top) {
-            if weatherViewModel.isRefreshing {
+            if viewModel.isRefreshing {
                 ProgressView()
                     .padding(.top, 8)
             }
         }
     }
-
-    /// On launch and each return to the app, with location access on:
-    /// - re-reads the position while My Location is saved, so it follows the device rather than
-    ///   staying where it was added;
-    /// - otherwise adds it once access turns up after onboarding went without it (granted later in
-    ///   the Settings app, say). Only when there are no cities yet, or access has just changed to
-    ///   granted, so someone who removed My Location on purpose doesn't get it back every launch.
-    private func updateMyLocation() {
-        let granted = locationViewModel.hasLocationPermission()
-        let newlyGranted = granted && locationWasGranted == false
-        locationWasGranted = granted
-        guard granted, locationViewModel.state != .locating else { return }
-        if cityListViewModel.locations.contains(where: \.isCurrentLocation) {
-            guard cityListViewModel.claimMyLocationCheck() else { return }
-            fetchingMyLocationToAdd = false
-            locationViewModel.fetchLocation()
-        } else if newlyGranted || cityListViewModel.locations.isEmpty {
-            fetchingMyLocationToAdd = true
-            locationViewModel.fetchLocation()
-        }
-    }
-
-    /// Pull to refresh on My Location reads the phone's position first, whatever the 15-minute
-    /// limit, so My Location moves (by the usual 1 km rule) before its weather is fetched. A drive
-    /// with the screen on never returns to the app, so this is how to catch up by hand.
-    private func moveMyLocationBeforeRefresh() async {
-        guard cityListViewModel.activeLocation?.isCurrentLocation == true,
-              let here = await locationViewModel.currentPosition() else { return }
-        cityListViewModel.noteMyLocationChecked()
-        cityListViewModel.updateCurrentLocation(here)
-    }
-
-    private func refreshActiveLocation() {
-        // A refresh also moves "now" on, so the hourly strip and captions update even when the
-        // weather itself hasn't changed.
-        now = Date()
-        guard let location = cityListViewModel.activeLocation else { return }
-        weatherViewModel.refreshCurrent(location: location)
-        weatherViewModel.refreshForecast(location: location)
-    }
-
-    /// Notification text is built from the cache, so reschedule once fresh data has landed. One
-    /// refresh changes state up to four times (cached then fresh, for current and forecast), so the
-    /// calls are coalesced into a single run.
-    private func rescheduleNotificationsSoon() {
-        rescheduleTask?.cancel()
-        rescheduleTask = Task {
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            await WeatherNotificationScheduler.shared.scheduleNotifications()
-        }
-    }
-
-    private func backgroundRefreshActiveLocation() {
-        guard let location = cityListViewModel.activeLocation else { return }
-        weatherViewModel.backgroundRefreshCurrent(location: location)
-        weatherViewModel.backgroundRefreshForecast(location: location)
-    }
-}
-
-extension EnvironmentValues {
-    /// Whether distances (visibility) read in miles rather than kilometres.
-    @Entry var distanceInMiles = false
 }
 
 private struct CurrentWeatherContent: View {
-    @Environment(\.distanceInMiles) private var distanceInMiles
-    let weather: CurrentWeather
-    /// True when `weather` is the cached forecast's current hour standing in for an old reading:
-    /// there's no cloud cover (or visibility) to show.
-    var showingForecast = false
-    let forecastState: LoadingState<[DayForecast]>
+    /// Everything shown, worked out by the view model at its clock.
+    let state: WeatherScreenState
     let location: SavedLocation?
-    let showWalkCard: Bool
-    let now: Date
     let onDaySelected: (DayForecast) -> Void
     let onForecastRetry: () -> Void
 
-    /// The hourly strip covers the next 24 hours.
-    private static let hourlyStripCount = 24
     /// Landscape phones and tablets put the hero beside today's details instead of stacking
     /// everything in one stretched column.
     private static let wideLayoutMinWidth: CGFloat = 600
@@ -382,92 +247,11 @@ private struct CurrentWeatherContent: View {
     @ScaledMetric(relativeTo: .largeTitle) private var temperatureTrimBottom: CGFloat = 14
 
     private var isWide: Bool { contentWidth >= Self.wideLayoutMinWidth }
-
-    private var forecastDays: [DayForecast] {
-        forecastState.successValue ?? []
-    }
-
-    /// "Today" in the city's own date, so it matches the city-local forecast labels.
-    private var todayForecast: DayForecast? {
-        let todayLabel = WeatherFormatting.todayLabel(timeZone: weather.timeZone)
-        return forecastDays.first.flatMap { $0.dateLabel == todayLabel ? $0 : nil }
-    }
-
-    private var upcomingDays: [DayForecast] {
-        todayForecast != nil ? Array(forecastDays.dropFirst()) : forecastDays
-    }
-
-    private var feelsLikeC: Double { weather.units.toCelsius(weather.feelsLike) }
-
-    /// Day or night by the clock, so a reading cached before sunset doesn't flash the daytime hero.
-    private var iconCodeNow: String { StaleWeather.iconCode(weather, at: now) }
-
-    private var mood: PetMood {
-        PetMood.forConditions(
-            conditionMain: weather.conditionMain,
-            iconCode: iconCodeNow,
-            feelsLikeC: feelsLikeC,
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds
-        )
-    }
-
-    /// The reading with today's sunrise and sunset, for one cached on an earlier day, so the Daylight
-    /// tile and the walk card follow the clock as the hero does.
-    private var weatherToday: CurrentWeather { StaleWeather.withSunTimesToday(weather, at: now) }
-
-    /// Nil while the forecast is loading or failed, which hides the card rather than giving advice
-    /// with nothing to base it on.
-    private var walkAdvice: WalkAdvice? {
-        let weatherToday = weatherToday
-        return WalkAdvisor.advice(
-            currentFeelsLikeC: feelsLikeC,
-            upcoming: upcomingSlots,
-            now: now,
-            timeZone: weather.timeZone,
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            precipitatingNow: WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
-            sunsetEpoch: weatherToday.sunsetEpoch,
-            darkNow: StaleWeather.isDark(weatherToday, at: now)
-        )
-    }
-
-    /// From the hour in progress on, however old the forecast on screen is.
-    private var upcomingSlots: [HourlySlot] {
-        forecastDays.flatMap(\.hourlySlots).upcoming(from: now)
-    }
-
-    private var hourlySlots: [HourlySlot] {
-        Array(upcomingSlots.prefix(Self.hourlyStripCount))
-    }
-
-    /// "Rain starting around 3:15 PM", only when rain or snow is due in the next 2 hours.
-    private var nextRain: NextRain? {
-        guard RemoteConfigRepository.shared.nextRainEnabled else { return nil }
-        return NextRain.from(forecastDays.first?.quarterHours ?? [], now: now)
-    }
-
-    /// The chance of rain over the next few hours, when one of them reaches Remote Config's chance.
-    /// It takes over the next-rain line, whose text becomes its headline.
-    private var rainOutlook: RainOutlook? {
-        let config = RemoteConfigRepository.shared
-        return RainOutlook.from(
-            upcomingSlots,
-            enabled: config.rainOutlookEnabled,
-            hours: config.rainOutlookHours,
-            minChance: config.rainOutlookMinChance,
-            units: weather.units,
-            nextRainLine: nextRain?.line(timeZone: weather.timeZone)
-        )
-    }
-
-    /// Today's seasonal theme by the city's own date, worked out again whenever `now` moves on, so
-    /// it ends by itself when its day does.
-    private var seasonalTheme: SeasonalTheme? {
-        SeasonalThemes.theme(on: now, timeZone: weather.timeZone, in: RemoteConfigRepository.shared.seasonalThemes)
-    }
+    private var weather: CurrentWeather { state.weather }
+    private var night: Bool { state.mood == .night }
 
     var body: some View {
-        let outlook = rainOutlook
+        let outlook = state.rainOutlook
         VStack(alignment: .leading, spacing: 12) {
             if isWide {
                 HStack(alignment: .top, spacing: 16) {
@@ -478,15 +262,8 @@ private struct CurrentWeatherContent: View {
                 heroSection(showNextRain: outlook == nil)
             }
             // No section headers: each card says what it is.
-            if RemoteConfigRepository.shared.hourlyForecastEnabled, !hourlySlots.isEmpty {
-                HourlyStrip(
-                    items: HourlyStripItem.strip(
-                        hourlySlots,
-                        events: SunEvent.all(forecast: forecastDays, weather: weatherToday),
-                        now: now
-                    ),
-                    timeZone: weather.timeZone
-                )
+            if !state.hourlyStrip.isEmpty {
+                HourlyStrip(items: state.hourlyStrip, timeZone: weather.timeZone)
             }
             // After the hourly strip in either layout: on wide screens Today is already up top.
             if let outlook {
@@ -495,12 +272,12 @@ private struct CurrentWeatherContent: View {
             if !isWide {
                 todaySection
             }
-            if RemoteConfigRepository.shared.radarEnabled {
+            if state.showsRadar {
                 RadarCard(location: location, timeZone: weather.timeZone)
             }
             restOfWeek
         }
-        .environment(\.seasonalTheme, seasonalTheme)
+        .environment(\.seasonalTheme, state.seasonalTheme)
         .onGeometryChange(for: CGFloat.self) { proxy in
             proxy.size.width
         } action: { width in
@@ -512,11 +289,11 @@ private struct CurrentWeatherContent: View {
     @ViewBuilder
     private func heroSection(showNextRain: Bool) -> some View {
         heroCard
-        if showNextRain, let nextRain {
+        if showNextRain, let nextRain = state.nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
-        if showWalkCard, RemoteConfigRepository.shared.walkCardEnabled, let walkAdvice {
-            WalkCard(advice: walkAdvice)
+        if let walkCard = state.walkCard {
+            WalkCard(content: walkCard)
         }
     }
 
@@ -527,67 +304,54 @@ private struct CurrentWeatherContent: View {
 
     @ViewBuilder
     private var restOfWeek: some View {
-        if RemoteConfigRepository.shared.weekForecastEnabled,
-           !upcomingDays.isEmpty || forecastState == .loading || isForecastError {
-            if !upcomingDays.isEmpty {
-                // Wide screens show the days in two columns, with matching row heights, rather than
-                // stretched rows.
-                let columns = isWide ? 2 : 1
-                Grid(alignment: .topLeading, horizontalSpacing: 24, verticalSpacing: 0) {
-                    ForEach(Array(stride(from: 0, to: upcomingDays.count, by: columns)), id: \.self) { start in
-                        GridRow {
-                            ForEach(upcomingDays[start ..< min(start + columns, upcomingDays.count)]) { day in
-                                UpcomingDayRow(day: day) {
-                                    onDaySelected(day)
-                                }
+        switch state.week {
+        case let .days(days):
+            // Wide screens show the days in two columns, with matching row heights, rather than
+            // stretched rows.
+            let columns = isWide ? 2 : 1
+            Grid(alignment: .topLeading, horizontalSpacing: 24, verticalSpacing: 0) {
+                ForEach(Array(stride(from: 0, to: days.count, by: columns)), id: \.self) { start in
+                    GridRow {
+                        ForEach(days[start ..< min(start + columns, days.count)]) { day in
+                            UpcomingDayRow(day: day) {
+                                onDaySelected(day)
                             }
-                            if columns == 2, start + 1 >= upcomingDays.count {
-                                Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
-                            }
+                        }
+                        if columns == 2, start + 1 >= days.count {
+                            Color.clear.gridCellUnsizedAxes([.horizontal, .vertical])
                         }
                     }
                 }
-            } else if forecastState == .loading {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                        .padding(.vertical, 24)
-                    Spacer()
-                }
-            } else if case .error(let errorKey, let canRetry) = forecastState {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(WeatherErrorMessages.message(for: errorKey))
-                        .foregroundStyle(.red)
-                    if canRetry {
-                        Button("Retry", action: onForecastRetry)
-                    }
+            }
+        case .loading:
+            HStack {
+                Spacer()
+                ProgressView()
+                    .padding(.vertical, 24)
+                Spacer()
+            }
+        case let .error(errorKey, canRetry):
+            VStack(alignment: .leading, spacing: 8) {
+                Text(WeatherErrorMessages.message(for: errorKey))
+                    .foregroundStyle(.red)
+                if canRetry {
+                    Button("Retry", action: onForecastRetry)
                 }
             }
+        case nil:
+            EmptyView()
         }
-    }
-
-    private var isForecastError: Bool {
-        if case .error = forecastState { return true }
-        return false
-    }
-
-    /// The theme's caption on its day, otherwise the weather's.
-    private var heroCaption: String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = weather.timeZone
-        return seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar)
-            ?? mood.caption(on: now, timeZone: weather.timeZone, hasDog: showWalkCard)
     }
 
     private var heroCard: some View {
         Button {
-            if let today = todayForecast {
+            if let today = state.today {
                 onDaySelected(today)
             }
         } label: {
             VStack(spacing: 4) {
                 // Kept smaller than the card so the scene doesn't dominate, especially on wide screens.
-                PetScene(mood: mood, moonPhase: MoonPhase(at: now), decorations: seasonalTheme?.decorations ?? [])
+                PetScene(mood: state.mood, moonPhase: MoonPhase(at: state.now), decorations: state.seasonalTheme?.decorations ?? [])
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
                 // Medium weight on the small lines so they hold up on the brighter hero colours.
@@ -606,52 +370,31 @@ private struct CurrentWeatherContent: View {
                     .padding(.top, -temperatureTrimTop)
                     .padding(.bottom, -temperatureTrimBottom)
                 // Today's high and low in whole degrees: "H 64° · L 61°".
-                let highLow = TodayDetails.highLow(current: weather, today: todayForecast)
-                let high = Int(highLow.high.rounded())
-                let low = Int(highLow.low.rounded())
-                Text("H \(high)° · L \(low)°")
+                Text("H \(state.high)° · L \(state.low)°")
                     .fontWeight(.medium)
                     // "H 64°" would be read as the letter H.
-                    .accessibilityLabel("High \(high)°, low \(low)°")
-                Text(heroCaption)
+                    .accessibilityLabel("High \(state.high)°, low \(state.low)°")
+                Text(state.heroCaption)
                     .font(.brand(.title3))
                     .multilineTextAlignment(.center)
                     .padding(.top, 8)
             }
-            .foregroundStyle(seasonalTheme?.heroInk(night: mood == .night) ?? mood.ink)
+            .foregroundStyle(state.seasonalTheme?.heroInk(night: night) ?? state.mood.ink)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 12)
             .background(
-                seasonalTheme?.heroBackground(night: mood == .night) ?? mood.skyColor,
+                state.seasonalTheme?.heroBackground(night: night) ?? state.mood.skyColor,
                 in: RoundedRectangle(cornerRadius: 12)
             )
         }
         .buttonStyle(.plain)
-        .disabled(todayForecast == nil)
+        .disabled(state.today == nil)
     }
 
     private var detailsCard: some View {
-        TodayTiles(
-            weather: weatherToday,
-            showingForecast: showingForecast,
-            // Paw check goes with the walk card: Settings' Dog walking switch hides both.
-            pavementNow: showWalkCard ? upcomingSlots.first?.pavementTemperature : nil,
-            groundWet: upcomingSlots.first?.groundWet == true
-                || WalkAdvisor.isPrecipitating(conditionMain: weather.conditionMain),
-            // UV is always 0 after dark, so it only shows in the daytime (night icons end in "n").
-            uvIndex: iconCodeNow.hasSuffix("n") ? nil : upcomingSlots.first?.uvIndex,
-            uvPeak: todayForecast?.hourlySlots.filter { $0.uvIndex != nil }.max { ($0.uvIndex ?? 0) < ($1.uvIndex ?? 0) },
-            // The forecast's hour in progress, so it shows offline too. A forecast cached before the
-            // switch went off can still have it, hence the check here as well.
-            airQuality: RemoteConfigRepository.airQualityEnabled ? upcomingSlots.first?.airQuality : nil,
-            hasDog: showWalkCard,
-            now: now,
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
-            distanceInMiles: distanceInMiles,
-            switches: RemoteConfigRepository.shared.todayTiles
-        )
+        TodayTiles(state: state.todayTiles)
     }
 }
 

@@ -17,7 +17,7 @@ final class WeatherBackgroundRefresher {
     /// Remote Config's `weather_refresh_interval_minutes`, as on Android. iOS treats it as a minimum.
     private let refreshInterval: () -> TimeInterval
     private let preferences: PreferencesStore
-    private let weatherRepository: WeatherRepository
+    private let repository: LocationWeatherRepository
     private let notificationsAuthorized: () async -> Bool
     private let scheduleNotifications: () async -> Void
     private let submitRefreshRequest: (_ earliestBegin: Date) -> Void
@@ -26,7 +26,7 @@ final class WeatherBackgroundRefresher {
     init(
         refreshInterval: (() -> TimeInterval)? = nil,
         preferences: PreferencesStore? = nil,
-        weatherRepository: WeatherRepository? = nil,
+        repository: LocationWeatherRepository? = nil,
         notificationsAuthorized: @escaping () async -> Bool = {
             await WeatherNotificationScheduler.shared.isAuthorized()
         },
@@ -43,7 +43,7 @@ final class WeatherBackgroundRefresher {
     ) {
         self.refreshInterval = refreshInterval ?? { RemoteConfigRepository.shared.refreshInterval }
         self.preferences = preferences ?? .shared
-        self.weatherRepository = weatherRepository ?? WeatherRepository()
+        self.repository = repository ?? LocationWeatherRepository(preferences: preferences)
         self.notificationsAuthorized = notificationsAuthorized
         self.scheduleNotifications = scheduleNotifications
         self.submitRefreshRequest = submitRefreshRequest
@@ -71,44 +71,15 @@ final class WeatherBackgroundRefresher {
         // With Follow my location on, My Location first moves to where the phone was last seen.
         followMyLocation()
         let locations = preferences.savedLocations
-        let notificationLocation = locations.notificationLocation
-        let cacheKey = notificationLocation?.cacheKey
-        // Same display-name rule as the foreground refresh in WeatherForecastViewModel.
-        let usesApiCityName = notificationLocation?.isCurrentLocation == true
+        let cacheKey = locations.notificationLocation?.cacheKey
 
         let authorized = await notificationsAuthorized()
         var refreshed = false
 
         let logic = NotificationWorkerLogic(
             getSavedLocations: { locations },
-            getUnits: { [preferences] in
-                WeatherUnitsResolver.resolve(override: preferences.unitOverride)
-            },
-            fetchCurrentWeather: { [preferences, weatherRepository] units, label, latitude, longitude in
-                let result = await weatherRepository.fetchCurrentWeather(
-                    units: units,
-                    locationLabel: usesApiCityName ? "" : label,
-                    cityQuery: latitude == nil || longitude == nil ? label : nil,
-                    latitude: latitude,
-                    longitude: longitude
-                )
-                if case .success(let weather) = result, let cacheKey {
-                    preferences.setCachedWeather(weather, for: cacheKey)
-                }
-                return result
-            },
-            fetchForecast: { [preferences, weatherRepository] units, label, latitude, longitude in
-                let result = await weatherRepository.fetchForecast(
-                    units: units,
-                    cityQuery: latitude == nil || longitude == nil ? label : nil,
-                    latitude: latitude,
-                    longitude: longitude
-                )
-                if case .success(let days) = result, let cacheKey {
-                    preferences.setCachedForecast(days, for: cacheKey)
-                }
-                return result
-            },
+            refreshWeather: { [repository] in await repository.refreshWeather(for: $0) },
+            refreshForecast: { [repository] in await repository.refreshForecast(for: $0) },
             hasNotificationPermission: { authorized },
             onRefreshed: { refreshed = true }
         )
@@ -122,34 +93,9 @@ final class WeatherBackgroundRefresher {
         // and not part of the result. Same as Android's background refresh.
         let activeIndex = preferences.activeLocationIndex
         if locations.indices.contains(activeIndex), locations[activeIndex].cacheKey != cacheKey {
-            await refreshCache(for: locations[activeIndex])
+            _ = await repository.refreshWeather(for: locations[activeIndex])
+            _ = await repository.refreshForecast(for: locations[activeIndex])
         }
         return result
-    }
-
-    /// Fetches `location`'s weather and forecast and caches whatever comes back, as the foreground
-    /// refresh does.
-    private func refreshCache(for location: SavedLocation) async {
-        let units = WeatherUnitsResolver.resolve(override: preferences.unitOverride)
-        let cityQuery = location.latitude == nil || location.longitude == nil ? location.label : nil
-        let weather = await weatherRepository.fetchCurrentWeather(
-            units: units,
-            locationLabel: location.isCurrentLocation ? "" : location.label,
-            cityQuery: cityQuery,
-            latitude: location.latitude,
-            longitude: location.longitude
-        )
-        if case .success(let weather) = weather {
-            preferences.setCachedWeather(weather, for: location.cacheKey)
-        }
-        let forecast = await weatherRepository.fetchForecast(
-            units: units,
-            cityQuery: cityQuery,
-            latitude: location.latitude,
-            longitude: location.longitude
-        )
-        if case .success(let days) = forecast {
-            preferences.setCachedForecast(days, for: location.cacheKey)
-        }
     }
 }

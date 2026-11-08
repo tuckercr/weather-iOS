@@ -223,4 +223,42 @@ final class SettingsViewModelTests: XCTestCase {
             applyUsageSharing: {}
         )
     }
+
+    // MARK: - Follow my location
+
+    func testFollowMyLocationExplainsFirstUnlessAlwaysIsAllowed() {
+        let notYet = SettingsViewModel(
+            preferences: preferences.store,
+            follower: MyLocationFollower(preferences: preferences.store, authorization: .authorizedWhenInUse, refresh: {})
+        )
+        notYet.setFollowMyLocation(true)
+        XCTAssertTrue(notYet.isExplainingFollowMyLocation)
+        XCTAssertFalse(preferences.store.followMyLocation, "Nothing changes until Continue")
+
+        var openedSettings = false
+        notYet.confirmFollowMyLocation { openedSettings = true }
+        XCTAssertFalse(notYet.isExplainingFollowMyLocation)
+        XCTAssertTrue(preferences.store.followMyLocation)
+        XCTAssertFalse(openedSettings, "The first time, iOS asks for Always itself")
+
+        let always = SettingsViewModel(
+            preferences: preferences.store,
+            follower: MyLocationFollower(preferences: preferences.store, authorization: .authorizedAlways, refresh: {})
+        )
+        always.setFollowMyLocation(false)
+        XCTAssertFalse(always.followsMyLocation)
+        always.setFollowMyLocation(true)
+        XCTAssertFalse(always.isExplainingFollowMyLocation)
+        XCTAssertTrue(always.followsMyLocation)
+    }
+
+    func testTheLinkFromIOSSettingsIsHandledOnce() {
+        let link = NotificationSettingsLink()
+        let viewModel = SettingsViewModel(preferences: preferences.store, notificationSettingsLink: link)
+
+        link.isRequested = true
+        XCTAssertTrue(viewModel.notificationSettingsRequested)
+        viewModel.notificationSettingsShown()
+        XCTAssertFalse(viewModel.notificationSettingsRequested)
+    }
 }

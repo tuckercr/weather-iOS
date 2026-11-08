@@ -69,8 +69,14 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 ## Architecture
 
 - **Screens and state.** `Cats_DogsApp` → `RootView` (splash, onboarding, then `CurrentWeatherView`).
-  View models are `@Observable` on the main actor. `CurrentWeatherView` keeps the screen's clock
-  (`now`), which refreshes, returning to the app and a 30-minute tick move on, so past hours drop off.
+  View models are `@Observable` on the main actor. `WeatherForecastViewModel` holds the screen's
+  clock (`now`, moved on by `tick()` on refreshes, returning to the app and a 30-minute timer, so
+  past hours drop off) and builds a `WeatherScreen` (`ViewModels/WeatherScreen.swift`) that
+  `CurrentWeatherView` only draws. It also runs the screen's steps (refreshes, My Location, the
+  notification city); the view only tells it what happened. `AppViewModels` makes the view models
+  once, with the repositories they share: `CityRepository` (the saved cities and the active one)
+  and `LocationRepository` (the one owner of the screens' `CLLocationManager`). No view model holds
+  another.
 - **Data.** Repositories in `Data/` sit over the API clients in `Services/` (`OpenWeatherAPI`,
   `OpenMeteoAPI`, `GeocodingAPI` protocols, faked in tests). Cities with coordinates get their
   current reading and forecast from Open-Meteo (hourly, UV, pavement heat, the 15-minute
@@ -80,11 +86,16 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   codes, so moods and icons work the same for both. `ForecastAggregator` groups slots into the
   city's local days.
 - **Cache first.** `PreferencesStore` (UserDefaults) holds the cities, settings and the last weather
-  and forecast per city. Cached data shows at once and stays on screen if a refresh fails;
-  `Utilities/StaleWeather` decides how an old reading is shown.
+  and forecast per city. `LocationWeatherRepository` is the one way to a saved location's weather:
+  its cache, and refreshes that fetch in the user's units and cache the result. The screen, the
+  background refresh and the notifications all use it. Cached data shows at once and stays on
+  screen if a refresh fails; `Utilities/StaleWeather` decides how an old reading is shown.
 - **Time zones.** Everything shown for a city uses the city's time zone (`CurrentWeather.timeZone`),
   including "today", night captions and seasonal themes. Only the 8:30 notifications use the
   device clock.
+- **Layers.** `Domain/` holds the rules with no UI in them (`PetMood`, `WalkAdvisor`, `WalkCheck`,
+  `PetWeatherThresholds`, `SeasonalTheme`); their colours are view extensions (`PetMood+Colors`,
+  `SeasonalTheme+Colors`). Only `Views/` imports SwiftUI.
 - **Pets.** `PetMood.forConditions` maps conditions to one of 9 moods, which choose the hero card's
   colour, ink and caption; `PetScene` draws the pets in code. A `SeasonalTheme` (built-in
   `SeasonalThemes.json`, replaceable from Remote Config `seasonal_themes`) can override the hero
@@ -92,8 +103,10 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   briefing and the walk nudges, with `PetWeatherThresholds` (Remote Config, validated, always °C).
 - **Notifications.** iOS can't run code at a set time, so `NotificationPlanner` (pure, unit tested)
   plans everything ahead from the cache: a week of 8:30 briefings, walk nudges and the next rain
-  alert, worded by how old the forecast is. `WeatherNotificationScheduler` replaces the whole queue
-  whenever the app or a background refresh gets new data or a setting changes, and
+  alert, worded by how old the forecast is. It finds today, the high and low and the pets' mood
+  with the same functions as the screen (`isDay(of:in:)`, `TodayDetails.highLow`, `PetMood`).
+  `WeatherNotificationScheduler` replaces the whole queue whenever the weather view model or a
+  background refresh gets new data or a setting changes, and
   `WeatherBackgroundRefresher` (`BGAppRefreshTask`) refreshes the notification city's cache. The
   notification city is My Location when saved, otherwise the first city.
 - **Remote Config.** `RemoteConfigRepository` reads every key with an in-app default and validation,

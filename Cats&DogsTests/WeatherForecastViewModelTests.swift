@@ -13,6 +13,7 @@ final class WeatherForecastViewModelTests: XCTestCase {
     private var viewModel: WeatherForecastViewModel!
     private var loggedErrors: [String] = []
     private var settingsOpenedCount = 0
+    private var replans = 0
     private var foregroundRefreshWindow: TimeInterval = 0
     private var clock = Date(timeIntervalSince1970: 1_700_000_000)
 
@@ -22,20 +23,98 @@ final class WeatherForecastViewModelTests: XCTestCase {
         api = ScriptedWeatherAPI()
         loggedErrors = []
         settingsOpenedCount = 0
+        replans = 0
         foregroundRefreshWindow = 0
         clock = Date(timeIntervalSince1970: 1_700_000_000)
         viewModel = WeatherForecastViewModel(
-            preferences: preferences.store,
-            weatherRepository: api.repository,
+            repository: LocationWeatherRepository(weatherRepository: api.repository, preferences: preferences.store),
+            cities: CityRepository(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in }),
+            follower: MyLocationFollower(preferences: preferences.store, authorization: .denied, refresh: {}),
+            replanNotifications: { [unowned self] in replans += 1 },
             onError: { [unowned self] in loggedErrors.append($0) },
             onSettingsOpened: { [unowned self] in settingsOpenedCount += 1 },
             foregroundRefreshMinInterval: { [unowned self] in foregroundRefreshWindow },
+            config: { WeatherScreenConfig() },
             now: { [unowned self] in clock }
         )
     }
 
     override func tearDown() async throws {
         preferences.destroy()
+    }
+
+    // MARK: - Clock and screen
+
+    func testTheClockOnlyMovesOnWithTick() {
+        let start = viewModel.now
+        clock = clock.addingTimeInterval(3_600)
+        XCTAssertEqual(viewModel.now, start)
+        viewModel.tick()
+        XCTAssertEqual(viewModel.now, clock)
+    }
+
+    func testTheScreenLoadsThenShowsTheReadingAtTheClock() async {
+        guard case .loading = viewModel.screen(hasDog: true) else { return XCTFail("expected loading") }
+
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(state) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertEqual(state.now, viewModel.now)
+        XCTAssertEqual(state.weather.cityName, "Austin, Texas, US")
+        XCTAssertNil(state.stale)
+    }
+
+    func testWalkAdviceComesFromTheLoadedForecastAndIsNilUntilThen() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(before) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertNil(before.walkAdvice)
+        XCTAssertFalse(before.showsWalkCard)
+
+        viewModel.refreshForecast(location: pinned)
+        await waitUntil { self.viewModel.forecast.successValue != nil }
+        clock = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
+        viewModel.tick()
+        guard case let .weather(after) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        XCTAssertNotNil(after.walkAdvice)
+    }
+
+    // MARK: - Notifications
+
+    func testNewWeatherReplansTheNotificationsOnce() async {
+        viewModel.refreshCurrent(location: pinned)
+        viewModel.refreshForecast(location: pinned)
+        await waitUntil(timeout: 4) { self.replans > 0 }
+        try? await Task.sleep(for: .milliseconds(1_500))
+        XCTAssertEqual(replans, 1)
+    }
+
+    func testCachedWeatherReplansEvenWhenTheFetchFails() async {
+        // Offline with a cache: the week of briefings is still renewed from it.
+        preferences.store.setCachedWeather(sampleWeather(), for: austin.cacheKey)
+        api.onCurrent = { _ in throw self.offline }
+        viewModel.refreshCurrent(location: austin)
+        await waitUntil(timeout: 4) { self.replans == 1 }
+    }
+
+    func testAFetchInUnitsSinceChangedIsNotCached() async {
+        api.onCurrent = { [unowned self] request in
+            // The user switches to imperial while the metric fetch is out.
+            preferences.store.setUnitOverride(.imperial)
+            return weatherResponse(name: "Austin")
+        }
+        viewModel.refreshCurrent(location: austin)
+        await waitUntil { self.api.completedCurrentRequests == 1 }
+        await settle()
+        XCTAssertNil(preferences.store.cachedWeather(for: austin.cacheKey))
+    }
+
+    func testAFailedRefreshDoesNotReplan() async {
+        api.onCurrent = { _ in throw self.offline }
+        viewModel.refreshCurrent(location: austin)
+        await waitUntil { self.loggedErrors.count == 1 }
+        try? await Task.sleep(for: .milliseconds(1_500))
+        XCTAssertEqual(replans, 0)
     }
 
     // MARK: - Request routing
@@ -154,7 +233,9 @@ final class WeatherForecastViewModelTests: XCTestCase {
         XCTAssertEqual(api.currentRequests.map(\.cityQuery), ["Austin", "Denver"])
         XCTAssertEqual(viewModel.currentWeather.successValue?.cityName, "Denver")
         XCTAssertEqual(preferences.store.lastCity, "Denver")
-        XCTAssertNil(preferences.store.cachedWeather(for: austin.cacheKey), "The stale result must not be cached")
+        // Still cached under its own city: it's Austin's weather, just not what's on screen.
+        XCTAssertEqual(preferences.store.cachedWeather(for: austin.cacheKey)?.cityName, "Austin")
+        XCTAssertEqual(preferences.store.cachedWeather(for: denver.cacheKey)?.cityName, "Denver")
         XCTAssertFalse(viewModel.isRefreshing)
     }
 

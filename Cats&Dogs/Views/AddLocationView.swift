@@ -5,7 +5,6 @@ import SwiftUI
 /// which put the results under the keyboard. Same layout and rules as Android's
 /// `ui/AddLocationScreen.kt`.
 struct AddLocationView: View {
-    let savedLocations: [SavedLocation]
     /// The location to save, the name to confirm it with ("Malmö added"), and how, for `city_added`.
     let onAdd: (SavedLocation, String, CityAdded) -> Void
     /// A place already saved, at this index: show its weather.
@@ -27,39 +26,21 @@ struct AddLocationView: View {
         self.onAdd = onAdd
         self.onGoTo = onGoTo
         self.onClose = onClose
-        let viewModel = geoViewModel ?? GeoLocationViewModel()
-        // Sorting measures from the phone's region and My Location, both already on the phone.
-        viewModel.origin = CitySearchOrigin.current(savedLocations: savedLocations)
-        _geoViewModel = State(initialValue: viewModel)
+        _geoViewModel = State(initialValue: geoViewModel ?? GeoLocationViewModel())
     }
+
+    /// Opened when the screen appears, not when the view is made: SwiftUI makes views often.
+    private let savedLocations: [SavedLocation]
 
     private var query: String {
         geoViewModel.cityInput.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var action: AddLocationAction {
-        AddLocationRules.action(
-            typed: geoViewModel.cityInput,
-            suggestions: geoViewModel.citySuggestions,
-            searching: geoViewModel.citySuggestLoading,
-            searchFailed: geoViewModel.searchFailed,
-            saved: savedLocations,
-            sizeRatio: geoViewModel.policy.sizeRatio
-        )
-    }
-
-    /// The row the button and the keyboard's Search key would take, highlighted in the list.
-    private var target: CitySuggestion? {
-        switch action {
-        case .add(let suggestion), .goTo(let suggestion, _): suggestion
-        default: nil
-        }
-    }
+    private var action: AddLocationAction { geoViewModel.action }
 
     /// Offered while My Location isn't saved and access is on or can still be asked for.
     private var canAddMyLocation: Bool {
-        !savedLocations.contains(where: \.isCurrentLocation)
-            && (locationViewModel.hasLocationPermission() || locationViewModel.canRequestPermission())
+        !geoViewModel.hasMyLocation && locationViewModel.canOfferMyLocation
     }
 
     var body: some View {
@@ -107,11 +88,14 @@ struct AddLocationView: View {
                 }
             }
         }
-        .onAppear { searchFocused = true }
+        .onAppear {
+            geoViewModel.open(savedLocations: savedLocations)
+            searchFocused = true
+        }
         // The screen stays open until the fix arrives, then adds it and closes.
         .onChange(of: locationViewModel.state) { _, state in
             if case .located(let location) = state {
-                onAdd(location, location.label, CityAdded(source: .myLocation, provider: geoViewModel.policy.provider))
+                perform(geoViewModel.addingMyLocation(location))
             }
         }
     }
@@ -151,14 +135,8 @@ struct AddLocationView: View {
 
     private var myLocationRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Button {
-                if locationViewModel.hasLocationPermission() {
-                    locationViewModel.fetchLocation()
-                } else {
-                    // Fetches once allowed; a "Don't Allow" hides the row.
-                    locationViewModel.requestPermission()
-                }
-            } label: {
+            // Fetches once allowed; a "Don't Allow" hides the row.
+            Button(action: locationViewModel.useMyLocation) {
                 HStack(spacing: 10) {
                     if locationViewModel.state == .locating {
                         ProgressView()
@@ -182,14 +160,10 @@ struct AddLocationView: View {
     }
 
     private func row(_ suggestion: CitySuggestion) -> some View {
-        let savedIndex = AddLocationRules.savedIndex(of: suggestion, in: savedLocations)
-        let isTarget = suggestion == target
+        let savedIndex = geoViewModel.savedIndex(of: suggestion)
+        let isTarget = suggestion == geoViewModel.target
         return Button {
-            if let savedIndex {
-                onGoTo(savedIndex)
-            } else {
-                add(suggestion, source: .suggestion)
-            }
+            perform(geoViewModel.choose(suggestion))
         } label: {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
@@ -270,33 +244,19 @@ struct AddLocationView: View {
     }
 
     private func runAction() {
-        switch action {
-        case .add(let suggestion):
-            add(suggestion, source: .typedMatch)
-        case .goTo(_, let index):
-            onGoTo(index)
-        case .addByName(let name):
-            onAdd(
-                SavedLocation(label: name, latitude: nil, longitude: nil),
-                name,
-                CityAdded(source: .typedName, provider: geoViewModel.policy.provider)
-            )
-        case .none, .pickFromList, .notFound:
+        guard let choice = geoViewModel.submit() else {
             // Return would otherwise put the keyboard away with nothing done.
             searchFocused = true
+            return
         }
+        perform(choice)
     }
 
-    private func add(_ suggestion: CitySuggestion, source: CityAddedSource) {
-        onAdd(
-            SavedLocation(
-                label: AddLocationRules.labelToSave(suggestion, saved: savedLocations),
-                latitude: suggestion.weatherLat,
-                longitude: suggestion.weatherLon
-            ),
-            suggestion.name,
-            CityAdded(source: source, provider: suggestion.provider)
-        )
+    private func perform(_ choice: GeoLocationViewModel.Choice) {
+        switch choice {
+        case let .add(location, name, added): onAdd(location, name, added)
+        case .goTo(let index): onGoTo(index)
+        }
     }
 }
 

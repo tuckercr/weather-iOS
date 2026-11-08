@@ -35,7 +35,7 @@ struct OnboardingLocationView: View {
                 .multilineTextAlignment(.center)
         } actions: {
             if viewModel.state != .locating {
-                Button(action: requestLocation) {
+                Button(action: viewModel.useMyLocation) {
                     Text("Use my location").frame(maxWidth: .infinity)
                 }
                 .accentButtonStyle()
@@ -67,17 +67,6 @@ struct OnboardingLocationView: View {
             "Could not determine your location. You can still add locations manually."
         default:
             "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are."
-        }
-    }
-
-    private func requestLocation() {
-        if viewModel.hasLocationPermission() {
-            viewModel.fetchLocation()
-        } else if viewModel.isPermissionDenied() {
-            // Denied before, so iOS won't show the prompt again.
-            onSkip()
-        } else {
-            viewModel.requestPermission()
         }
     }
 }

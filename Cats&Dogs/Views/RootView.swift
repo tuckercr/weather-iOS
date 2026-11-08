@@ -7,49 +7,51 @@ private enum AppScreen: Hashable {
 }
 
 struct RootView: View {
-    @State private var welcomeViewModel = WelcomeViewModel()
-    @State private var cityListViewModel = CityListViewModel()
-    @State private var weatherViewModel = WeatherForecastViewModel()
-    @State private var settingsViewModel = SettingsViewModel()
+    private let welcomeViewModel: WelcomeViewModel
+    private let cityListViewModel: CityListViewModel
+    private let weatherViewModel: WeatherForecastViewModel
+    private let settingsViewModel: SettingsViewModel
+    private let updatePrompt: UpdatePromptViewModel
+    private let radarViewModel: RadarViewModel
     @State private var path: [AppScreen] = []
-    @State private var updatePrompt = UpdatePromptViewModel()
     @Environment(\.scenePhase) private var scenePhase
-    private let notificationSettingsLink = NotificationSettingsLink.shared
+
+    init(viewModels: AppViewModels) {
+        welcomeViewModel = viewModels.welcome
+        cityListViewModel = viewModels.cityList
+        weatherViewModel = viewModels.weather
+        settingsViewModel = viewModels.settings
+        updatePrompt = viewModels.updatePrompt
+        radarViewModel = viewModels.radar
+    }
 
     var body: some View {
         Group {
             if updatePrompt.prompt == .required {
                 UpdateRequiredView(storeURL: updatePrompt.storeURL)
-            } else if let state = welcomeViewModel.onboardingState {
-                if !state.hasSeenWelcome {
-                    WelcomeView {
-                        welcomeViewModel.completeWelcome()
-                    }
-                } else if welcomeViewModel.isAskingAboutDog {
-                    OnboardingDogView { hasDog in
-                        // The walk card only shows when there's a dog.
-                        settingsViewModel.setShowWalkCard(hasDog)
-                        welcomeViewModel.completeDogQuestion()
-                    }
-                } else if !state.notificationOnboardingDone {
-                    OnboardingNotificationView {
-                        welcomeViewModel.completeNotificationOnboarding()
-                    }
-                } else if !state.locationOnboardingDone {
-                    OnboardingLocationView(
-                        onLocationResolved: { location in
-                            cityListViewModel.addLocation(location)
-                            welcomeViewModel.completeLocationOnboarding()
-                        },
-                        onSkip: {
-                            welcomeViewModel.completeLocationOnboarding()
-                        }
+            } else {
+                switch welcomeViewModel.step {
+                case nil:
+                    ProgressView()
+                case .welcome:
+                    WelcomeView(onGetStarted: welcomeViewModel.completeWelcome)
+                case .dog:
+                    OnboardingDogView(onAnswered: welcomeViewModel.answerDogQuestion)
+                case .notifications:
+                    OnboardingNotificationView(
+                        text: welcomeViewModel.notificationOnboardingText,
+                        onAllow: welcomeViewModel.allowNotifications,
+                        onNotNow: welcomeViewModel.completeNotificationOnboarding
                     )
-                } else {
+                case .location:
+                    OnboardingLocationView(
+                        onLocationResolved: welcomeViewModel.chooseLocation,
+                        onSkip: welcomeViewModel.completeLocationOnboarding
+                    )
+                case .done:
                     NavigationStack(path: $path) {
                         CurrentWeatherView(
-                            cityListViewModel: cityListViewModel,
-                            weatherViewModel: weatherViewModel,
+                            viewModel: weatherViewModel,
                             settingsViewModel: settingsViewModel,
                             onOpenSettings: {
                                 weatherViewModel.logSettingsOpened()
@@ -69,8 +71,7 @@ struct RootView: View {
                                 SettingsView(
                                     settingsViewModel: settingsViewModel,
                                     onOpenNotifications: { path.append(.notifications) },
-                                    onOpenLocations: { path.append(.locations) },
-                                    onLocationResolved: { cityListViewModel.addLocation($0) }
+                                    onOpenLocations: { path.append(.locations) }
                                 )
                             case .notifications:
                                 NotificationSettingsView(settingsViewModel: settingsViewModel)
@@ -83,16 +84,15 @@ struct RootView: View {
                         }
                     }
                     // From the link in iOS Settings; waits here until onboarding is done.
-                    .onChange(of: notificationSettingsLink.isRequested, initial: true) { _, requested in
+                    .onChange(of: settingsViewModel.notificationSettingsRequested, initial: true) { _, requested in
                         guard requested else { return }
-                        notificationSettingsLink.isRequested = false
+                        settingsViewModel.notificationSettingsShown()
                         path = [.settings, .notifications]
                     }
                 }
-            } else {
-                ProgressView()
             }
         }
+        .environment(radarViewModel)
         // Remote Config values fetched in the background apply from the next read.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { updatePrompt.refresh() }
@@ -101,5 +101,5 @@ struct RootView: View {
 }
 
 #Preview {
-    RootView()
+    RootView(viewModels: AppViewModels())
 }

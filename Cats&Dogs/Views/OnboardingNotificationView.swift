@@ -1,7 +1,10 @@
 import SwiftUI
 
 struct OnboardingNotificationView: View {
-    let onDone: () -> Void
+    /// What the notifications will be, from the welcome view model.
+    let text: String
+    let onAllow: () async -> Void
+    let onNotNow: () -> Void
 
     var body: some View {
         OnboardingLayout {
@@ -21,31 +24,20 @@ struct OnboardingNotificationView: View {
                 .padding(.top, 20)
                 .accessibilityAddTraits(.isHeader)
 
-            // With a dog (the question just before), the walk-time nudge is mentioned too; each kind
-            // only while Remote Config has it on.
-            Text(
-                (PreferencesStore.shared.showWalkCard && RemoteConfigRepository.shared.walkTimeNotificationsEnabled
-                    ? "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
-                    : "Each morning, Sunny & Misty will send a weather briefing for your location.")
-                    + (RemoteConfigRepository.shared.rainNotificationsEnabled ? "\n\nYou can turn on rain alerts in Settings." : "")
-            )
+            Text(text)
                 .font(.body)
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
         } actions: {
             Button {
-                Task {
-                    _ = await WeatherNotificationScheduler.shared.requestAuthorization()
-                    await WeatherNotificationScheduler.shared.scheduleNotifications()
-                    onDone()
-                }
+                Task { await onAllow() }
             } label: {
                 Text("Allow notifications").frame(maxWidth: .infinity)
             }
             .accentButtonStyle()
             .controlSize(.large)
 
-            Button(action: onDone) {
+            Button(action: onNotNow) {
                 Text("Not now").frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -55,5 +47,9 @@ struct OnboardingNotificationView: View {
 }
 
 #Preview {
-    OnboardingNotificationView(onDone: {})
+    OnboardingNotificationView(
+        text: "Each morning, Sunny & Misty will send a weather briefing for your location.",
+        onAllow: {},
+        onNotNow: {}
+    )
 }

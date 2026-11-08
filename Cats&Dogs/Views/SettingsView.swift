@@ -5,10 +5,8 @@ struct SettingsView: SettingsScreen {
     @Bindable var settingsViewModel: SettingsViewModel
     let onOpenNotifications: () -> Void
     let onOpenLocations: () -> Void
-    let onLocationResolved: (SavedLocation) -> Void
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
-    @State private var locationViewModel = LocationPermissionViewModel()
     @State private var showCacheCleared = false
 
     var body: some View {
@@ -58,7 +56,7 @@ struct SettingsView: SettingsScreen {
                     requestTitle: "Allow location access",
                     openSettingsTitle: "Open Settings to enable location",
                     settingsURL: UIApplication.openSettingsURLString,
-                    onRequest: { locationViewModel.requestPermission() }
+                    onRequest: { Task { await settingsViewModel.requestLocationAccess() } }
                 )
             } header: {
                 sectionHeader("Location")
@@ -145,13 +143,6 @@ struct SettingsView: SettingsScreen {
                 Task { await settingsViewModel.refreshPermissions() }
             }
         }
-        .onChange(of: locationViewModel.state) { _, state in
-            // Location is only useful as a saved city, so a grant made here adds it like onboarding does.
-            if case .located(let location) = state {
-                onLocationResolved(location)
-            }
-            Task { await settingsViewModel.refreshPermissions() }
-        }
         .alert("Cache cleared", isPresented: $showCacheCleared) {
             Button("OK", role: .cancel) {}
         }
@@ -188,8 +179,7 @@ struct SettingsView: SettingsScreen {
         SettingsView(
             settingsViewModel: SettingsViewModel(),
             onOpenNotifications: {},
-            onOpenLocations: {},
-            onLocationResolved: { _ in }
+            onOpenLocations: {}
         )
     }
 }

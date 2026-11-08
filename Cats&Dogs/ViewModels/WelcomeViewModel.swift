@@ -1,6 +1,11 @@
 import Foundation
 import Observation
 
+/// Where a new user is: the welcome, the dog question, notifications, location, then the app.
+enum OnboardingStep: Equatable {
+    case welcome, dog, notifications, location, done
+}
+
 struct OnboardingState: Equatable {
     var hasSeenWelcome: Bool
     var notificationOnboardingDone: Bool
@@ -17,14 +22,33 @@ final class WelcomeViewModel {
 
     private let preferences: PreferencesStore
     private let onOnboardingComplete: @MainActor () -> Void
+    private let remotelyEnabled: @MainActor (NotificationKind) -> Bool
+    private let requestNotificationAuthorization: @MainActor () async -> Bool
+    private let scheduleNotifications: @MainActor () async -> Void
+    private let onDogAnswered: @MainActor (Bool) -> Void
+    private let onLocationChosen: @MainActor (SavedLocation) -> Void
 
     init(
         preferences: PreferencesStore? = nil,
-        onOnboardingComplete: (@MainActor () -> Void)? = nil
+        onOnboardingComplete: (@MainActor () -> Void)? = nil,
+        remotelyEnabled: (@MainActor (NotificationKind) -> Bool)? = nil,
+        requestNotificationAuthorization: (@MainActor () async -> Bool)? = nil,
+        scheduleNotifications: (@MainActor () async -> Void)? = nil,
+        onDogAnswered: (@MainActor (Bool) -> Void)? = nil,
+        onLocationChosen: (@MainActor (SavedLocation) -> Void)? = nil
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
         self.onOnboardingComplete = onOnboardingComplete ?? { AnalyticsRepository.shared.logOnboardingComplete() }
+        self.remotelyEnabled = remotelyEnabled ?? { RemoteConfigRepository.shared.notificationsEnabled($0) }
+        self.requestNotificationAuthorization = requestNotificationAuthorization ?? {
+            await WeatherNotificationScheduler.shared.requestAuthorization()
+        }
+        self.scheduleNotifications = scheduleNotifications ?? {
+            await WeatherNotificationScheduler.shared.scheduleNotifications()
+        }
+        self.onDogAnswered = onDogAnswered ?? { preferences.setShowWalkCard($0) }
+        self.onLocationChosen = onLocationChosen ?? { _ in }
         onboardingState = OnboardingState(
             hasSeenWelcome: preferences.hasSeenWelcome,
             notificationOnboardingDone: preferences.notificationOnboardingDone,
@@ -42,9 +66,45 @@ final class WelcomeViewModel {
         }
     }
 
-    /// Moves on from "Is there a dog at home?". The answer itself goes to `SettingsViewModel.setShowWalkCard`.
-    func completeDogQuestion() {
+    /// The step to show: nil until the state has loaded.
+    var step: OnboardingStep? {
+        guard let state = onboardingState else { return nil }
+        if !state.hasSeenWelcome { return .welcome }
+        if isAskingAboutDog { return .dog }
+        if !state.notificationOnboardingDone { return .notifications }
+        if !state.locationOnboardingDone { return .location }
+        return .done
+    }
+
+    /// "Is there a dog at home?": the walk card, Paw Check and the walk notifications only show
+    /// with one. The answer goes to Settings (`onDogAnswered`), then on to notifications.
+    func answerDogQuestion(_ hasDog: Bool) {
+        onDogAnswered(hasDog)
         isAskingAboutDog = false
+    }
+
+    /// A location from the onboarding location step: it becomes the first city, and onboarding ends.
+    func chooseLocation(_ location: SavedLocation) {
+        onLocationChosen(location)
+        completeLocationOnboarding()
+    }
+
+    /// What "Stay in the loop" promises. With a dog (the question just before), the walk-time nudge
+    /// is mentioned too; each kind only while Remote Config has it on.
+    var notificationOnboardingText: String {
+        let walkTime = preferences.showWalkCard && remotelyEnabled(.walkTime)
+        return (walkTime
+            ? "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
+            : "Each morning, Sunny & Misty will send a weather briefing for your location.")
+            + (remotelyEnabled(.rain) ? "\n\nYou can turn on rain alerts in Settings." : "")
+    }
+
+    /// "Allow notifications": asks iOS, plans the notifications if allowed, and moves on either way.
+    func allowNotifications() async {
+        if await requestNotificationAuthorization() {
+            await scheduleNotifications()
+        }
+        completeNotificationOnboarding()
     }
 
     func completeNotificationOnboarding() {

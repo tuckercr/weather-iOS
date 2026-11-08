@@ -1,6 +1,7 @@
 import XCTest
 @testable import Cats_Dogs
 
+@MainActor
 final class RemoteConfigRepositoryTests: XCTestCase {
     func testRefreshIntervalDefaultsToThirtyMinutes() {
         XCTAssertEqual(RemoteConfigRepository.refreshInterval(minutes: nil), 30 * 60)

@@ -51,7 +51,7 @@ final class WelcomeViewModelTests: XCTestCase {
         viewModel.completeWelcome()
         XCTAssertTrue(viewModel.isAskingAboutDog)
 
-        viewModel.completeDogQuestion()
+        viewModel.answerDogQuestion(true)
         XCTAssertFalse(viewModel.isAskingAboutDog)
         XCTAssertFalse(
             WelcomeViewModel(preferences: preferences.reopened()).isAskingAboutDog,
@@ -98,5 +98,69 @@ final class WelcomeViewModelTests: XCTestCase {
         let viewModel = WelcomeViewModel(preferences: preferences.store)
 
         XCTAssertEqual(viewModel.onboardingState?.notificationOnboardingDone, true)
+    }
+
+    // MARK: - Notification onboarding
+
+    func testTheNotificationPromiseMentionsTheWalkWithADogAndRainWhileRemoteConfigAllows() {
+        preferences.store.setShowWalkCard(true)
+        let all = WelcomeViewModel(preferences: preferences.store, remotelyEnabled: { _ in true })
+        XCTAssertEqual(
+            all.notificationOnboardingText,
+            "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
+                + "\n\nYou can turn on rain alerts in Settings."
+        )
+
+        preferences.store.setShowWalkCard(false)
+        let noDog = WelcomeViewModel(preferences: preferences.store, remotelyEnabled: { $0 != .rain })
+        XCTAssertEqual(noDog.notificationOnboardingText, "Each morning, Sunny & Misty will send a weather briefing for your location.")
+    }
+
+    func testAllowingNotificationsPlansThemOnlyWhenGrantedAndMovesOnEitherWay() async {
+        for granted in [true, false] {
+            var planned = 0
+            let viewModel = WelcomeViewModel(
+                preferences: preferences.store,
+                requestNotificationAuthorization: { granted },
+                scheduleNotifications: { planned += 1 }
+            )
+
+            await viewModel.allowNotifications()
+
+            XCTAssertEqual(planned, granted ? 1 : 0)
+            XCTAssertEqual(viewModel.onboardingState?.notificationOnboardingDone, true)
+        }
+    }
+
+    // MARK: - Steps
+
+    func testTheStepsGoWelcomeDogNotificationsLocationThenTheApp() async {
+        var dog: Bool?
+        var chosen: SavedLocation?
+        let viewModel = WelcomeViewModel(
+            preferences: preferences.store,
+            onOnboardingComplete: {},
+            requestNotificationAuthorization: { false },
+            onDogAnswered: { dog = $0 },
+            onLocationChosen: { chosen = $0 }
+        )
+        XCTAssertEqual(viewModel.step, .welcome)
+        viewModel.completeWelcome()
+        XCTAssertEqual(viewModel.step, .dog)
+        viewModel.answerDogQuestion(false)
+        XCTAssertEqual(dog, false)
+        XCTAssertEqual(viewModel.step, .notifications)
+        await viewModel.allowNotifications()
+        XCTAssertEqual(viewModel.step, .location)
+        let austin = SavedLocation(label: "Austin", latitude: 30.27, longitude: -97.74)
+        viewModel.chooseLocation(austin)
+        XCTAssertEqual(chosen, austin)
+        XCTAssertEqual(viewModel.step, .done)
+    }
+
+    func testWithoutAnotherViewModelTheDogAnswerIsSaved() {
+        let viewModel = WelcomeViewModel(preferences: preferences.store)
+        viewModel.answerDogQuestion(false)
+        XCTAssertFalse(preferences.store.showWalkCard)
     }
 }

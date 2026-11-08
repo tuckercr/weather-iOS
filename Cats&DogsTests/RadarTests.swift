@@ -72,6 +72,110 @@ final class RadarTests: XCTestCase {
         frames: [RadarFrame(timeEpochSeconds: 2, path: "/b", isForecast: false)]
     )
 
+    // MARK: - Radar images
+
+    private func pixel() -> CGImage {
+        let context = CGContext(
+            data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        return context.makeImage()!
+    }
+
+    func testOverlaysLoadNearestNowFirstAndARefreshedTimelineKeepsTheOnesItShares() async {
+        let image = pixel()
+        let loaded = PathLog()
+        let past = RadarTimeline(host: "https://example.com", frames: [
+            RadarFrame(timeEpochSeconds: 1, path: "/1", isForecast: false),
+            RadarFrame(timeEpochSeconds: 2, path: "/2", isForecast: false),
+            RadarFrame(timeEpochSeconds: 3, path: "/3", isForecast: true),
+        ])
+        let source = TimelineSource([past])
+        let viewModel = RadarViewModel(
+            fetchTimeline: { try await source.next() },
+            loadBaseMap: { _ in image },
+            loadOverlay: { _, _, frame in
+                await loaded.append(frame.path)
+                return image
+            }
+        )
+        let tile = RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom)
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+
+        await viewModel.loadBaseMap(for: tile)
+        await viewModel.loadOverlays(for: tile)
+
+        XCTAssertNotNil(viewModel.baseMap)
+        XCTAssertEqual(Set(viewModel.overlays.keys), ["/1", "/2", "/3"])
+        // Loaded again for the same tile, only what's missing is fetched.
+        await viewModel.loadOverlays(for: tile)
+        let paths = await loaded.paths
+        XCTAssertEqual(paths.count, 3)
+    }
+
+    func testPlaybackStartsOnNowAndScrubbingPausesIt() async {
+        let timeline = RadarTimeline(host: "https://example.com", frames: [
+            RadarFrame(timeEpochSeconds: 0, path: "/1", isForecast: false),
+            RadarFrame(timeEpochSeconds: 600, path: "/2", isForecast: false),
+            RadarFrame(timeEpochSeconds: 1200, path: "/3", isForecast: true),
+        ])
+        let viewModel = RadarViewModel(
+            frameInterval: .milliseconds(1),
+            fetchTimeline: { timeline },
+            loadBaseMap: { _ in nil },
+            loadOverlay: { _, _, _ in nil }
+        )
+        let tile = RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom)
+        await viewModel.show(tile)
+        await waitUntil { viewModel.timeline.successValue != nil }
+        await viewModel.startPlayback(on: tile)
+
+        XCTAssertEqual(viewModel.frameIndex, 1, "The latest observed frame")
+        XCTAssertTrue(viewModel.playing)
+        let utc = TimeZone(identifier: "UTC")!
+        XCTAssertTrue(viewModel.currentFrameLabel(timeZone: utc)?.hasPrefix("Now · ") == true)
+
+        viewModel.scrub(to: 9)
+        XCTAssertFalse(viewModel.playing)
+        XCTAssertEqual(viewModel.frameIndex, 2, "Kept to the frames there are")
+        XCTAssertTrue(viewModel.currentFrameLabel(timeZone: utc)?.hasPrefix("Forecast · ") == true)
+
+        viewModel.togglePlaying()
+        let player = Task { await viewModel.play() }
+        await waitUntil { viewModel.frameIndex == 0 }
+        player.cancel()
+    }
+
+    func testANewTileStartsTheOverlaysAndMapFromScratch() async {
+        let image = pixel()
+        let viewModel = RadarViewModel(
+            fetchTimeline: { RadarTimeline(host: "https://example.com", frames: [RadarFrame(timeEpochSeconds: 1, path: "/a", isForecast: false)]) },
+            loadBaseMap: { _ in nil },
+            loadOverlay: { _, _, _ in image }
+        )
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+        await viewModel.loadOverlays(for: RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom))
+        XCTAssertEqual(viewModel.overlays.count, 1)
+
+        // Somewhere with no overlays loading: the old city's are dropped, not shown over the new map.
+        let gate = OverlayGate()
+        let failing = RadarViewModel(
+            fetchTimeline: { RadarTimeline(host: "https://example.com", frames: [RadarFrame(timeEpochSeconds: 1, path: "/a", isForecast: false)]) },
+            loadBaseMap: { _ in nil },
+            loadOverlay: { _, _, _ in await gate.isOpen ? image : nil }
+        )
+        failing.load()
+        await waitUntil { failing.timeline.successValue != nil }
+        await failing.loadOverlays(for: RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom))
+        XCTAssertEqual(failing.overlays.count, 1)
+        await gate.close()
+        await failing.loadOverlays(for: RadarTile.from(latitude: 0, longitude: -179.9, zoom: RadarTiles.zoom))
+        XCTAssertTrue(failing.overlays.isEmpty)
+        XCTAssertNil(failing.baseMap)
+    }
+
     func testLoadsTheTimelineOnceAndIgnoresLaterLoads() async {
         let calls = Counter()
         let timeline = sampleTimeline
@@ -243,4 +347,16 @@ private final class TimelineSource {
         guard !queue.isEmpty, let timeline = queue.removeFirst() else { throw RadarError.network }
         return timeline
     }
+}
+
+/// The overlay paths a test radar was asked for, in order.
+private actor PathLog {
+    private(set) var paths: [String] = []
+    func append(_ path: String) { paths.append(path) }
+}
+
+/// Lets a test radar's overlays load until it's closed.
+private actor OverlayGate {
+    private(set) var isOpen = true
+    func close() { isOpen = false }
 }

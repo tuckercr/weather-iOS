@@ -32,6 +32,41 @@ final class GeoLocationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.citySuggestLoading)
     }
 
+    func testAddLocationShowsAPlaceThatsSavedRatherThanAddingItAgain() async {
+        api.onSearch = { _ in [geocodingResult(name: "Austin", state: "Texas")] }
+        viewModel.open(savedLocations: [SavedLocation(label: "Austin, Texas, US", latitude: 30.27, longitude: -97.74)])
+
+        viewModel.onCityInputChange("Austin")
+        await waitUntil { !self.viewModel.citySuggestions.isEmpty }
+
+        let austin = viewModel.citySuggestions[0]
+        XCTAssertEqual(viewModel.choose(austin), .goTo(0))
+        XCTAssertEqual(viewModel.submit(), .goTo(0))
+        XCTAssertEqual(viewModel.target, austin)
+        XCTAssertFalse(viewModel.hasMyLocation)
+    }
+
+    func testAddLocationAddsAnUnsavedPlaceAndSaysHow() async {
+        api.onSearch = { _ in [geocodingResult(name: "Austin", state: "Texas")] }
+        viewModel.open(savedLocations: [])
+
+        viewModel.onCityInputChange("Austin")
+        await waitUntil { !self.viewModel.citySuggestions.isEmpty }
+
+        guard case let .add(location, name, tapped) = viewModel.choose(viewModel.citySuggestions[0]) else {
+            return XCTFail("Expected the row to add Austin")
+        }
+        XCTAssertEqual(location.label, "Austin, Texas, US")
+        XCTAssertEqual(name, "Austin")
+        XCTAssertEqual(tapped.source, .suggestion)
+        guard case let .add(_, _, typed)? = viewModel.submit() else {
+            return XCTFail("Expected the button to add Austin")
+        }
+        XCTAssertEqual(typed.source, .typedMatch)
+        let here = SavedLocation(label: "My Location", latitude: 30.3, longitude: -97.7, isCurrentLocation: true)
+        XCTAssertEqual(viewModel.addingMyLocation(here), .add(here, name: "My Location", CityAdded(source: .myLocation, provider: viewModel.policy.provider)))
+    }
+
     func testRapidTypingOnlySearchesForTheFinalInput() async {
         api.onSearch = { query in [geocodingResult(name: query)] }
 

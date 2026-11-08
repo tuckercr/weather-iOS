@@ -6,7 +6,7 @@ import XCTest
 final class LocationPermissionViewModelTests: XCTestCase {
     func testFetchLocationWithoutPermissionDeniesImmediatelyAndDoesNotQueryLocation() async {
         var locationQueries = 0
-        let viewModel = LocationPermissionViewModel(
+        let viewModel = makeViewModel(
             authorizationStatus: { .denied },
             locationFetcher: {
                 locationQueries += 1
@@ -23,20 +23,20 @@ final class LocationPermissionViewModelTests: XCTestCase {
 
     func testCanAskOnlyWhileIOSWouldStillPrompt() {
         // "Allow Once" and "Ask Next Time" come back as not determined on the next launch.
-        XCTAssertTrue(LocationPermissionViewModel(authorizationStatus: { .notDetermined }).canRequestPermission())
-        XCTAssertFalse(LocationPermissionViewModel(authorizationStatus: { .denied }).canRequestPermission())
-        XCTAssertFalse(LocationPermissionViewModel(authorizationStatus: { .authorizedWhenInUse }).canRequestPermission())
+        XCTAssertTrue(makeViewModel(authorizationStatus: { .notDetermined }).canRequestPermission())
+        XCTAssertFalse(makeViewModel(authorizationStatus: { .denied }).canRequestPermission())
+        XCTAssertFalse(makeViewModel(authorizationStatus: { .authorizedWhenInUse }).canRequestPermission())
     }
 
     func testNotDeterminedCountsAsNoPermission() {
-        let viewModel = LocationPermissionViewModel(authorizationStatus: { .notDetermined })
+        let viewModel = makeViewModel(authorizationStatus: { .notDetermined })
 
         XCTAssertFalse(viewModel.hasLocationPermission())
     }
 
     func testFetchLocationShowsLocatingThenResolvesCurrentLocation() async {
         let gate = Gate<CLLocation?>()
-        let viewModel = LocationPermissionViewModel(
+        let viewModel = makeViewModel(
             authorizationStatus: { .authorizedWhenInUse },
             locationFetcher: { try await gate.value() }
         )
@@ -53,25 +53,24 @@ final class LocationPermissionViewModelTests: XCTestCase {
         )
     }
 
-    func testCurrentPositionWaitsForAFixAndLeavesTheStateAlone() async {
-        let viewModel = LocationPermissionViewModel(
+    func testCurrentPositionWaitsForAFix() async {
+        let repository = LocationRepository(
             authorizationStatus: { .authorizedAlways },
             locationFetcher: { CLLocation(latitude: 36.03, longitude: -84.1) }
         )
 
-        let here = await viewModel.currentPosition()
+        let here = await repository.currentPosition()
 
         XCTAssertEqual(here, SavedLocation(label: "My Location", latitude: 36.03, longitude: -84.1, isCurrentLocation: true))
-        XCTAssertEqual(viewModel.state, .idle)
     }
 
     func testCurrentPositionIsNilWithoutPermissionOrAFix() async {
         var asked = false
-        let denied = LocationPermissionViewModel(
+        let denied = LocationRepository(
             authorizationStatus: { .denied },
             locationFetcher: { asked = true; return CLLocation(latitude: 1, longitude: 2) }
         )
-        let noFix = LocationPermissionViewModel(authorizationStatus: { .authorizedWhenInUse }, locationFetcher: { nil })
+        let noFix = LocationRepository(authorizationStatus: { .authorizedWhenInUse }, locationFetcher: { nil })
 
         let deniedPosition = await denied.currentPosition()
         let noFixPosition = await noFix.currentPosition()
@@ -82,7 +81,7 @@ final class LocationPermissionViewModelTests: XCTestCase {
     }
 
     func testFetchLocationFailsWhenNoCoordinatesAreReturned() async {
-        let viewModel = LocationPermissionViewModel(
+        let viewModel = makeViewModel(
             authorizationStatus: { .authorizedAlways },
             locationFetcher: { nil }
         )
@@ -94,7 +93,7 @@ final class LocationPermissionViewModelTests: XCTestCase {
     }
 
     func testFetchLocationFailsWhenLocationLookupThrows() async {
-        let viewModel = LocationPermissionViewModel(
+        let viewModel = makeViewModel(
             authorizationStatus: { .authorizedWhenInUse },
             locationFetcher: { throw CLError(.locationUnknown) }
         )
@@ -106,10 +105,45 @@ final class LocationPermissionViewModelTests: XCTestCase {
     }
 
     func testOnPermissionDeniedRecordsDeniedState() {
-        let viewModel = LocationPermissionViewModel(authorizationStatus: { .notDetermined })
+        let viewModel = makeViewModel(authorizationStatus: { .notDetermined })
 
         viewModel.onPermissionDenied()
 
         XCTAssertEqual(viewModel.state, .permissionDenied)
+    }
+
+    func testUseMyLocationReportsADenialInsteadOfAskingAgain() {
+        let denied = makeViewModel(authorizationStatus: { .denied })
+        XCTAssertFalse(denied.canOfferMyLocation)
+        denied.useMyLocation()
+        XCTAssertEqual(denied.state, .permissionDenied)
+
+        XCTAssertTrue(makeViewModel(authorizationStatus: { .notDetermined }).canOfferMyLocation)
+    }
+
+    func testUseMyLocationFetchesWhenAllowed() async {
+        let allowed = makeViewModel(
+            authorizationStatus: { .authorizedWhenInUse },
+            locationFetcher: { CLLocation(latitude: 1, longitude: 2) }
+        )
+        allowed.useMyLocation()
+        await waitUntil { if case .located = allowed.state { true } else { false } }
+    }
+
+    func testAskingWithoutAPromptToShowSaysWhetherAccessIsOn() async {
+        let allowed = await LocationRepository(authorizationStatus: { .authorizedWhenInUse }).requestPermission()
+        let denied = await LocationRepository(authorizationStatus: { .denied }).requestPermission()
+
+        XCTAssertTrue(allowed)
+        XCTAssertFalse(denied)
+    }
+
+    private func makeViewModel(
+        authorizationStatus: @escaping () -> CLAuthorizationStatus,
+        locationFetcher: (() async throws -> CLLocation?)? = nil
+    ) -> LocationPermissionViewModel {
+        LocationPermissionViewModel(
+            location: LocationRepository(authorizationStatus: authorizationStatus, locationFetcher: locationFetcher)
+        )
     }
 }

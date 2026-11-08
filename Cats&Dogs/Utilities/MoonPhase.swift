@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 /// The moon's phase in eight steps, worked out from the date alone, so it needs no API. Same
 /// calculation as the Android `MoonPhase`.
@@ -31,9 +31,4 @@ enum MoonPhase: Int, CaseIterable {
     var assetSuffix: String {
         ["new", "waxing_crescent", "first_quarter", "waxing_gibbous", "full", "waning_gibbous", "last_quarter", "waning_crescent"][rawValue]
     }
-}
-
-extension EnvironmentValues {
-    /// Whether the city on screen is south of the equator, where the moon is lit from the other side.
-    @Entry var southernHemisphere = false
 }

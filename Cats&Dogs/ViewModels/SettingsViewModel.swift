@@ -44,25 +44,40 @@ final class SettingsViewModel {
     private(set) var hasMyLocation: Bool
 
     private let preferences: PreferencesStore
-    private let locationStatus: () -> CLAuthorizationStatus
+    private let location: LocationRepository
+    private let locationStatus: @MainActor () -> CLAuthorizationStatus
+    private let addCity: @MainActor (SavedLocation) -> Void
     private let notificationStatus: () async -> UNAuthorizationStatus
     private let requestNotificationAuthorization: () async -> Bool
     private let rescheduleNotifications: () async -> Void
     private let applyUsageSharing: () -> Void
     private let remotelyEnabled: (NotificationKind) -> Bool
+    private let follower: MyLocationFollower
+    private let notificationSettingsLink: NotificationSettingsLink
+    private let sendSamples: () async -> Void
+    /// Turning Follow my location on without "Always" explains first.
+    private(set) var isExplainingFollowMyLocation = false
 
     init(
         preferences: PreferencesStore? = nil,
-        locationStatus: (() -> CLAuthorizationStatus)? = nil,
+        location: LocationRepository? = nil,
+        locationStatus: (@MainActor () -> CLAuthorizationStatus)? = nil,
+        addCity: (@MainActor (SavedLocation) -> Void)? = nil,
         notificationStatus: (() async -> UNAuthorizationStatus)? = nil,
         requestNotificationAuthorization: (() async -> Bool)? = nil,
         rescheduleNotifications: (() async -> Void)? = nil,
         applyUsageSharing: (() -> Void)? = nil,
-        remotelyEnabled: ((NotificationKind) -> Bool)? = nil
+        remotelyEnabled: ((NotificationKind) -> Bool)? = nil,
+        follower: MyLocationFollower? = nil,
+        notificationSettingsLink: NotificationSettingsLink? = nil,
+        sendSamples: (() async -> Void)? = nil
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
-        self.locationStatus = locationStatus ?? { CLLocationManager().authorizationStatus }
+        let location = location ?? .shared
+        self.location = location
+        self.locationStatus = locationStatus ?? { location.authorizationStatus }
+        self.addCity = addCity ?? { _ in }
         self.notificationStatus = notificationStatus ?? {
             await WeatherNotificationScheduler.shared.authorizationStatus()
         }
@@ -76,6 +91,13 @@ final class SettingsViewModel {
             AnalyticsRepository.shared.applyUsageSharingPreference()
         }
         self.remotelyEnabled = remotelyEnabled ?? { RemoteConfigRepository.shared.notificationsEnabled($0) }
+        self.follower = follower ?? .shared
+        self.notificationSettingsLink = notificationSettingsLink ?? .shared
+        self.sendSamples = sendSamples ?? {
+            #if DEBUG
+            await WeatherNotificationScheduler.shared.sendSamples()
+            #endif
+        }
         unitOverride = preferences.unitOverride
         shareUsageStatistics = preferences.shareUsageStatistics
         showWalkCard = preferences.showWalkCard
@@ -150,6 +172,58 @@ final class SettingsViewModel {
         locationAlways = location == .authorizedAlways
         hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
         notificationPermission = PermissionStatus(await notificationStatus())
+    }
+
+    /// "Allow location access": the system prompt, then, once allowed, My Location as a saved city,
+    /// as onboarding adds it: location is only useful as a city.
+    func requestLocationAccess() async {
+        if await location.requestPermission(), let here = await location.currentPosition() {
+            addCity(here)
+        }
+        await refreshPermissions()
+    }
+
+    // MARK: - Follow my location
+
+    /// What the switch shows: on only while it's set and "Always" is allowed.
+    var followsMyLocation: Bool { follower.isFollowing }
+
+    /// Off turns it straight off. On with "Always" already allowed has nothing to ask, so nothing to
+    /// explain; otherwise the explanation shows first (`confirmFollowMyLocation`).
+    func setFollowMyLocation(_ on: Bool) {
+        if !on {
+            follower.turnOff()
+        } else if follower.authorization == .authorizedAlways {
+            follower.turnOn {}
+        } else {
+            isExplainingFollowMyLocation = true
+        }
+    }
+
+    /// "Continue" on the explanation: asks for "Always", which iOS only shows once; after that,
+    /// `openSettings` opens the Settings app.
+    func confirmFollowMyLocation(openSettings: () -> Void) {
+        isExplainingFollowMyLocation = false
+        follower.turnOn(openSettings: openSettings)
+    }
+
+    func dismissFollowMyLocationExplanation() {
+        isExplainingFollowMyLocation = false
+    }
+
+    // MARK: - The Notifications screen from iOS Settings
+
+    /// iOS Settings' link to the app's notification settings was tapped.
+    var notificationSettingsRequested: Bool { notificationSettingsLink.isRequested }
+
+    /// Handled: the root view has gone to the Notifications screen.
+    func notificationSettingsShown() {
+        notificationSettingsLink.isRequested = false
+    }
+
+    /// Debug builds only: one of each notification, a few seconds apart.
+    func sendSampleNotifications() async {
+        await sendSamples()
     }
 
     /// Shows the system prompt. Only meaningful while the status is `.notDetermined`.
