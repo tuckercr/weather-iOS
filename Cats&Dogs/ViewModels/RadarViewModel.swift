@@ -149,4 +149,82 @@ final class RadarViewModel {
         timeline = .idle
         load()
     }
+
+    // MARK: - Playback
+
+    /// The frame on screen.
+    private(set) var frameIndex = 0
+    /// Playing through the frames; scrubbing pauses it.
+    private(set) var playing = true
+    /// The tile playback last started on, so a new location starts playing again.
+    @ObservationIgnored private var playbackTile: RadarTile?
+
+    var frames: [RadarFrame] { timeline.successValue?.frames ?? [] }
+
+    /// The most recent observed frame: "now".
+    var nowIndex: Int { frames.lastIndex { !$0.isForecast } ?? 0 }
+
+    /// The overlay for the frame on screen, once it has loaded.
+    var currentOverlay: CGImage? {
+        frames.indices.contains(frameIndex) ? overlays[frames[frameIndex].path] : nil
+    }
+
+    /// "Now · 7:50 AM" for the latest observed frame, "Forecast · …" for nowcast frames, on the
+    /// city's clock; nil before there are frames.
+    func currentFrameLabel(timeZone: TimeZone) -> String? {
+        guard frames.indices.contains(frameIndex) else { return nil }
+        let frame = frames[frameIndex]
+        let time = WeatherFormatting.epochTime(frame.timeEpochSeconds, timeZone: timeZone)
+        if frameIndex == nowIndex { return "Now · \(time)" }
+        if frame.isForecast { return "Forecast · \(time)" }
+        return time
+    }
+
+    /// The radar card shows `tile` (the city on screen): the frames if they're missing or stale,
+    /// and the map behind them.
+    func show(_ tile: RadarTile) async {
+        load()
+        await loadBaseMap(for: tile)
+    }
+
+    /// The frames for `tile` and the current timeline: playback starts again on "now" (and starts
+    /// playing for a new location), and every frame's overlay is prefetched.
+    func startPlayback(on tile: RadarTile) async {
+        if playbackTile != tile {
+            playbackTile = tile
+            playing = true
+        }
+        frameIndex = nowIndex
+        await loadOverlays(for: tile)
+    }
+
+    /// Steps through the frames while playing, until cancelled or paused.
+    func play() async {
+        guard playing, !frames.isEmpty else { return }
+        while !Task.isCancelled {
+            try? await Task.sleep(for: frameInterval)
+            guard !Task.isCancelled, playing, !frames.isEmpty else { return }
+            frameIndex = (frameIndex + 1) % frames.count
+        }
+    }
+
+    func togglePlaying() {
+        playing.toggle()
+    }
+
+    /// The slider: shows that frame, and pauses.
+    func scrub(to index: Int) {
+        playing = false
+        frameIndex = min(max(index, 0), max(frames.count - 1, 0))
+    }
+
+    /// While the screen stays open, keeps the frames current, only while the radar is in view.
+    /// Until cancelled.
+    func keepCurrent() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: Self.recheckInterval)
+            guard !Task.isCancelled else { return }
+            recheck()
+        }
+    }
 }

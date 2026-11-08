@@ -22,13 +22,15 @@ struct AddLocationView: View {
         onClose: @escaping () -> Void,
         geoViewModel: GeoLocationViewModel? = nil
     ) {
+        self.savedLocations = savedLocations
         self.onAdd = onAdd
         self.onGoTo = onGoTo
         self.onClose = onClose
-        let viewModel = geoViewModel ?? GeoLocationViewModel()
-        viewModel.open(savedLocations: savedLocations)
-        _geoViewModel = State(initialValue: viewModel)
+        _geoViewModel = State(initialValue: geoViewModel ?? GeoLocationViewModel())
     }
+
+    /// Opened when the screen appears, not when the view is made: SwiftUI makes views often.
+    private let savedLocations: [SavedLocation]
 
     private var query: String {
         geoViewModel.cityInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -38,8 +40,7 @@ struct AddLocationView: View {
 
     /// Offered while My Location isn't saved and access is on or can still be asked for.
     private var canAddMyLocation: Bool {
-        !geoViewModel.hasMyLocation
-            && (locationViewModel.hasLocationPermission() || locationViewModel.canRequestPermission())
+        !geoViewModel.hasMyLocation && locationViewModel.canOfferMyLocation
     }
 
     var body: some View {
@@ -87,7 +88,10 @@ struct AddLocationView: View {
                 }
             }
         }
-        .onAppear { searchFocused = true }
+        .onAppear {
+            geoViewModel.open(savedLocations: savedLocations)
+            searchFocused = true
+        }
         // The screen stays open until the fix arrives, then adds it and closes.
         .onChange(of: locationViewModel.state) { _, state in
             if case .located(let location) = state {
@@ -131,14 +135,8 @@ struct AddLocationView: View {
 
     private var myLocationRow: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Button {
-                if locationViewModel.hasLocationPermission() {
-                    locationViewModel.fetchLocation()
-                } else {
-                    // Fetches once allowed; a "Don't Allow" hides the row.
-                    locationViewModel.requestPermission()
-                }
-            } label: {
+            // Fetches once allowed; a "Don't Allow" hides the row.
+            Button(action: locationViewModel.useMyLocation) {
                 HStack(spacing: 10) {
                     if locationViewModel.state == .locating {
                         ProgressView()

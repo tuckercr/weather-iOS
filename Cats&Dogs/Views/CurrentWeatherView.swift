@@ -12,23 +12,23 @@ struct CurrentWeatherView: View {
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
-    /// What the screen does when: refreshes, My Location and the notification city.
-    @State private var viewModel: CurrentWeatherViewModel
+    /// What the screen does when: refreshes, My Location and the notification city. Made once, by
+    /// RootView: a view's initialiser runs on every redraw of its parent.
+    let viewModel: CurrentWeatherViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
 
     init(
-        cityListViewModel: CityListViewModel,
-        weatherViewModel: WeatherForecastViewModel,
+        viewModel: CurrentWeatherViewModel,
         settingsViewModel: SettingsViewModel,
         onOpenSettings: @escaping () -> Void
     ) {
-        self.cityListViewModel = cityListViewModel
-        self.weatherViewModel = weatherViewModel
+        self.viewModel = viewModel
+        cityListViewModel = viewModel.cityList
+        weatherViewModel = viewModel.weather
         self.settingsViewModel = settingsViewModel
         self.onOpenSettings = onOpenSettings
-        _viewModel = State(initialValue: CurrentWeatherViewModel(cityList: cityListViewModel, weather: weatherViewModel))
     }
 
     var body: some View {

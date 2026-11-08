@@ -114,6 +114,39 @@ final class RadarTests: XCTestCase {
         XCTAssertEqual(paths.count, 3)
     }
 
+    func testPlaybackStartsOnNowAndScrubbingPausesIt() async {
+        let timeline = RadarTimeline(host: "https://example.com", frames: [
+            RadarFrame(timeEpochSeconds: 0, path: "/1", isForecast: false),
+            RadarFrame(timeEpochSeconds: 600, path: "/2", isForecast: false),
+            RadarFrame(timeEpochSeconds: 1200, path: "/3", isForecast: true),
+        ])
+        let viewModel = RadarViewModel(
+            frameInterval: .milliseconds(1),
+            fetchTimeline: { timeline },
+            loadBaseMap: { _ in nil },
+            loadOverlay: { _, _, _ in nil }
+        )
+        let tile = RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom)
+        await viewModel.show(tile)
+        await waitUntil { viewModel.timeline.successValue != nil }
+        await viewModel.startPlayback(on: tile)
+
+        XCTAssertEqual(viewModel.frameIndex, 1, "The latest observed frame")
+        XCTAssertTrue(viewModel.playing)
+        let utc = TimeZone(identifier: "UTC")!
+        XCTAssertTrue(viewModel.currentFrameLabel(timeZone: utc)?.hasPrefix("Now · ") == true)
+
+        viewModel.scrub(to: 9)
+        XCTAssertFalse(viewModel.playing)
+        XCTAssertEqual(viewModel.frameIndex, 2, "Kept to the frames there are")
+        XCTAssertTrue(viewModel.currentFrameLabel(timeZone: utc)?.hasPrefix("Forecast · ") == true)
+
+        viewModel.togglePlaying()
+        let player = Task { await viewModel.play() }
+        await waitUntil { viewModel.frameIndex == 0 }
+        player.cancel()
+    }
+
     func testANewTileStartsTheOverlaysAndMapFromScratch() async {
         let image = pixel()
         let viewModel = RadarViewModel(

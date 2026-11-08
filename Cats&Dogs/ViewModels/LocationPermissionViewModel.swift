@@ -64,6 +64,22 @@ final class LocationPermissionViewModel: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// Whether "Use my location" / "Add My Location" can do anything: access is on, or iOS can still ask.
+    var canOfferMyLocation: Bool { hasLocationPermission() || canRequestPermission() }
+
+    /// "Use my location" and "Add My Location": fetches the position when allowed, asks when iOS still
+    /// can (and fetches once allowed), and otherwise reports it's denied, since iOS won't ask again.
+    /// The outcome arrives in `state`.
+    func useMyLocation() {
+        if hasLocationPermission() {
+            fetchLocation()
+        } else if isPermissionDenied() {
+            state = .permissionDenied
+        } else {
+            requestPermission()
+        }
+    }
+
     func requestPermission() {
         awaitingAuthorization = true
         manager.requestWhenInUseAuthorization()

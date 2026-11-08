@@ -112,4 +112,22 @@ final class LocationPermissionViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.state, .permissionDenied)
     }
+
+    func testUseMyLocationReportsADenialInsteadOfAskingAgain() {
+        let denied = LocationPermissionViewModel(authorizationStatus: { .denied })
+        XCTAssertFalse(denied.canOfferMyLocation)
+        denied.useMyLocation()
+        XCTAssertEqual(denied.state, .permissionDenied)
+
+        XCTAssertTrue(LocationPermissionViewModel(authorizationStatus: { .notDetermined }).canOfferMyLocation)
+    }
+
+    func testUseMyLocationFetchesWhenAllowed() async {
+        let allowed = LocationPermissionViewModel(
+            authorizationStatus: { .authorizedWhenInUse },
+            locationFetcher: { CLLocation(latitude: 1, longitude: 2) }
+        )
+        allowed.useMyLocation()
+        await waitUntil { if case .located = allowed.state { true } else { false } }
+    }
 }

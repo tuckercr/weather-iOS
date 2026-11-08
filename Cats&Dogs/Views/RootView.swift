@@ -9,7 +9,8 @@ private enum AppScreen: Hashable {
 struct RootView: View {
     @State private var welcomeViewModel: WelcomeViewModel
     @State private var cityListViewModel: CityListViewModel
-    @State private var weatherViewModel = WeatherForecastViewModel()
+    @State private var weatherViewModel: WeatherForecastViewModel
+    @State private var currentWeatherViewModel: CurrentWeatherViewModel
     @State private var settingsViewModel: SettingsViewModel
     @State private var path: [AppScreen] = []
     @State private var updatePrompt = UpdatePromptViewModel()
@@ -22,8 +23,11 @@ struct RootView: View {
         // location to the city list.
         let settings = SettingsViewModel()
         let cityList = CityListViewModel()
+        let weather = WeatherForecastViewModel()
         _settingsViewModel = State(initialValue: settings)
         _cityListViewModel = State(initialValue: cityList)
+        _weatherViewModel = State(initialValue: weather)
+        _currentWeatherViewModel = State(initialValue: CurrentWeatherViewModel(cityList: cityList, weather: weather))
         _welcomeViewModel = State(initialValue: WelcomeViewModel(
             onDogAnswered: settings.setShowWalkCard,
             onLocationChosen: { cityList.addLocation($0) }
@@ -56,8 +60,7 @@ struct RootView: View {
                 case .done:
                     NavigationStack(path: $path) {
                         CurrentWeatherView(
-                            cityListViewModel: cityListViewModel,
-                            weatherViewModel: weatherViewModel,
+                            viewModel: currentWeatherViewModel,
                             settingsViewModel: settingsViewModel,
                             onOpenSettings: {
                                 weatherViewModel.logSettingsOpened()
