@@ -5,7 +5,7 @@ import XCTest
 final class PetWeatherThresholdsTests: XCTestCase {
     func testNoValuesGivesTheStandardThresholds() {
         XCTAssertEqual(PetWeatherThresholds.validated(), .standard)
-        XCTAssertEqual(PetWeatherThresholds.standard.hotPavementC, 52)
+        XCTAssertEqual(PetWeatherThresholds.standard.hotPavementC, 46)
         XCTAssertEqual(PetWeatherThresholds.standard.maxRainChance, 30)
         XCTAssertEqual(PetWeatherThresholds.standard.comfortC, 3 ... 27)
         XCTAssertEqual(PetWeatherThresholds.standard.walkHours, 7 ... 20)
@@ -69,8 +69,8 @@ final class PetWeatherThresholdsTests: XCTestCase {
         XCTAssertEqual(thresholds.petColdC, 10)
     }
 
-    func testPavementTileThresholdsDefaultTo45And0AndUseInRangeValues() {
-        XCTAssertEqual(PetWeatherThresholds.standard.warmPavementC, 45)
+    func testPavementTileThresholdsDefaultTo40And0AndUseInRangeValues() {
+        XCTAssertEqual(PetWeatherThresholds.standard.warmPavementC, 40)
         XCTAssertEqual(PetWeatherThresholds.standard.icyPavementC, 0)
 
         let thresholds = PetWeatherThresholds.validated(warmPavementC: 40, icyPavementC: -5)
@@ -81,11 +81,11 @@ final class PetWeatherThresholdsTests: XCTestCase {
     }
 
     func testAWarmPavementThresholdAtOrAboveTheHotOneMovesBelowItLeavingTheHotOneAlone() {
-        // walk_hot_pavement_c = 44 is valid; the standard warm threshold of 45 would never show.
-        let thresholds = PetWeatherThresholds.validated(hotPavementC: 44)
+        // walk_hot_pavement_c = 40 is valid; the standard warm threshold of 40 would never show.
+        let thresholds = PetWeatherThresholds.validated(hotPavementC: 40)
 
-        XCTAssertEqual(thresholds.hotPavementC, 44)
-        XCTAssertEqual(thresholds.warmPavementC, 37)
+        XCTAssertEqual(thresholds.hotPavementC, 40)
+        XCTAssertEqual(thresholds.warmPavementC, 33)
     }
 
     func testDangerousPavementDefaultsTo135FAndUsesInRangeValues() {

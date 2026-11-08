@@ -231,21 +231,21 @@ final class WalkAdvisorTests: XCTestCase {
     }
 
     func testImperialPavementIsComparedInCelsius() {
-        // 110F is about 43C: under the 45C warm limit, so a warm afternoon is still walkable.
+        // 100F is about 38C: under the 40C warm limit, so a warm afternoon is still walkable.
         let advice = WalkAdvisor.advice(
             currentFeelsLikeC: 26,
-            upcoming: [slot("2 PM", 79, rain: 0, units: .imperial, pavement: 110)]
+            upcoming: [slot("2 PM", 79, rain: 0, units: .imperial, pavement: 100)]
         )
         XCTAssertEqual(advice?.rating, .great)
     }
 
     func testPavementThatIsGettingHotMakesNowOnlyOkayPointingAtACoolerHour() {
-        // 49C is between the 45C warm and 52C hot limits.
+        // 43C is between the 40C warm and 46C hot limits.
         let advice = WalkAdvisor.advice(
             currentFeelsLikeC: 24,
-            upcoming: [slot("2 PM", 24, rain: 0, pavement: 49), slot("6 PM", 22, rain: 0, pavement: 35)]
+            upcoming: [slot("2 PM", 24, rain: 0, pavement: 43), slot("6 PM", 22, rain: 0, pavement: 35)]
         )
-        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM", pavementNow: 49))
+        XCTAssertEqual(advice?.withoutCheck, WalkAdvice(rating: .okay, bestTimeLabel: "6 PM", pavementNow: 43))
         XCTAssertEqual(advice?.now.reason, .pavement(.warm))
     }
 
@@ -279,8 +279,10 @@ final class WalkAdvisorTests: XCTestCase {
         XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots)?.rating, .great)
         XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 18, upcoming: slots, thresholds: strict)?.bestTimeLabel, "6 PM")
 
-        let lowerPavementLimit = PetWeatherThresholds.validated(hotPavementC: 44)
-        let warmPavement = [slot("3 PM", 20, rain: 0, pavement: 44.5)]
+        var lowerPavementLimit = PetWeatherThresholds.standard
+        lowerPavementLimit.hotPavementC = 37
+        lowerPavementLimit.warmPavementC = 33
+        let warmPavement = [slot("3 PM", 20, rain: 0, pavement: 38)]
         XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: warmPavement)?.rating, .great)
         XCTAssertEqual(WalkAdvisor.advice(currentFeelsLikeC: 20, upcoming: warmPavement, thresholds: lowerPavementLimit)?.rating, .pawsHot)
     }

@@ -3,7 +3,7 @@ import Foundation
 /// The judgement calls behind the pets' moods and the walk card, tunable from Remote Config. All
 /// temperatures are Celsius whatever units the user picked.
 struct PetWeatherThresholds: Equatable {
-    /// Asphalt this hot burns paws in under a minute (about 125 F).
+    /// Asphalt this hot can burn paws (about 115 F).
     var hotPavementC: Double
     /// A slot with this chance of rain or more isn't suggested for a walk.
     var maxRainChance: Int
@@ -13,7 +13,7 @@ struct PetWeatherThresholds: Equatable {
     var petHotC: Double
     var petColdC: Double
     /// Pavement at or above this (and below `hotPavementC`) is getting hot: keep walks short.
-    var warmPavementC: Double = 45
+    var warmPavementC: Double = 40
     /// Pavement below this may be icy or salted.
     var icyPavementC: Double = 0
     /// Pavement at or above this (about 135 F) is dangerously hot: worse than `hotPavementC`.
@@ -28,7 +28,7 @@ struct PetWeatherThresholds: Equatable {
     var airQualityEnabled = true
 
     static let standard = PetWeatherThresholds(
-        hotPavementC: 52,
+        hotPavementC: 46,
         maxRainChance: 30,
         comfortC: 3 ... 27,
         walkHours: 7 ... 20,
