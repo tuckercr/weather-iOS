@@ -2,74 +2,47 @@ import SwiftUI
 
 /// Today's details as a grid of tiles: feels like, wind, humidity, pavement, UV and air quality in pairs (an odd
 /// one out takes the full width), then daylight (with the UV index, when UV has no tile) and Misty's View (the
-/// sky and how far she can see) across the full width. Each tile has a plain fact under its number; only Fluff
-/// Factor, Paw Check, UV, Air Quality and Misty's View speak for the pets. Remote Config can hide any of them. Same layout as Android's `TodayTiles`.
+/// sky and how far she can see) across the full width. Which tiles show and what each says comes worked out in
+/// `TodayTilesState`; this lays them out and colours them. Same layout as Android's `TodayTiles`.
 struct TodayTiles: View {
-    let weather: CurrentWeather
-    /// True when `weather` is the cached forecast's current hour standing in for an old reading:
-    /// there's no cloud cover or visibility to show.
-    let showingForecast: Bool
-    /// The hour in progress's pavement estimate, in `weather`'s units; nil when not forecast.
-    let pavementNow: Double?
-    /// Rain or snow lately, or snow lying: below freezing the pavement tile warns of ice.
-    let groundWet: Bool
-    /// Today's UV index, or nil after dark or when not forecast.
-    let uvIndex: Double?
-    /// Today's hour with the highest UV, for the UV tile's peak.
-    var uvPeak: HourlySlot? = nil
-    /// Nil until it's fetched, or when it can't be.
-    let airQuality: AirQuality?
-    /// Air quality speaks of walks with a dog, of people without one.
-    let hasDog: Bool
-    let now: Date
-    let thresholds: PetWeatherThresholds
-    let distanceInMiles: Bool
-    var switches = TodayTileSwitches()
+    let state: TodayTilesState
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let gap: CGFloat = 8
 
-    private var showsDaylight: Bool {
-        switches.daylight && weather.sunriseEpoch != nil && weather.sunsetEpoch != nil
-    }
-
-    /// UV gets its own tile when switched on, or when there's no Daylight tile to carry it.
-    private var showsUVTile: Bool { uvIndex != nil && (switches.uv || !showsDaylight) }
-
-    private var smallTiles: [AnyView] {
-        var tiles: [AnyView] = []
-        if switches.feelsLike { tiles.append(AnyView(feelsLike)) }
-        if switches.wind { tiles.append(AnyView(wind)) }
-        if switches.humidity { tiles.append(AnyView(humidity)) }
-        if switches.pawCheck, let pavementNow { tiles.append(AnyView(pavement(pavementNow))) }
-        if showsUVTile, let uvIndex { tiles.append(AnyView(uv(uvIndex))) }
-        if let airQuality { tiles.append(AnyView(air(airQuality))) }
-        return tiles
-    }
-
     var body: some View {
         // Two tiles side by side leave too little room for accessibility text sizes, so those get one
         // per row.
         let perRow = dynamicTypeSize.isAccessibilitySize ? 1 : 2
         VStack(spacing: Self.gap) {
-            let tiles = smallTiles
+            let tiles = state.small
             // An odd tile out (usually Air quality, when Paw check is showing) takes the full width
             // rather than leaving a gap beside it.
             let paired = tiles.count.isMultiple(of: perRow) ? tiles.count : tiles.count - 1
             EqualTileGrid(columns: perRow, spacing: Self.gap) {
                 ForEach(0 ..< paired, id: \.self) { index in
-                    tiles[index]
+                    tile(tiles[index])
                 }
             }
             if paired < tiles.count {
-                tiles[paired]
+                tile(tiles[paired])
             }
-            if showsDaylight, let sunrise = weather.sunriseEpoch, let sunset = weather.sunsetEpoch {
-                daylight(sunrise: sunrise, sunset: sunset)
-            }
-            if switches.sky { sky }
+            if let daylight = state.daylight { self.daylight(daylight) }
+            if let sky = state.sky { self.sky(sky) }
+        }
+    }
+
+    @ViewBuilder
+    private func tile(_ tile: TodayTile) -> some View {
+        switch tile {
+        case let .feelsLike(tile): feelsLike(tile)
+        case let .wind(tile): wind(tile)
+        case let .fluff(tile): fluff(tile)
+        case let .pawCheck(tile): pavement(tile)
+        case let .uv(tile): uv(tile)
+        case let .air(tile): air(tile)
         }
     }
 
@@ -77,27 +50,22 @@ struct TodayTiles: View {
 
     /// The feels-like temperature with its band ("Hot"), the band bar, and how far it is from the
     /// actual temperature.
-    private var feelsLike: some View {
-        let feelsLikeC = weather.units.toCelsius(weather.feelsLike)
-        let band = TodayDetails.feelsLikeBand(feelsLikeC: feelsLikeC, thresholds: thresholds)
-        return Tile(icon: "thermometer.medium", label: "Feels Like") {
+    private func feelsLike(_ tile: FeelsLikeTile) -> some View {
+        Tile(icon: "thermometer.medium", label: "Feels Like") {
             // The same size as the other tiles' values, as Air Quality has its band beside it.
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                TileValue(WeatherFormatting.temperature(weather.feelsLike, units: weather.units))
+                TileValue(tile.value)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                Text(band.name)
+                Text(tile.band.name)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(feelsLikeTint(band))
+                    .foregroundStyle(feelsLikeTint(tile.band))
                     .lineLimit(1)
             }
-            BandBar(
-                bands: Self.feelsLikeBands(dark: colorScheme == .dark),
-                position: TodayDetails.feelsLikeBarPosition(feelsLikeC: feelsLikeC, thresholds: thresholds)
-            )
-            .padding(.vertical, 2)
-            .accessibilityHidden(true)
-            TileNote(TodayDetails.feelsLikeGap(feelsLike: weather.feelsLike, temperature: weather.temperature))
+            BandBar(bands: Self.feelsLikeBands(dark: colorScheme == .dark), position: tile.barPosition)
+                .padding(.vertical, 2)
+                .accessibilityHidden(true)
+            TileNote(tile.note)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
@@ -121,24 +89,18 @@ struct TodayTiles: View {
 
     /// The speed beside a windsock whose droop shows the strength, with where the wind comes from
     /// and any gusts that stand out underneath.
-    private var wind: some View {
-        let note = TodayDetails.windNote(
-            speed: weather.windSpeed,
-            deg: weather.windDeg,
-            gust: weather.windGust,
-            units: weather.units
-        )
-        return Tile(icon: "wind", label: "Wind") {
+    private func wind(_ tile: WindTile) -> some View {
+        Tile(icon: "wind", label: "Wind") {
             HStack(alignment: .center, spacing: 8) {
-                TileValue(WeatherFormatting.wind(weather.windSpeed, units: weather.units))
+                TileValue(tile.value)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 Spacer(minLength: 0)
-                Windsock(droopDegrees: TodayDetails.windsockDroopDegrees(speed: weather.windSpeed, units: weather.units))
+                Windsock(droopDegrees: tile.droopDegrees)
                     .frame(width: 40, height: 40)
                     .accessibilityHidden(true)
             }
-            TileNote(note.text, spoken: note.spoken)
+            TileNote(tile.note, spoken: tile.spokenNote)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
@@ -146,19 +108,14 @@ struct TodayTiles: View {
 
     /// Fluff Factor: the humidity with the dew point under it, beside Misty, whose fur fluffs up as
     /// the dew point rises, and her line about it.
-    private var humidity: some View {
-        let dewC = TodayDetails.dewPointC(
-            temperatureC: weather.units.toCelsius(weather.temperature),
-            humidityPercent: weather.humidityPercent
-        )
-        let level = TodayDetails.fluffLevel(dewPointC: dewC, humidityPercent: weather.humidityPercent)
-        return Tile(icon: "drop.fill", label: "Fluff Factor") {
+    private func fluff(_ tile: FluffTile) -> some View {
+        Tile(icon: "drop.fill", label: "Fluff Factor") {
             HStack(alignment: .center, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
-                    TileValue("\(weather.humidityPercent)%")
-                        .accessibilityLabel("Humidity \(weather.humidityPercent)%")
-                    if let dewC {
-                        Text("Dew point \(WeatherFormatting.temperature(weather.units.fromCelsius(dewC), units: weather.units, showsUnit: false))")
+                    TileValue("\(tile.humidityPercent)%")
+                        .accessibilityLabel("Humidity \(tile.humidityPercent)%")
+                    if let dewPoint = tile.dewPoint {
+                        Text(dewPoint)
                             .font(.footnote)
                             .foregroundStyle(Color.secondaryText)
                             .lineLimit(1)
@@ -166,30 +123,23 @@ struct TodayTiles: View {
                     }
                 }
                 Spacer(minLength: 0)
-                FluffyMisty(level: level)
+                FluffyMisty(level: tile.level)
                     .frame(width: 48, height: 42)
                     .accessibilityHidden(true)
             }
-            TileNote(TodayDetails.fluffLine(level, hasDog: hasDog))
+            TileNote(tile.line)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
     }
 
-    private func pavement(_ pavement: Double) -> some View {
-        let band = TodayDetails.pavementBand(
-            pavementC: weather.units.toCelsius(pavement),
-            groundWet: groundWet,
-            feelsLikeC: weather.units.toCelsius(weather.feelsLike),
-            thresholds: thresholds
-        )
-        return Tile(icon: "pawprint.fill", label: "Paw Check") {
-            // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
-            TileValue("About \(WeatherFormatting.temperature(pavement, units: weather.units))")
+    private func pavement(_ tile: PawCheckTile) -> some View {
+        Tile(icon: "pawprint.fill", label: "Paw Check") {
+            TileValue(tile.value)
             // The note says it in words.
-            PawScale(step: band.pawScaleStep)
+            PawScale(step: tile.band.pawScaleStep)
                 .accessibilityHidden(true)
-            TileNote(band.line, color: pavementTint(band))
+            TileNote(tile.band.line, color: pavementTint(tile.band))
         }
     }
 
@@ -205,38 +155,29 @@ struct TodayTiles: View {
         return Color(hex: colorScheme == .dark ? dark : light)
     }
 
-    private func air(_ air: AirQuality) -> some View {
+    private func air(_ tile: AirTile) -> some View {
         Tile(icon: "aqi.medium", label: "Air Quality") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                TileValue("\(air.index)")
-                Text(air.bandName)
+                TileValue("\(tile.index)")
+                Text(tile.bandName)
                     .font(.subheadline)
                     .foregroundStyle(Color.secondaryText)
             }
-            BandBar(bands: BandBar.airQuality, position: air.barPosition)
+            BandBar(bands: BandBar.airQuality, position: tile.barPosition)
                 .padding(.vertical, 2)
                 .accessibilityHidden(true)
             // The pollutant behind it is for VoiceOver only: another line would stretch every tile
             // in the grid, which all take the tallest one's height.
-            let line = air.line(hasDog: hasDog, thresholds: thresholds)
-            TileNote(
-                line,
-                color: airTint(band: air.band),
-                spoken: [air.pollutantLine, line].compactMap(\.self).joined(separator: ". ")
-            )
+            TileNote(tile.line, color: airTint(tile.tone), spoken: tile.spokenLine)
         }
     }
 
-    /// The walk card's shades again: green for good air, amber for so-so, red where the walk rules
-    /// say potty breaks only, or without a dog (whose line goes by band) from Unhealthy up.
-    private func airTint(band: Int) -> Color {
-        let bad = hasDog ? WalkConditions.airLevel(band: band, thresholds) >= .pottyOnly : band >= 3
-        let (light, dark): (UInt32, UInt32) = if bad {
-            (0x791F1F, 0xF7C1C1)
-        } else if band == 0 {
-            (0x27500A, 0xC0DD97)
-        } else {
-            (0x633806, 0xFAC775)
+    /// The walk card's shades again: green for good air, amber for so-so, red for bad.
+    private func airTint(_ tone: AirTile.Tone) -> Color {
+        let (light, dark): (UInt32, UInt32) = switch tone {
+        case .bad: (0x791F1F, 0xF7C1C1)
+        case .good: (0x27500A, 0xC0DD97)
+        case .soSo: (0x633806, 0xFAC775)
         }
         return Color(hex: colorScheme == .dark ? dark : light)
     }
@@ -245,45 +186,28 @@ struct TodayTiles: View {
         Color(hex: colorScheme == .dark ? 0xC0DD97 : 0x27500A)
     }
 
-    private func uv(_ uv: Double) -> some View {
-        let line = TodayDetails.uvLine(peak: uvPeak, now: now, hasDog: hasDog)
-        return Tile(icon: "sun.max.fill", label: "UV Index") {
+    private func uv(_ tile: UVTile) -> some View {
+        Tile(icon: "sun.max.fill", label: "UV Index") {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
-                TileValue("\(Int(uv.rounded()))")
-                Text(WeatherFormatting.uvLevel(uv))
+                TileValue("\(tile.value)")
+                Text(tile.level)
                     .font(.subheadline)
                     .foregroundStyle(Color.secondaryText)
             }
-            if !line.text.isEmpty {
-                TileNote(line.text, color: line.isPetLine ? petLineTint : .secondaryText)
+            if !tile.line.isEmpty {
+                TileNote(tile.line, color: tile.isPetLine ? petLineTint : .secondaryText)
             }
         }
     }
 
-    private func daylight(sunrise: Int, sunset: Int) -> some View {
-        let state = TodayDetails.daylight(now: Int(now.timeIntervalSince1970), sunrise: sunrise, sunset: sunset)
-        let fraction: Double
-        let summary: String
-        switch state {
-        case .beforeSunrise(let secondsUntil):
-            fraction = 0
-            summary = "Sunrise in \(TodayDetails.duration(seconds: secondsUntil))"
-        case .daytime(let secondsLeft, let dayFraction):
-            fraction = dayFraction
-            summary = "\(TodayDetails.duration(seconds: secondsLeft)) left"
-        case .afterSunset:
-            fraction = 1
-            summary = "The sun has set"
-        }
-        let isUp = if case .daytime = state { true } else { false }
-        let uvNote = showsUVTile ? nil : uvIndex.map { "UV \(Int($0.rounded())) · \(WeatherFormatting.uvLevel($0))" }
-        return Tile(icon: "sun.horizon.fill", label: "Daylight", trailing: uvNote) {
-            SunArc(fraction: fraction, isUp: isUp)
+    private func daylight(_ tile: DaylightTile) -> some View {
+        Tile(icon: "sun.horizon.fill", label: "Daylight", trailing: tile.uvNote) {
+            SunArc(fraction: tile.fraction, isUp: tile.isUp)
                 .frame(height: 44)
                 .accessibilityHidden(true)
-            let sunriseTime = TileNote(WeatherFormatting.epochTime(sunrise, timeZone: weather.timeZone)).fixedSize()
-            let sunsetTime = TileNote(WeatherFormatting.epochTime(sunset, timeZone: weather.timeZone)).fixedSize()
-            let summaryText = Text(summary).font(.subheadline.weight(.medium))
+            let sunriseTime = TileNote(tile.sunrise).fixedSize()
+            let sunsetTime = TileNote(tile.sunset).fixedSize()
+            let summaryText = Text(tile.summary).font(.subheadline.weight(.medium))
             if dynamicTypeSize.isAccessibilitySize {
                 // No room for all three on one line: the summary goes above the times.
                 summaryText
@@ -304,28 +228,12 @@ struct TodayTiles: View {
         }
     }
 
-    private var sky: some View {
-        let sky = TodayDetails.skyCondition(
-            conditionMain: weather.conditionMain,
-            cloudPercent: showingForecast ? nil : weather.cloudPercent,
-            iconCode: weather.iconCode
-        )
-        let visibility = showingForecast ? nil : weather.visibilityMeters
-        let band = visibility.map { TodayDetails.visibilityBand(meters: $0) }
-        let headline: String = if let visibility, let band {
-            if let distance = TodayDetails.visibilityDistance(meters: visibility, inMiles: distanceInMiles) {
-                "\(sky.rawValue) · \(band.name), \(distance)"
-            } else {
-                "\(sky.rawValue) · \(band.name)"
-            }
-        } else {
-            sky.rawValue
-        }
-        return Tile(icon: "eye.fill", label: "Misty's View") {
-            Text(TodayDetails.keepUnitsTogether(headline))
+    private func sky(_ tile: SkyTile) -> some View {
+        Tile(icon: "eye.fill", label: "Misty's View") {
+            Text(tile.headline)
                 .font(.brand(.headline))
-            if let band {
-                TileNote(band.mistyLine, color: petLineTint)
+            if let mistyLine = tile.mistyLine {
+                TileNote(mistyLine, color: petLineTint)
             }
         }
     }

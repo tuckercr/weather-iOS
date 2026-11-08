@@ -2,9 +2,6 @@ import SwiftUI
 
 // What the weather screen hands down to the views inside it.
 extension EnvironmentValues {
-    /// Whether distances (visibility) read in miles rather than kilometres.
-    @Entry var distanceInMiles = false
-
     /// Whether the city on screen is south of the equator, where the moon is lit from the other side.
     @Entry var southernHemisphere = false
 

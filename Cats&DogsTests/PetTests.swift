@@ -516,11 +516,11 @@ final class WalkAdvisorTests: XCTestCase {
     }
 
     func testTheCardSaysWhatComesNext() {
-        XCTAssertEqual(WalkCard.outlookLine(.until(time: "5 PM", change: .storms)), "Good until 5 PM, then storms.")
-        XCTAssertEqual(WalkCard.outlookLine(.until(time: "5 PM", change: .maybeRain)), "Good until 5 PM, then maybe rain.")
-        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 0)), "Getting dark soon.")
-        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 1)), "Gets dark in about an hour.")
-        XCTAssertEqual(WalkCard.outlookLine(.darkIn(hours: 3)), "Gets dark in about 3 hours.")
+        XCTAssertEqual(WalkCardContent.outlookLine(.until(time: "5 PM", change: .storms)), "Good until 5 PM, then storms.")
+        XCTAssertEqual(WalkCardContent.outlookLine(.until(time: "5 PM", change: .maybeRain)), "Good until 5 PM, then maybe rain.")
+        XCTAssertEqual(WalkCardContent.outlookLine(.darkIn(hours: 0)), "Getting dark soon.")
+        XCTAssertEqual(WalkCardContent.outlookLine(.darkIn(hours: 1)), "Gets dark in about an hour.")
+        XCTAssertEqual(WalkCardContent.outlookLine(.darkIn(hours: 3)), "Gets dark in about 3 hours.")
     }
 
     private func slot(

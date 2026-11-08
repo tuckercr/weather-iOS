@@ -148,7 +148,7 @@ final class WalkCheckTests: XCTestCase {
     }
 
     private func caption(_ slots: [HourlySlot], conditionNow: String? = nil) -> String? {
-        advice(slots, conditionNow: conditionNow).flatMap(WalkCard.caption)
+        advice(slots, conditionNow: conditionNow).flatMap(WalkCardContent.caption)
     }
 
     // MARK: - The hero's caption

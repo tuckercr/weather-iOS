@@ -106,7 +106,6 @@ struct CurrentWeatherView: View {
         }
         // The moon (hero scene and night icons) is lit from the other side down south.
         .environment(\.southernHemisphere, isSouthernHemisphere)
-        .environment(\.distanceInMiles, WeatherFormatting.usesMiles(override: unitOverride))
     }
 
     private var isSouthernHemisphere: Bool {
@@ -181,7 +180,10 @@ struct CurrentWeatherView: View {
     private var weatherContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                switch weatherViewModel.screen(hasDog: showWalkCard) {
+                switch weatherViewModel.screen(
+                    hasDog: showWalkCard,
+                    distanceInMiles: WeatherFormatting.usesMiles(override: unitOverride)
+                ) {
                 case .loading:
                     HStack {
                         Spacer()
@@ -231,7 +233,6 @@ struct CurrentWeatherView: View {
 }
 
 private struct CurrentWeatherContent: View {
-    @Environment(\.distanceInMiles) private var distanceInMiles
     /// Everything shown, worked out by the view model at its clock.
     let state: WeatherScreenState
     let location: SavedLocation?
@@ -294,8 +295,8 @@ private struct CurrentWeatherContent: View {
         if showNextRain, let nextRain = state.nextRain {
             NextRainLine(nextRain: nextRain, timeZone: weather.timeZone)
         }
-        if state.showsWalkCard, let walkAdvice = state.walkAdvice {
-            WalkCard(advice: walkAdvice)
+        if let walkCard = state.walkCard {
+            WalkCard(content: walkCard)
         }
     }
 
@@ -396,20 +397,7 @@ private struct CurrentWeatherContent: View {
     }
 
     private var detailsCard: some View {
-        TodayTiles(
-            weather: state.weatherToday,
-            showingForecast: state.showingForecast,
-            pavementNow: state.tiles.pavementNow,
-            groundWet: state.tiles.groundWet,
-            uvIndex: state.tiles.uvIndex,
-            uvPeak: state.tiles.uvPeak,
-            airQuality: state.tiles.airQuality,
-            hasDog: state.hasDog,
-            now: state.now,
-            thresholds: state.thresholds,
-            distanceInMiles: distanceInMiles,
-            switches: state.tileSwitches
-        )
+        TodayTiles(state: state.todayTiles)
     }
 }
 

@@ -15,6 +15,8 @@ struct WeatherScreenConfig {
     var weekForecastEnabled = true
     var walkCardEnabled = true
     var todayTiles = TodayTileSwitches()
+    /// Visibility in miles rather than kilometres: the user's units, not Remote Config's.
+    var distanceInMiles = false
 
     static var live: WeatherScreenConfig {
         let config = RemoteConfigRepository.shared
@@ -150,9 +152,11 @@ struct WeatherScreenState {
     /// nothing.
     let walkAdvice: WalkAdvice?
     let showsWalkCard: Bool
+    /// What the walk card says; nil when it doesn't show.
+    let walkCard: WalkCardContent?
     let tiles: Tiles
-    let thresholds: PetWeatherThresholds
-    let tileSwitches: TodayTileSwitches
+    /// The Today tiles, worked out from `tiles` and the reading.
+    let todayTiles: TodayTilesState
     let showsRadar: Bool
     /// Nil when the rest of the week is switched off, or there's nothing to show for it.
     let week: Week?
@@ -208,6 +212,7 @@ struct WeatherScreenState {
             : WalkAdvisor.advice(for: weather, forecast: days, at: now, thresholds: config.thresholds, hasDog: hasDog)
         self.walkAdvice = walkAdvice
         showsWalkCard = walkAdvice?.showsCard(hasDog: hasDog, cardEnabled: config.walkCardEnabled) ?? false
+        walkCard = showsWalkCard ? walkAdvice.map(WalkCardContent.init) : nil
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
         heroCaption = PetMood.heroCaption(
@@ -230,8 +235,20 @@ struct WeatherScreenState {
             // switch went off can still have it, hence the check here as well.
             airQuality: config.airQualityEnabled ? hourNow?.airQuality : nil
         )
-        thresholds = config.thresholds
-        tileSwitches = config.todayTiles
+        todayTiles = TodayTilesState(
+            weather: weatherToday,
+            showingForecast: showingForecast,
+            pavementNow: tiles.pavementNow,
+            groundWet: tiles.groundWet,
+            uvIndex: tiles.uvIndex,
+            uvPeak: tiles.uvPeak,
+            airQuality: tiles.airQuality,
+            hasDog: hasDog,
+            now: now,
+            thresholds: config.thresholds,
+            distanceInMiles: config.distanceInMiles,
+            switches: config.todayTiles
+        )
         showsRadar = config.radarEnabled
 
         let upcomingDays = today != nil ? Array(days.dropFirst()) : days

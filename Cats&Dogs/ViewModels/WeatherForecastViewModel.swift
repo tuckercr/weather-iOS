@@ -66,14 +66,16 @@ final class WeatherForecastViewModel {
     /// What the screen shows for the active city at the screen's clock: the reading (or the
     /// forecast hour standing in for an old one), the hero, the walk verdict, the tiles and the
     /// sections the settings switch on.
-    func screen(hasDog: Bool) -> WeatherScreen {
-        WeatherScreen.make(
+    func screen(hasDog: Bool, distanceInMiles: Bool = false) -> WeatherScreen {
+        var config = config()
+        config.distanceInMiles = distanceInMiles
+        return WeatherScreen.make(
             current: currentWeather,
             forecast: forecast,
             staleErrorKey: staleErrorKey,
             now: now,
             hasDog: hasDog,
-            config: config()
+            config: config
         )
     }
 
