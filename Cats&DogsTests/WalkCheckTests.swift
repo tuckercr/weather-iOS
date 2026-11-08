@@ -62,7 +62,7 @@ final class WalkCheckTests: XCTestCase {
     }
 
     func testPavementGoesFromAWaitToKeepingPetsInside() {
-        XCTAssertEqual(check(slot(pavement: 49)).level, .wait)
+        XCTAssertEqual(check(slot(pavement: 43)).level, .wait)
         XCTAssertEqual(check(slot(pavement: 54)).level, .pottyOnly)
         XCTAssertEqual(check(slot(pavement: 60)).level, .stayIn)
         XCTAssertEqual(check(slot(pavement: 60)).reason, .pavement(.dangerous))
@@ -92,7 +92,7 @@ final class WalkCheckTests: XCTestCase {
 
     func testRainComesBeforeWarmPavementAtTheSameLevel() {
         // Nairobi on 11-07: drizzle, and pavement getting hot in the sun between showers.
-        XCTAssertEqual(check(slot(pavement: 49), conditionNow: "Drizzle").reason, .rain(likely: true))
+        XCTAssertEqual(check(slot(pavement: 43), conditionNow: "Drizzle").reason, .rain(likely: true))
     }
 
     func testTheWorstFactorLeadsAndHeatComesBeforeAirBeforeCold() {
@@ -143,8 +143,8 @@ final class WalkCheckTests: XCTestCase {
     }
 
     func testThePavementNoteSaysItIsAboutNowAndNeverStandsInForRain() {
-        XCTAssertEqual(caption([slot(pavement: 49), slot("6 PM", pavement: 30)]), "Paw check: about 49° now. Getting hot.")
-        XCTAssertNil(caption([slot(pavement: 49), slot("6 PM", pavement: 30)], conditionNow: "Drizzle"))
+        XCTAssertEqual(caption([slot(pavement: 43), slot("6 PM", pavement: 30)]), "Paw check: about 43° now. Getting hot.")
+        XCTAssertNil(caption([slot(pavement: 43), slot("6 PM", pavement: 30)], conditionNow: "Drizzle"))
     }
 
     private func caption(_ slots: [HourlySlot], conditionNow: String? = nil) -> String? {

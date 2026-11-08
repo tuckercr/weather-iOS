@@ -74,8 +74,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
      around 7 AM" when it falls on the city's next day), or "Not a good day for walkies" when nothing
      in the next 24 hours qualifies. A good hour is under 30% rain chance, at a comfortable
-     feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 45 °C
-     (113 °F), and when it is raining now, now never counts, whatever the hourly forecast says. The
+     feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 40 °C
+     (104 °F), and when it is raining now, now never counts, whatever the hourly forecast says. The
      paw is tinted by the rating, and a caption gives the reason when it's more than a wait: the
      pavement now ("Paw check: about 55° now. Too hot for paws."), heat or cold, the air by its
      pollutant ("Smoky air. Potty breaks only.", "High ozone", "Dusty air"), a gale ("Gale force
@@ -522,8 +522,8 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
 | `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |
 | `foreground_refresh_min_minutes` | 0 (0–1440) | Skips the silent refresh on returning to the app if that city was fetched this recently. Pull-to-refresh and city changes are never skipped |
-| `walk_hot_pavement_c` | 52 (40–70) | Pavement temperature that triggers the hot-paws warning |
-| `walk_warm_pavement_c` | 45 (30–65, below `walk_hot_pavement_c`, otherwise 7 below it) | Pavement temperature at which the Today Paw Check tile says "Getting hot" and that hour isn't suggested for a walk (a walk now rates "okay") |
+| `walk_hot_pavement_c` | 46, about 115 °F (40–70) | Pavement temperature that triggers the hot-paws warning |
+| `walk_warm_pavement_c` | 40 (30–65, below `walk_hot_pavement_c`, otherwise 7 below it) | Pavement temperature at which the Today Paw Check tile says "Getting hot" and that hour isn't suggested for a walk (a walk now rates "okay") |
 | `walk_dangerous_pavement_c` | 57.2, which is 135 °F (45–80, above `walk_hot_pavement_c`, otherwise 5 above it) | Pavement temperature at which the Today Paw Check tile says "Dangerously hot" |
 | `walk_icy_pavement_c` | 0 (−20–10) | Pavement temperature below which the Today Paw Check tile says "Icy, watch for salt" after rain or snow in the last 12 hours or with snow on the ground, and "Below freezing" otherwise |
 | `walk_max_rain_chance` | 30 (0–100) | Rain chance at or above which an hour isn't suggested for a walk |

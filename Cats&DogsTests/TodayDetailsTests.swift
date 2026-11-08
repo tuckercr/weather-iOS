@@ -63,10 +63,12 @@ final class TodayDetailsTests: XCTestCase {
         let t = PetWeatherThresholds.standard
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 57.2, groundWet: false, feelsLikeC: 20, thresholds: t), .dangerous)
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 57.1, groundWet: false, feelsLikeC: 20, thresholds: t), .tooHot)
-        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 52, groundWet: false, feelsLikeC: 20, thresholds: t), .tooHot)
-        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 51.9, groundWet: false, feelsLikeC: 20, thresholds: t), .warm)
-        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 45, groundWet: false, feelsLikeC: 20, thresholds: t), .warm)
-        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 44.9, groundWet: false, feelsLikeC: 20, thresholds: t), .safe)
+        // About 115 F: already too hot for paws.
+        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 46.1, groundWet: false, feelsLikeC: 20, thresholds: t), .tooHot)
+        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 46, groundWet: false, feelsLikeC: 20, thresholds: t), .tooHot)
+        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 45.9, groundWet: false, feelsLikeC: 20, thresholds: t), .warm)
+        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 40, groundWet: false, feelsLikeC: 20, thresholds: t), .warm)
+        XCTAssertEqual(TodayDetails.pavementBand(pavementC: 39.9, groundWet: false, feelsLikeC: 20, thresholds: t), .safe)
         XCTAssertEqual(TodayDetails.pavementBand(pavementC: 0, groundWet: true, feelsLikeC: 0.1, thresholds: t), .safe)
     }
 
