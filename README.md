@@ -444,11 +444,12 @@ Shared with Android (the same cases on both platforms):
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
-- `CityListViewModelTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
+- `CityRepositoryTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
 - `WeatherForecastViewModelTests`: request routing, cache-first display, error mapping, silent background refresh, the foreground-refresh window, analytics events, and races between overlapping requests
 - `GeoLocationViewModelTests`: debounced search, latest-input-wins, a failed search told apart from finding nothing
 - `AddLocationRulesTests`: Add location's button: the first row named what was typed (accents ignored), the size check that stops "Nas" adding Nås, saved places (label or within 2 km, never My Location) gone to, and failed or empty searches
-- `LocationPermissionViewModelTests`: denied, located and failed states
+- `LocationPermissionViewModelTests`: denied, located and failed states, and `LocationRepository`'s position reads
+- `WeatherScreenStepsTests`: the weather screen's refreshes, My Location and the notification city
 - `SettingsViewModelTests`: unit override persistence, clear cache, permission requests, usage-sharing opt-out, the walk card setting
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event
 - `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK

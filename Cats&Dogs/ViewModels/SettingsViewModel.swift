@@ -44,7 +44,9 @@ final class SettingsViewModel {
     private(set) var hasMyLocation: Bool
 
     private let preferences: PreferencesStore
-    private let locationStatus: () -> CLAuthorizationStatus
+    private let location: LocationRepository
+    private let locationStatus: @MainActor () -> CLAuthorizationStatus
+    private let addCity: @MainActor (SavedLocation) -> Void
     private let notificationStatus: () async -> UNAuthorizationStatus
     private let requestNotificationAuthorization: () async -> Bool
     private let rescheduleNotifications: () async -> Void
@@ -58,7 +60,9 @@ final class SettingsViewModel {
 
     init(
         preferences: PreferencesStore? = nil,
-        locationStatus: (() -> CLAuthorizationStatus)? = nil,
+        location: LocationRepository? = nil,
+        locationStatus: (@MainActor () -> CLAuthorizationStatus)? = nil,
+        addCity: (@MainActor (SavedLocation) -> Void)? = nil,
         notificationStatus: (() async -> UNAuthorizationStatus)? = nil,
         requestNotificationAuthorization: (() async -> Bool)? = nil,
         rescheduleNotifications: (() async -> Void)? = nil,
@@ -70,7 +74,10 @@ final class SettingsViewModel {
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
-        self.locationStatus = locationStatus ?? { CLLocationManager().authorizationStatus }
+        let location = location ?? .shared
+        self.location = location
+        self.locationStatus = locationStatus ?? { location.authorizationStatus }
+        self.addCity = addCity ?? { _ in }
         self.notificationStatus = notificationStatus ?? {
             await WeatherNotificationScheduler.shared.authorizationStatus()
         }
@@ -165,6 +172,15 @@ final class SettingsViewModel {
         locationAlways = location == .authorizedAlways
         hasMyLocation = preferences.savedLocations.contains(where: \.isCurrentLocation)
         notificationPermission = PermissionStatus(await notificationStatus())
+    }
+
+    /// "Allow location access": the system prompt, then, once allowed, My Location as a saved city,
+    /// as onboarding adds it: location is only useful as a city.
+    func requestLocationAccess() async {
+        if await location.requestPermission(), let here = await location.currentPosition() {
+            addCity(here)
+        }
+        await refreshPermissions()
     }
 
     // MARK: - Follow my location

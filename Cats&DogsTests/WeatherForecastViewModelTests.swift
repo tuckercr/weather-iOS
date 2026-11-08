@@ -28,6 +28,8 @@ final class WeatherForecastViewModelTests: XCTestCase {
         clock = Date(timeIntervalSince1970: 1_700_000_000)
         viewModel = WeatherForecastViewModel(
             repository: LocationWeatherRepository(weatherRepository: api.repository, preferences: preferences.store),
+            cities: CityRepository(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in }),
+            follower: MyLocationFollower(preferences: preferences.store, authorization: .denied, refresh: {}),
             replanNotifications: { [unowned self] in replans += 1 },
             onError: { [unowned self] in loggedErrors.append($0) },
             onSettingsOpened: { [unowned self] in settingsOpenedCount += 1 },

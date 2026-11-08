@@ -1,9 +1,9 @@
 import XCTest
 @testable import Cats_Dogs
 
-/// The weather screen's steps. Same cases as Android's `CurrentWeatherViewModelTest`.
+/// The weather screen's steps, in `WeatherForecastViewModel`. Same cases as Android's `WeatherScreenStepsTest`.
 @MainActor
-final class CurrentWeatherViewModelTests: XCTestCase {
+final class WeatherScreenStepsTests: XCTestCase {
     private let austin = SavedLocation(label: "Austin, TX, US", latitude: 30.27, longitude: -97.74)
     private let myLocation = SavedLocation(label: SavedLocation.myLocationLabel, latitude: 40, longitude: -83, isCurrentLocation: true)
     /// About 110 km north of `myLocation`: far enough to move it.
@@ -35,7 +35,7 @@ final class CurrentWeatherViewModelTests: XCTestCase {
         viewModel.appeared()
 
         // A city with coordinates: the reading from the fake, the forecast from Open-Meteo.
-        await waitUntil { self.api.currentRequests.count == 1 && viewModel.weather.forecast.successValue != nil }
+        await waitUntil { self.api.currentRequests.count == 1 && viewModel.forecast.successValue != nil }
     }
 
     func testAnotherCityTheUnitsAndRetryAllRefetch() async {
@@ -93,7 +93,7 @@ final class CurrentWeatherViewModelTests: XCTestCase {
         let viewModel = makeViewModel()
 
         viewModel.becameActive()
-        await waitUntil { viewModel.cityList.locations.first == self.movedHere }
+        await waitUntil { viewModel.locations.first == self.movedHere }
         viewModel.becameActive()
         await settle()
 
@@ -106,7 +106,7 @@ final class CurrentWeatherViewModelTests: XCTestCase {
 
         viewModel.appeared()
 
-        await waitUntil { viewModel.cityList.locations == [self.myLocation] }
+        await waitUntil { viewModel.locations == [self.myLocation] }
     }
 
     func testMyLocationRemovedOnPurposeIsNotAddedBack() async {
@@ -119,7 +119,7 @@ final class CurrentWeatherViewModelTests: XCTestCase {
         await settle()
 
         XCTAssertEqual(position.reads, 0)
-        XCTAssertEqual(viewModel.cityList.locations, [austin])
+        XCTAssertEqual(viewModel.locations, [austin])
     }
 
     func testMyLocationIsAddedWhenAccessIsGrantedLater() async {
@@ -132,7 +132,7 @@ final class CurrentWeatherViewModelTests: XCTestCase {
         position.granted = true
         viewModel.becameActive()
 
-        await waitUntil { viewModel.cityList.locations.contains(self.myLocation) }
+        await waitUntil { viewModel.locations.contains(self.myLocation) }
     }
 
     func testPullToRefreshOnMyLocationReadsThePositionWhateverTheInterval() async {
@@ -146,29 +146,25 @@ final class CurrentWeatherViewModelTests: XCTestCase {
         await viewModel.pulledToRefresh()
 
         XCTAssertEqual(position.reads, 2)
-        XCTAssertEqual(viewModel.cityList.locations, [movedHere])
-        XCTAssertFalse(viewModel.weather.isRefreshing)
+        XCTAssertEqual(viewModel.locations, [movedHere])
+        XCTAssertFalse(viewModel.isRefreshing)
     }
 
     // MARK: - Helpers
 
-    private func makeViewModel(sleep: ((Duration) async throws -> Void)? = nil) -> CurrentWeatherViewModel {
-        let cityList = CityListViewModel(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in })
-        let weather = WeatherForecastViewModel(
+    private func makeViewModel(sleep: ((Duration) async throws -> Void)? = nil) -> WeatherForecastViewModel {
+        WeatherForecastViewModel(
             repository: LocationWeatherRepository(weatherRepository: api.repository, preferences: preferences.store),
+            cities: CityRepository(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in }),
+            position: position,
+            follower: MyLocationFollower(preferences: preferences.store, authorization: .denied, refresh: {}),
+            refreshNotificationCity: { [unowned self] in notificationCityRefreshes += 1 },
+            sleep: sleep,
             replanNotifications: {},
             onError: { _ in },
             onSettingsOpened: {},
             foregroundRefreshMinInterval: { 0 },
             config: { WeatherScreenConfig() }
-        )
-        return CurrentWeatherViewModel(
-            cityList: cityList,
-            weather: weather,
-            position: position,
-            follower: MyLocationFollower(preferences: preferences.store, authorization: .denied, refresh: {}),
-            refreshNotificationCity: { [unowned self] in notificationCityRefreshes += 1 },
-            sleep: sleep
         )
     }
 }

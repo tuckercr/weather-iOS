@@ -10,7 +10,6 @@ struct RootView: View {
     private let welcomeViewModel: WelcomeViewModel
     private let cityListViewModel: CityListViewModel
     private let weatherViewModel: WeatherForecastViewModel
-    private let currentWeatherViewModel: CurrentWeatherViewModel
     private let settingsViewModel: SettingsViewModel
     private let updatePrompt: UpdatePromptViewModel
     private let radarViewModel: RadarViewModel
@@ -21,7 +20,6 @@ struct RootView: View {
         welcomeViewModel = viewModels.welcome
         cityListViewModel = viewModels.cityList
         weatherViewModel = viewModels.weather
-        currentWeatherViewModel = viewModels.currentWeather
         settingsViewModel = viewModels.settings
         updatePrompt = viewModels.updatePrompt
         radarViewModel = viewModels.radar
@@ -53,7 +51,7 @@ struct RootView: View {
                 case .done:
                     NavigationStack(path: $path) {
                         CurrentWeatherView(
-                            viewModel: currentWeatherViewModel,
+                            viewModel: weatherViewModel,
                             settingsViewModel: settingsViewModel,
                             onOpenSettings: {
                                 weatherViewModel.logSettingsOpened()
@@ -73,8 +71,7 @@ struct RootView: View {
                                 SettingsView(
                                     settingsViewModel: settingsViewModel,
                                     onOpenNotifications: { path.append(.notifications) },
-                                    onOpenLocations: { path.append(.locations) },
-                                    onLocationResolved: { cityListViewModel.addLocation($0) }
+                                    onOpenLocations: { path.append(.locations) }
                                 )
                             case .notifications:
                                 NotificationSettingsView(settingsViewModel: settingsViewModel)

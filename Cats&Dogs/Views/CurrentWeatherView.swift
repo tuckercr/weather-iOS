@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct CurrentWeatherView: View {
-    @Bindable var cityListViewModel: CityListViewModel
-    @Bindable var weatherViewModel: WeatherForecastViewModel
     /// Read here rather than passed in as values: if RootView read them, every change would rebuild
     /// the navigation stack, Settings screen included, under the user's finger.
     let settingsViewModel: SettingsViewModel
@@ -12,29 +10,27 @@ struct CurrentWeatherView: View {
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
-    /// What the screen does when: refreshes, My Location and the notification city. Made once, with
-    /// the app's other view models (`AppViewModels`): a view's initialiser runs on every redraw of
-    /// its parent.
-    let viewModel: CurrentWeatherViewModel
+    /// What the screen shows, and what it does when: refreshes, My Location and the notification
+    /// city. Made once, with the app's other view models (`AppViewModels`): a view's initialiser
+    /// runs on every redraw of its parent.
+    let viewModel: WeatherForecastViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
 
     init(
-        viewModel: CurrentWeatherViewModel,
+        viewModel: WeatherForecastViewModel,
         settingsViewModel: SettingsViewModel,
         onOpenSettings: @escaping () -> Void
     ) {
         self.viewModel = viewModel
-        cityListViewModel = viewModel.cityList
-        weatherViewModel = viewModel.weather
         self.settingsViewModel = settingsViewModel
         self.onOpenSettings = onOpenSettings
     }
 
     var body: some View {
         Group {
-            if cityListViewModel.locations.isEmpty {
+            if viewModel.locations.isEmpty {
                 emptyState
             } else {
                 weatherContent
@@ -56,15 +52,15 @@ struct CurrentWeatherView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if cityListViewModel.locations.count >= 2 {
+            if viewModel.locations.count >= 2 {
                 cityTabs
             }
         }
         // The view only says what happened; the view model does the steps.
-        .onChange(of: cityListViewModel.activeLocation?.cacheKey) { _, _ in
+        .onChange(of: viewModel.activeLocation?.cacheKey) { _, _ in
             viewModel.activeCityChanged()
         }
-        .onChange(of: cityListViewModel.locations.notificationLocation?.cacheKey) { _, _ in
+        .onChange(of: viewModel.locations.notificationLocation?.cacheKey) { _, _ in
             Task { await viewModel.notificationCityChanged() }
         }
         .onChange(of: viewModel.myLocationMoves) { _, _ in
@@ -81,7 +77,7 @@ struct CurrentWeatherView: View {
             guard scenePhase == .active else { return }
             await viewModel.refreshWhileActive()
         }
-        .task(id: weatherViewModel.staleErrorKey) {
+        .task(id: viewModel.staleErrorKey) {
             await viewModel.recheckWhileStale()
         }
         .task {
@@ -89,13 +85,13 @@ struct CurrentWeatherView: View {
         }
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(
-                savedLocations: cityListViewModel.locations,
+                savedLocations: viewModel.locations,
                 onAdd: { location, _, added in
-                    cityListViewModel.addLocation(location, added: added)
+                    viewModel.addCity(location, added: added)
                     showAddLocation = false
                 },
                 onGoTo: { index in
-                    cityListViewModel.setActiveIndex(index)
+                    viewModel.selectCity(index)
                     showAddLocation = false
                 },
                 onClose: { showAddLocation = false }
@@ -110,19 +106,19 @@ struct CurrentWeatherView: View {
     }
 
     private var isSouthernHemisphere: Bool {
-        (cityListViewModel.activeLocation?.latitude ?? 0) < 0
+        (viewModel.activeLocation?.latitude ?? 0) < 0
     }
 
     private var navigationTitle: String {
-        cityListViewModel.activeLocation?.label ?? "Sunny & Misty"
+        viewModel.activeLocation?.label ?? "Sunny & Misty"
     }
 
     private var cityTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Array(cityListViewModel.locations.enumerated()), id: \.offset) { index, location in
+                ForEach(Array(viewModel.locations.enumerated()), id: \.offset) { index, location in
                     Button {
-                        cityListViewModel.setActiveIndex(index)
+                        viewModel.selectCity(index)
                     } label: {
                         HStack(spacing: 4) {
                             if location.isCurrentLocation {
@@ -135,7 +131,7 @@ struct CurrentWeatherView: View {
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
                         .background(
-                            index == cityListViewModel.activeIndex
+                            index == viewModel.activeIndex
                                 ? Color.accent.opacity(0.2)
                                 : Color.clear
                         )
@@ -146,7 +142,7 @@ struct CurrentWeatherView: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityAddTraits(index == cityListViewModel.activeIndex ? .isSelected : [])
+                    .accessibilityAddTraits(index == viewModel.activeIndex ? .isSelected : [])
                 }
             }
             .padding(.horizontal, 16)
@@ -181,7 +177,7 @@ struct CurrentWeatherView: View {
     private var weatherContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                switch weatherViewModel.screen(
+                switch viewModel.screen(
                     hasDog: showWalkCard,
                     distanceInMiles: WeatherFormatting.usesMiles(override: unitOverride)
                 ) {
@@ -212,7 +208,7 @@ struct CurrentWeatherView: View {
                     }
                     CurrentWeatherContent(
                         state: state,
-                        location: cityListViewModel.activeLocation,
+                        location: viewModel.activeLocation,
                         onDaySelected: { selectedDay = $0 },
                         onForecastRetry: viewModel.retry
                     )
@@ -225,7 +221,7 @@ struct CurrentWeatherView: View {
             await viewModel.pulledToRefresh()
         }
         .overlay(alignment: .top) {
-            if weatherViewModel.isRefreshing {
+            if viewModel.isRefreshing {
                 ProgressView()
                     .padding(.top, 8)
             }
