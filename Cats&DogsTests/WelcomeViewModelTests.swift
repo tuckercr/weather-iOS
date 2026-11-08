@@ -99,4 +99,36 @@ final class WelcomeViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.onboardingState?.notificationOnboardingDone, true)
     }
+
+    // MARK: - Notification onboarding
+
+    func testTheNotificationPromiseMentionsTheWalkWithADogAndRainWhileRemoteConfigAllows() {
+        preferences.store.setShowWalkCard(true)
+        let all = WelcomeViewModel(preferences: preferences.store, remotelyEnabled: { _ in true })
+        XCTAssertEqual(
+            all.notificationOnboardingText,
+            "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
+                + "\n\nYou can turn on rain alerts in Settings."
+        )
+
+        preferences.store.setShowWalkCard(false)
+        let noDog = WelcomeViewModel(preferences: preferences.store, remotelyEnabled: { $0 != .rain })
+        XCTAssertEqual(noDog.notificationOnboardingText, "Each morning, Sunny & Misty will send a weather briefing for your location.")
+    }
+
+    func testAllowingNotificationsPlansThemOnlyWhenGrantedAndMovesOnEitherWay() async {
+        for granted in [true, false] {
+            var planned = 0
+            let viewModel = WelcomeViewModel(
+                preferences: preferences.store,
+                requestNotificationAuthorization: { granted },
+                scheduleNotifications: { planned += 1 }
+            )
+
+            await viewModel.allowNotifications()
+
+            XCTAssertEqual(planned, granted ? 1 : 0)
+            XCTAssertEqual(viewModel.onboardingState?.notificationOnboardingDone, true)
+        }
+    }
 }

@@ -66,7 +66,7 @@ private struct RadarMapView: View {
     let longitude: Double
     let timeZone: TimeZone
 
-    private let radar = RadarViewModel.shared
+    @Environment(RadarViewModel.self) private var radar
 
     @Environment(\.scenePhase) private var scenePhase
     /// The tile playback last started on, so a new location starts playing again.

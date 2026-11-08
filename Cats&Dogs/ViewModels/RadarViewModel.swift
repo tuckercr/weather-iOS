@@ -2,8 +2,8 @@ import CoreGraphics
 import Foundation
 import Observation
 
-/// Holds the RainViewer radar timeline. The frame list is global (not per city), so one shared
-/// instance holds it. `load()` fetches it the first time and again once it's stale, so an app that
+/// Holds the RainViewer radar timeline. The frame list is global (not per city), so one instance,
+/// owned by `RootView` and handed down in the environment, holds it. `load()` fetches it the first time and again once it's stale, so an app that
 /// sat in the background for hours doesn't replay old frames labelled "Now". While the screen stays
 /// open, frames are only kept current while the radar is in view, so a radar scrolled out of sight
 /// doesn't keep fetching frames nobody watches. It also holds the images for the city on screen:
@@ -11,10 +11,9 @@ import Observation
 @MainActor
 @Observable
 final class RadarViewModel {
-    static let shared = RadarViewModel()
-
-    /// Delay between animation frames, from Remote Config (default 850 ms).
-    let frameInterval: Duration
+    /// Delay between animation frames, from Remote Config (default 850 ms), read when it's used so
+    /// a value fetched after launch counts.
+    var frameInterval: Duration { readFrameInterval() }
 
     /// RainViewer publishes a new frame every 10 minutes, and keeps only about two hours of them.
     nonisolated static let staleAfter: TimeInterval = 10 * 60
@@ -27,6 +26,7 @@ final class RadarViewModel {
     /// Each frame's stitched overlay by frame path, kept so replays are smooth.
     private(set) var overlays: [String: CGImage] = [:]
 
+    private let readFrameInterval: () -> Duration
     private let fetchTimeline: @Sendable () async throws -> RadarTimeline
     private let loadBaseMap: @Sendable (RadarTile) async -> CGImage?
     private let loadOverlay: @Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?
@@ -45,7 +45,8 @@ final class RadarViewModel {
         loadOverlay: (@Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?)? = nil,
         now: (() -> Date)? = nil
     ) {
-        self.frameInterval = frameInterval ?? RemoteConfigRepository.shared.radarFrameInterval
+        self.readFrameInterval = frameInterval.map { interval in { interval } }
+            ?? { RemoteConfigRepository.shared.radarFrameInterval }
         self.fetchTimeline = fetchTimeline ?? { try await RadarRepository().timeline() }
         self.loadBaseMap = loadBaseMap ?? { await RadarTileLoader.baseMap(for: $0) }
         self.loadOverlay = loadOverlay ?? { await RadarTileLoader.overlay(for: $2, in: $1, tile: $0) }

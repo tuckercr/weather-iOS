@@ -13,8 +13,9 @@ struct RootView: View {
     @State private var settingsViewModel = SettingsViewModel()
     @State private var path: [AppScreen] = []
     @State private var updatePrompt = UpdatePromptViewModel()
+    /// The radar's frames are the same for every city, so one view model holds them for the app.
+    @State private var radarViewModel = RadarViewModel()
     @Environment(\.scenePhase) private var scenePhase
-    private let notificationSettingsLink = NotificationSettingsLink.shared
 
     var body: some View {
         Group {
@@ -32,9 +33,11 @@ struct RootView: View {
                         welcomeViewModel.completeDogQuestion()
                     }
                 } else if !state.notificationOnboardingDone {
-                    OnboardingNotificationView {
-                        welcomeViewModel.completeNotificationOnboarding()
-                    }
+                    OnboardingNotificationView(
+                        text: welcomeViewModel.notificationOnboardingText,
+                        onAllow: welcomeViewModel.allowNotifications,
+                        onNotNow: welcomeViewModel.completeNotificationOnboarding
+                    )
                 } else if !state.locationOnboardingDone {
                     OnboardingLocationView(
                         onLocationResolved: { location in
@@ -83,9 +86,9 @@ struct RootView: View {
                         }
                     }
                     // From the link in iOS Settings; waits here until onboarding is done.
-                    .onChange(of: notificationSettingsLink.isRequested, initial: true) { _, requested in
+                    .onChange(of: settingsViewModel.notificationSettingsRequested, initial: true) { _, requested in
                         guard requested else { return }
-                        notificationSettingsLink.isRequested = false
+                        settingsViewModel.notificationSettingsShown()
                         path = [.settings, .notifications]
                     }
                 }
@@ -93,6 +96,7 @@ struct RootView: View {
                 ProgressView()
             }
         }
+        .environment(radarViewModel)
         // Remote Config values fetched in the background apply from the next read.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { updatePrompt.refresh() }
