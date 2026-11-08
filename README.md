@@ -85,7 +85,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      inside, away from the windows."), shown even without a dog. It can be turned off in Settings.
    - **One walk verdict**: `WalkConditions.check` (`WalkCheck.swift`) judges an hour once, and the
      hero's caption, the walk card, the Air Quality tile's note and the notifications all read it,
-     so they can't disagree. Each factor has a small rule and a level, and the worst one wins:
+     so they can't disagree. The screen gets it from `WeatherForecastViewModel.walkAdvice`. Each factor has a small rule and a level, and the worst one wins:
 
      | Level | When |
      |---|---|
