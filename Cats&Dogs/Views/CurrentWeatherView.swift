@@ -12,18 +12,24 @@ struct CurrentWeatherView: View {
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
     private var showWalkCard: Bool { settingsViewModel.showWalkCard }
 
+    /// What the screen does when: refreshes, My Location and the notification city.
+    @State private var viewModel: CurrentWeatherViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showAddLocation = false
     @State private var selectedDay: DayForecast?
-    /// "Now" for the hourly strip, walk advice, captions and moon. Moved on when the app becomes
-    /// active and every half hour while it stays open, so a screen left on overnight keeps up.
-    @State private var locationViewModel = LocationPermissionViewModel()
-    /// Location access at the last check, to spot it being granted later in the Settings app.
-    @State private var locationWasGranted: Bool?
-    /// Whether the fetch under way is to add My Location, rather than to move a saved one.
-    @State private var fetchingMyLocationToAdd = false
 
-    private static let autoRefreshInterval: Duration = .seconds(30 * 60)
+    init(
+        cityListViewModel: CityListViewModel,
+        weatherViewModel: WeatherForecastViewModel,
+        settingsViewModel: SettingsViewModel,
+        onOpenSettings: @escaping () -> Void
+    ) {
+        self.cityListViewModel = cityListViewModel
+        self.weatherViewModel = weatherViewModel
+        self.settingsViewModel = settingsViewModel
+        self.onOpenSettings = onOpenSettings
+        _viewModel = State(initialValue: CurrentWeatherViewModel(cityList: cityListViewModel, weather: weatherViewModel))
+    }
 
     var body: some View {
         Group {
@@ -53,66 +59,32 @@ struct CurrentWeatherView: View {
                 cityTabs
             }
         }
+        // The view only says what happened; the view model does the steps.
         .onChange(of: cityListViewModel.activeLocation?.cacheKey) { _, _ in
-            refreshActiveLocation()
+            viewModel.activeCityChanged()
         }
-        // Notifications are for My Location, otherwise the first city, whichever tab is showing. When
-        // that changes (reordered, added, removed, or My Location moved), its weather may not be
-        // cached yet: fetch it, then replan.
         .onChange(of: cityListViewModel.locations.notificationLocation?.cacheKey) { _, _ in
-            Task { await WeatherBackgroundRefresher.shared.performRefresh(replan: true) }
+            Task { await viewModel.notificationCityChanged() }
         }
-        // Follow my location moves My Location in storage, even while the app is open: the screen
-        // takes the move up, and the new place's weather comes with the active location changing.
-        .onChange(of: MyLocationFollower.shared.moves) { _, _ in
-            cityListViewModel.followStoredMyLocation()
+        .onChange(of: viewModel.myLocationMoves) { _, _ in
+            viewModel.myLocationMoved()
         }
         .onChange(of: unitOverride) { _, _ in
-            // Cached data is in the old units, so this has to be a real refetch.
-            refreshActiveLocation()
+            viewModel.unitsChanged()
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active {
-                weatherViewModel.tick()
-                backgroundRefreshActiveLocation()
-                updateMyLocation()
-                cityListViewModel.fillInMissingCoordinates()
-            }
+            if phase == .active { viewModel.becameActive() }
         }
-        // The same quiet refresh every half hour while the app stays in the foreground. Restarted
-        // (and so only running) while the scene is active.
+        // Restarted (and so only running) while the scene is active.
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: Self.autoRefreshInterval)
-                guard !Task.isCancelled else { return }
-                weatherViewModel.tick()
-                backgroundRefreshActiveLocation()
-            }
+            await viewModel.refreshWhileActive()
         }
-        // While refreshes keep failing, re-read the clock every few minutes so old weather gives way
-        // to the forecast once it passes the cutoff.
         .task(id: weatherViewModel.staleErrorKey) {
-            guard weatherViewModel.staleErrorKey != nil else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: StaleWeather.recheckInterval)
-                guard !Task.isCancelled else { return }
-                weatherViewModel.tick()
-            }
+            await viewModel.recheckWhileStale()
         }
         .task {
-            refreshActiveLocation()
-            updateMyLocation()
-        }
-        .onChange(of: locationViewModel.state) { _, state in
-            guard case .located(let location) = state else { return }
-            if cityListViewModel.locations.contains(where: \.isCurrentLocation) {
-                cityListViewModel.updateCurrentLocation(location)
-            } else if fetchingMyLocationToAdd {
-                // A position read only to move My Location, arriving after it was removed, adds nothing.
-                cityListViewModel.addLocation(location)
-            }
-            fetchingMyLocationToAdd = false
+            viewModel.appeared()
         }
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(
@@ -222,7 +194,7 @@ struct CurrentWeatherView: View {
                     WeatherErrorStateView(
                         errorKey: errorKey,
                         canRetry: canRetry,
-                        onRetry: refreshActiveLocation,
+                        onRetry: viewModel.retry,
                         lastUpdated: lastUpdated
                     )
 
@@ -239,7 +211,7 @@ struct CurrentWeatherView: View {
                         state: state,
                         location: cityListViewModel.activeLocation,
                         onDaySelected: { selectedDay = $0 },
-                        onForecastRetry: refreshActiveLocation
+                        onForecastRetry: viewModel.retry
                     )
                 }
             }
@@ -247,12 +219,7 @@ struct CurrentWeatherView: View {
             .padding(.bottom, 24)
         }
         .refreshable {
-            await moveMyLocationBeforeRefresh()
-            refreshActiveLocation()
-            // Keep the pull spinner up until the fetch has finished, rather than dropping it at once.
-            while weatherViewModel.isRefreshing {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
+            await viewModel.pulledToRefresh()
         }
         .overlay(alignment: .top) {
             if weatherViewModel.isRefreshing {
@@ -260,52 +227,6 @@ struct CurrentWeatherView: View {
                     .padding(.top, 8)
             }
         }
-    }
-
-    /// On launch and each return to the app, with location access on:
-    /// - re-reads the position while My Location is saved, so it follows the device rather than
-    ///   staying where it was added;
-    /// - otherwise adds it once access turns up after onboarding went without it (granted later in
-    ///   the Settings app, say). Only when there are no cities yet, or access has just changed to
-    ///   granted, so someone who removed My Location on purpose doesn't get it back every launch.
-    private func updateMyLocation() {
-        let granted = locationViewModel.hasLocationPermission()
-        let newlyGranted = granted && locationWasGranted == false
-        locationWasGranted = granted
-        guard granted, locationViewModel.state != .locating else { return }
-        if cityListViewModel.locations.contains(where: \.isCurrentLocation) {
-            guard cityListViewModel.claimMyLocationCheck() else { return }
-            fetchingMyLocationToAdd = false
-            locationViewModel.fetchLocation()
-        } else if newlyGranted || cityListViewModel.locations.isEmpty {
-            fetchingMyLocationToAdd = true
-            locationViewModel.fetchLocation()
-        }
-    }
-
-    /// Pull to refresh on My Location reads the phone's position first, whatever the 15-minute
-    /// limit, so My Location moves (by the usual 1 km rule) before its weather is fetched. A drive
-    /// with the screen on never returns to the app, so this is how to catch up by hand.
-    private func moveMyLocationBeforeRefresh() async {
-        guard cityListViewModel.activeLocation?.isCurrentLocation == true,
-              let here = await locationViewModel.currentPosition() else { return }
-        cityListViewModel.noteMyLocationChecked()
-        cityListViewModel.updateCurrentLocation(here)
-    }
-
-    private func refreshActiveLocation() {
-        // A refresh also moves "now" on, so the hourly strip and captions update even when the
-        // weather itself hasn't changed.
-        weatherViewModel.tick()
-        guard let location = cityListViewModel.activeLocation else { return }
-        weatherViewModel.refreshCurrent(location: location)
-        weatherViewModel.refreshForecast(location: location)
-    }
-
-    private func backgroundRefreshActiveLocation() {
-        guard let location = cityListViewModel.activeLocation else { return }
-        weatherViewModel.backgroundRefreshCurrent(location: location)
-        weatherViewModel.backgroundRefreshForecast(location: location)
     }
 }
 
