@@ -88,7 +88,7 @@ struct LocationsView: View {
                 onAdd: { location, name, added in
                     cityListViewModel.addLocation(location, added: added)
                     showAddLocation = false
-                    let message = "\(name) added"
+                    let message = String(localized: "\(name) added", comment: "Confirmation after adding a location. The argument is its name.")
                     confirmation = message
                     AccessibilityNotification.Announcement(message).post()
                 },

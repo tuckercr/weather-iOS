@@ -61,9 +61,9 @@ enum WalkReason: Equatable {
     /// screen words in its own way.
     static func airName(_ pollutant: AirQuality.Pollutant?) -> String? {
         switch pollutant {
-        case .fineParticles: "Smoky air"
-        case .coarseParticles: "Dusty air"
-        case .ozone: "High ozone"
+        case .fineParticles: String(localized: "Smoky air", comment: "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)")
+        case .coarseParticles: String(localized: "Dusty air", comment: "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)")
+        case .ozone: String(localized: "High ozone", comment: "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)")
         default: nil
         }
     }

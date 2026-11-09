@@ -133,12 +133,12 @@ enum StaleWeather {
         if calendar.isDate(then, inSameDayAs: now) { return time }
         if let yesterday = calendar.date(byAdding: .day, value: -1, to: now),
            calendar.isDate(then, inSameDayAs: yesterday) {
-            return "yesterday at \(time)"
+            return String(localized: "yesterday at \(time)", comment: "When an old reading was taken. The argument is a time.")
         }
         let formatter = DateFormatter()
         formatter.timeZone = weather.timeZone
         formatter.locale = .current
         formatter.dateFormat = "EEE"
-        return "\(formatter.string(from: then)) at \(time)"
+        return String(localized: "\(formatter.string(from: then)) at \(time)", comment: "When an old reading was taken: a short weekday name, then a time")
     }
 }

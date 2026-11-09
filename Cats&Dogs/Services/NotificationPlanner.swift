@@ -69,7 +69,7 @@ enum NotificationPlanner {
     /// A shower starting within this of the last one alerted about is the same rain.
     static let rainAlertRepeat = 3 * 60 * 60
 
-    static let fallbackBriefing = (title: "Sunny & Misty", body: "Tap to see today's weather.")
+    static let fallbackBriefing = (title: String(localized: "Sunny & Misty", comment: "The app's name"), body: String(localized: "Tap to see today's weather.", comment: "Morning briefing notification when there is no forecast"))
 
     static func plan(
         weather: CurrentWeather?,
@@ -142,11 +142,11 @@ enum NotificationPlanner {
                     identifier: "walk_\(day)",
                     kind: .walkTime,
                     date: date,
-                    title: "Time for a walk",
-                    body: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName). Sunny's waiting by the door."
+                    title: String(localized: "Time for a walk", comment: "Walk reminder notification title"),
+                    body: String(localized: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName). Sunny's waiting by the door.", comment: "Walk reminder notification: temperature, the sky or weather (lower case), and the city. Sunny is the dog.")
                         // The air from the walk on, not from 8:30: smoke that cleared by then doesn't count.
                         + (badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
-                            .map { " \($0), so a short one." } ?? "")
+                            .map { " " + String(localized: "\($0), so a short one.", comment: "Walk reminder notification, after the walk. The argument is the bad air, as in Smoky air today.") } ?? "")
                 ))
             }
         }
@@ -195,19 +195,20 @@ enum NotificationPlanner {
         // Forecast days are the city's, so today is the city's date at the briefing, not the device's.
         guard let slot = slot(at: date, in: slots),
               let day = forecast.day(of: date, in: weather.timeZone) else { return nil }
-        let title = "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName)"
+        let title = String(localized: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName)", comment: "Morning briefing title: temperature, the sky or weather (lower case), and the city")
         // As on the hero: the day's high and low, taking in the hour's temperature.
         var body = highLowLine(TodayDetails.highLow(temperature: slot.temperature, today: day), rainChance: day.precipitationChance)
         if hasDog {
             // Bad-air hours are left out of the walk silently, so the briefing says why.
             let air = badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
             if let best = bestWalkSlot(after: date, slots: slots, thresholds: thresholds, calendar: calendar), let start = best.date {
-                body += start <= date
-                    ? " Sunny says now's a great time for a walk."
-                    : " Sunny's picked \(best.timeLabel) for a walk."
-                if let air { body += " \(air), so keep it short." }
+                body += " " + (start <= date
+                    ? String(localized: "Sunny says now's a great time for a walk.", comment: "Morning briefing notification. Sunny is the dog.")
+                    : String(localized: "Sunny's picked \(best.timeLabel) for a walk.", comment: "Morning briefing notification. Sunny is the dog. The argument is a time."))
+                if let air { body += " " + String(localized: "\(air), so keep it short.", comment: "Morning briefing notification, about the walk. The argument is the bad air, as in Smoky air today.") }
             } else {
-                body += air.map { " \($0), so potty breaks only." } ?? " Not a good day for walkies."
+                body += " " + (air.map { String(localized: "\($0), so potty breaks only.", comment: "Morning briefing notification, about walks. The argument is the bad air, as in Smoky air today.") }
+                    ?? String(localized: "Not a good day for walkies.", comment: "Morning briefing notification"))
             }
         }
         return (title, body)
@@ -225,18 +226,19 @@ enum NotificationPlanner {
         // device's: a city to the west would otherwise get its day before.
         guard let day = forecast.day(of: date, in: weather.timeZone) else { return nil }
         return (
-            "Today's forecast for \(weather.cityName)",
+            String(localized: "Today's forecast for \(weather.cityName)", comment: "Morning briefing title from the day's forecast. The argument is the city."),
             highLowLine((day.tempMax, day.tempMin), rainChance: day.precipitationChance)
         )
     }
 
     /// "High 70°, low 45°, 60% chance of rain.", the rain only from `briefingRainChance`.
     private static func highLowLine(_ highLow: (high: Double, low: Double), rainChance: Int) -> String {
-        var line = "High \(Int(highLow.high.rounded()))°, low \(Int(highLow.low.rounded()))°"
+        let high = Int(highLow.high.rounded())
+        let low = Int(highLow.low.rounded())
         if let chance = WeatherFormatting.rainChance(rainChance), chance >= briefingRainChance {
-            line += ", \(chance)% chance of rain"
+            return String(localized: "High \(high)°, low \(low)°, \(chance)% chance of rain.", comment: "Morning briefing notification: the day's high and low temperatures and the chance of rain")
         }
-        return line + "."
+        return String(localized: "High \(high)°, low \(low)°.", comment: "Morning briefing notification: the day's high and low temperatures")
     }
 
     /// The first walkable hour from the one under way at `date` to the end of that day.
@@ -272,7 +274,8 @@ enum NotificationPlanner {
             .filter { WalkAdvisor.hasBadAirForWalking($0, thresholds) }
             .max { ($0.airQuality?.index ?? 0) < ($1.airQuality?.index ?? 0) }
         guard let worst else { return nil }
-        return "\(WalkReason.airName(worst.airQuality?.mainPollutant) ?? "Poor air") today"
+        let air = WalkReason.airName(worst.airQuality?.mainPollutant) ?? String(localized: "Poor air", comment: "Bad air of no particular kind, at the start of a sentence (Poor air today.)")
+        return String(localized: "\(air) today", comment: "Bad air in notifications, followed by more of the sentence. The argument is the bad air, as in Smoky air.")
     }
 
     /// The forecast hour under way at `date`.
@@ -286,7 +289,7 @@ enum NotificationPlanner {
     static func conditionPhrase(_ slot: HourlySlot) -> String {
         let group = slot.iconCode.prefix(2)
         if ["09", "10", "11", "13", "50"].contains(group) { return slot.description.lowercased() }
-        return TodayDetails.skyCondition(conditionMain: "", cloudPercent: nil, iconCode: slot.iconCode).rawValue.lowercased()
+        return TodayDetails.skyCondition(conditionMain: "", cloudPercent: nil, iconCode: slot.iconCode).name.lowercased()
     }
 
     /// "Rain starting around 3:15 PM" an hour before rain due within the 15-minute forecast, in the
@@ -307,13 +310,21 @@ enum NotificationPlanner {
         cityCalendar.timeZone = weather.timeZone
         guard rainAlertHours.contains(cityCalendar.component(.hour, from: fire)) else { return nil }
         if let last = lastRainAlert, abs(start - last.rainStart) < rainAlertRepeat, last.fireDate <= now { return nil }
-        let what = snow ? "Snow" : "Rain"
+        let time = WeatherFormatting.epochTime(start, timeZone: weather.timeZone)
+        let city = weather.cityName
+        let advice = hasDog
+            ? String(localized: "Walk now or wait it out.", comment: "Rain alert notification, about the walk")
+            : String(localized: "Misty's staying in.", comment: "Rain alert notification without a dog. Misty is the cat.")
         return PlannedNotification(
             identifier: "rain_next",
             kind: .rain,
             date: fire,
-            title: "\(what) starting around \(WeatherFormatting.epochTime(start, timeZone: weather.timeZone))",
-            body: "\(what) on the way in \(weather.cityName). " + (hasDog ? "Walk now or wait it out." : "Misty's staying in."),
+            title: snow
+                ? String(localized: "Snow starting around \(time)", comment: "Next rain line. The argument is a time.")
+                : String(localized: "Rain starting around \(time)", comment: "Next rain line. The argument is a time."),
+            body: (snow
+                ? String(localized: "Snow on the way in \(city).", comment: "Rain alert notification. The argument is the city.")
+                : String(localized: "Rain on the way in \(city).", comment: "Rain alert notification. The argument is the city.")) + " " + advice,
             rainStart: start,
             snow: snow
         )

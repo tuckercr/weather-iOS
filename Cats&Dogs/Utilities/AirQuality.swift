@@ -23,8 +23,8 @@ struct AirQuality: Codable, Equatable, Sendable {
         var bandNames: [String] {
             switch self {
             // "Unhealthy for sensitive groups" doesn't fit on a tile.
-            case .us: ["Good", "Moderate", "Poor for some", "Unhealthy", "Very unhealthy", "Hazardous"]
-            case .european: ["Good", "Fair", "Moderate", "Poor", "Very poor", "Extremely poor"]
+            case .us: [String(localized: "Good", comment: "Air quality band name on the Air Quality tile"), String(localized: "Moderate", comment: "UV exposure category (WHO), or air quality band name on the Air Quality tile"), String(localized: "Poor for some", comment: "Air quality band name on the Air Quality tile"), String(localized: "Unhealthy", comment: "Air quality band name on the Air Quality tile"), String(localized: "Very unhealthy", comment: "Air quality band name on the Air Quality tile"), String(localized: "Hazardous", comment: "Air quality band name on the Air Quality tile")]
+            case .european: [String(localized: "Good", comment: "Air quality band name on the Air Quality tile"), String(localized: "Fair", comment: "Air quality band name on the Air Quality tile"), String(localized: "Moderate", comment: "UV exposure category (WHO), or air quality band name on the Air Quality tile"), String(localized: "Poor", comment: "Air quality band name on the Air Quality tile"), String(localized: "Very poor", comment: "Air quality band name on the Air Quality tile"), String(localized: "Extremely poor", comment: "Air quality band name on the Air Quality tile")]
             }
         }
     }
@@ -34,12 +34,12 @@ struct AirQuality: Codable, Equatable, Sendable {
 
         var name: String {
             switch self {
-            case .fineParticles: "fine particles"
-            case .coarseParticles: "coarse particles"
-            case .ozone: "ozone"
-            case .nitrogenDioxide: "nitrogen dioxide"
-            case .sulphurDioxide: "sulphur dioxide"
-            case .carbonMonoxide: "carbon monoxide"
+            case .fineParticles: String(localized: "fine particles", comment: "Air pollutant, lower case, as in Mostly fine particles")
+            case .coarseParticles: String(localized: "coarse particles", comment: "Air pollutant, lower case, as in Mostly fine particles")
+            case .ozone: String(localized: "ozone", comment: "Air pollutant, lower case, as in Mostly fine particles")
+            case .nitrogenDioxide: String(localized: "nitrogen dioxide", comment: "Air pollutant, lower case, as in Mostly fine particles")
+            case .sulphurDioxide: String(localized: "sulphur dioxide", comment: "Air pollutant, lower case, as in Mostly fine particles")
+            case .carbonMonoxide: String(localized: "carbon monoxide", comment: "Air pollutant, lower case, as in Mostly fine particles")
             }
         }
     }
@@ -65,7 +65,7 @@ struct AirQuality: Codable, Equatable, Sendable {
     }
 
     var pollutantLine: String? {
-        mainPollutant.map { "Mostly \($0.name)" }
+        mainPollutant.map { String(localized: "Mostly \($0.name)", comment: "Air Quality tile: the main pollutant") }
     }
 
     /// What the air means for a walk, or for people when there's no dog. With a dog it follows the
@@ -74,18 +74,18 @@ struct AirQuality: Codable, Equatable, Sendable {
     func line(hasDog: Bool, thresholds: PetWeatherThresholds = .standard) -> String {
         if hasDog {
             return switch WalkConditions.airLevel(band: band, thresholds) {
-            case .stayIn, .danger: "Stay in. Potty breaks only"
-            case .pottyOnly: "Potty breaks only today"
-            case .fine, .wait: "Short walks for older and flat-faced dogs"
-            case .great: band == 0 ? "Good air for a long walk" : "Fine for most walks"
+            case .stayIn, .danger: String(localized: "Stay in. Potty breaks only", comment: "Air Quality tile: what the air means for a dog walk")
+            case .pottyOnly: String(localized: "Potty breaks only today", comment: "Air Quality tile: what the air means for a dog walk")
+            case .fine, .wait: String(localized: "Short walks for older and flat-faced dogs", comment: "Air Quality tile: what the air means for a dog walk")
+            case .great: band == 0 ? String(localized: "Good air for a long walk", comment: "Air Quality tile: what the air means for a dog walk") : String(localized: "Fine for most walks", comment: "Air Quality tile: what the air means for a dog walk")
             }
         }
         return switch band {
-        case 0: "Fresh air all round"
-        case 1: "Fine for most people"
-        case 2: "Sensitive people should take it easy"
-        case 3, 4: "Limit time outdoors"
-        default: "Stay indoors"
+        case 0: String(localized: "Fresh air all round", comment: "Air Quality tile: what the air means for people")
+        case 1: String(localized: "Fine for most people", comment: "Air Quality tile: what the air means for people")
+        case 2: String(localized: "Sensitive people should take it easy", comment: "Air Quality tile: what the air means for people")
+        case 3, 4: String(localized: "Limit time outdoors", comment: "Air Quality tile: what the air means for people")
+        default: String(localized: "Stay indoors", comment: "Air Quality tile: what the air means for people")
         }
     }
 

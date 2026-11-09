@@ -12,7 +12,7 @@ struct SunEvent: Equatable, Identifiable {
 
     var id: String { "\(kind)-\(epochSeconds)" }
 
-    var name: String { kind == .sunrise ? "Sunrise" : "Sunset" }
+    var name: String { kind == .sunrise ? String(localized: "Sunrise", comment: "Sunrise or sunset marker in the hourly strip") : String(localized: "Sunset", comment: "Sunrise or sunset marker in the hourly strip") }
 
     /// "6:50" in the city's time zone, without AM or PM: the hours either side say which.
     func shortTime(timeZone: TimeZone) -> String {
@@ -25,7 +25,7 @@ struct SunEvent: Equatable, Identifiable {
 
     /// What VoiceOver reads: "Sunset, 6:50 PM".
     func spoken(timeZone: TimeZone) -> String {
-        "\(name), \(WeatherFormatting.epochTime(epochSeconds, timeZone: timeZone))"
+        String(localized: "\(name), \(WeatherFormatting.epochTime(epochSeconds, timeZone: timeZone))", comment: "Spoken by VoiceOver: Sunrise or Sunset, then the time")
     }
 
     /// The forecast's sunrises and sunsets, from Open-Meteo. When it has none (the OpenWeather

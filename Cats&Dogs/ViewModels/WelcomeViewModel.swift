@@ -94,9 +94,9 @@ final class WelcomeViewModel {
     var notificationOnboardingText: String {
         let walkTime = preferences.showWalkCard && remotelyEnabled(.walkTime)
         return (walkTime
-            ? "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
-            : "Each morning, Sunny & Misty will send a weather briefing for your location.")
-            + (remotelyEnabled(.rain) ? "\n\nYou can turn on rain alerts in Settings." : "")
+            ? String(localized: "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk.", comment: "Onboarding: what the notifications will be")
+            : String(localized: "Each morning, Sunny & Misty will send a weather briefing for your location.", comment: "Onboarding: what the notifications will be"))
+            + (remotelyEnabled(.rain) ? "\n\n" + String(localized: "You can turn on rain alerts in Settings.", comment: "Onboarding: what the notifications will be") : "")
     }
 
     /// "Allow notifications": asks iOS, plans the notifications if allowed, and moves on either way.

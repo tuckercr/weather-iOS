@@ -110,7 +110,7 @@ struct CurrentWeatherView: View {
     }
 
     private var navigationTitle: String {
-        viewModel.activeLocation?.label ?? "Sunny & Misty"
+        viewModel.activeLocation?.label ?? String(localized: "Sunny & Misty", comment: "The app's name")
     }
 
     private var cityTabs: some View {

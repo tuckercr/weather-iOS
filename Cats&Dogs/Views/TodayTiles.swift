@@ -292,14 +292,14 @@ private struct EqualTileGrid: Layout {
 
 private struct Tile<Content: View>: View {
     let icon: String
-    let label: String
+    let label: LocalizedStringKey
     @Environment(\.seasonalTheme) private var seasonalTheme
     /// Extra detail at the right of the label row, such as the UV index on the Daylight tile.
     var trailing: String?
     @ViewBuilder let content: Content
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    init(icon: String, label: String, trailing: String? = nil, @ViewBuilder content: () -> Content) {
+    init(icon: String, label: LocalizedStringKey, trailing: String? = nil, @ViewBuilder content: () -> Content) {
         self.icon = icon
         self.label = label
         self.trailing = trailing
