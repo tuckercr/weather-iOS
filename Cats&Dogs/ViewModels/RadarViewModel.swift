@@ -7,7 +7,8 @@ import Observation
 /// sat in the background for hours doesn't replay old frames labelled "Now". While the screen stays
 /// open, frames are only kept current while the radar is in view, so a radar scrolled out of sight
 /// doesn't keep fetching frames nobody watches. It also holds the images for the city on screen:
-/// the map behind the radar and each frame's overlay, loaded through `RadarTileLoader`.
+/// the map behind the radar, RainViewer's coverage layer and each frame's overlay, loaded through
+/// `RadarTileLoader`.
 @MainActor
 @Observable
 final class RadarViewModel {
@@ -25,12 +26,20 @@ final class RadarViewModel {
     private(set) var baseMap: CGImage?
     /// Each frame's stitched overlay by frame path, kept so replays are smooth.
     private(set) var overlays: [String: CGImage] = [:]
+    /// RainViewer's coverage layer around the city on screen, opaque black where there's no radar;
+    /// nil until it loads, and when it doesn't, so the card then looks as it did without it.
+    private(set) var coverage: CGImage?
+    /// The city on screen is outside RainViewer's radar coverage: the card says "No radar here".
+    /// False until the coverage layer has loaded and says so.
+    private(set) var noRadarHere = false
 
     private let readFrameInterval: () -> Duration
     private let fetchTimeline: @Sendable () async throws -> RadarTimeline
     private let loadBaseMap: @Sendable (RadarTile) async -> CGImage?
     private let loadOverlay: @Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?
+    private let loadCoverage: @Sendable (RadarTile, RadarTimeline) async -> CGImage?
     @ObservationIgnored private var baseMapTile: RadarTile?
+    @ObservationIgnored private var coverageKey: CoverageKey?
     @ObservationIgnored private var overlaysTile: RadarTile?
     private let now: () -> Date
     private var loadedAt: Date?
@@ -43,6 +52,7 @@ final class RadarViewModel {
         fetchTimeline: (@Sendable () async throws -> RadarTimeline)? = nil,
         loadBaseMap: (@Sendable (RadarTile) async -> CGImage?)? = nil,
         loadOverlay: (@Sendable (RadarTile, RadarTimeline, RadarFrame) async -> CGImage?)? = nil,
+        loadCoverage: (@Sendable (RadarTile, RadarTimeline) async -> CGImage?)? = nil,
         now: (() -> Date)? = nil
     ) {
         self.readFrameInterval = frameInterval.map { interval in { interval } }
@@ -50,6 +60,7 @@ final class RadarViewModel {
         self.fetchTimeline = fetchTimeline ?? { try await RadarRepository().timeline() }
         self.loadBaseMap = loadBaseMap ?? { await RadarTileLoader.baseMap(for: $0) }
         self.loadOverlay = loadOverlay ?? { await RadarTileLoader.overlay(for: $2, in: $1, tile: $0) }
+        self.loadCoverage = loadCoverage ?? { await RadarTileLoader.coverage(in: $1, tile: $0) }
         self.now = now ?? { Date() }
     }
 
@@ -60,6 +71,24 @@ final class RadarViewModel {
         let image = await loadBaseMap(tile)
         guard !Task.isCancelled, baseMapTile == tile else { return }
         baseMap = image
+    }
+
+    /// Loads RainViewer's coverage layer for `tile`, once per city (and tile host), and decides
+    /// whether the city has radar. A new tile clears the old layer first. A failed load leaves no
+    /// layer and no "No radar here", as before there was one, and the next call tries again.
+    func loadCoverage(for tile: RadarTile) async {
+        guard let timeline = timeline.successValue else { return }
+        let key = CoverageKey(tile: tile, host: timeline.host)
+        if coverageKey == key, coverage != nil { return }
+        if coverageKey?.tile != tile {
+            coverage = nil
+            noRadarHere = false
+        }
+        coverageKey = key
+        guard let image = await loadCoverage(tile, timeline),
+              !Task.isCancelled, coverageKey == key else { return }
+        coverage = image
+        noRadarHere = !RadarCoverage.isCovered(image, at: tile)
     }
 
     /// Prefetches every frame's overlay for `tile` and the current timeline, frames nearest "now"
@@ -178,6 +207,12 @@ final class RadarViewModel {
         if frameIndex == nowIndex { return String(localized: "Now · \(time)", comment: "Radar frame label. The argument is a time.") }
         if frame.isForecast { return String(localized: "Forecast · \(time)", comment: "Radar frame label. The argument is a time.") }
         return time
+    }
+
+    /// What the coverage layer was loaded for: a city, and the tile host from the timeline.
+    struct CoverageKey: Hashable {
+        let tile: RadarTile
+        let host: String
     }
 
     /// The radar card shows `tile` (the city on screen): the frames if they're missing or stale,

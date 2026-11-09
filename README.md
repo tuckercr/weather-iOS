@@ -194,7 +194,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      frame time, a Light→Heavy legend, play/pause and a scrubber. A caption under the map credits
      OpenStreetMap and RainViewer. Frames are refetched once they are 10 minutes old (checked every
      minute while the radar is on screen, and on returning to the app), with the old frames kept up
-     until the new ones arrive.
+     until the new ones arrive. RainViewer has no radar over much of Africa, central Asia and the
+     oceans, where its frames are simply empty and would read as "no rain", so its coverage layer is
+     drawn over the map at 35% (dimming the areas without radar), and a city outside it shows a "No
+     radar here" pill in the middle of the map. If the coverage layer doesn't load, the card looks
+     as it did before. Rules in `Data/RadarCoverage.swift`.
    - **Rest of week**: one row per day (sample closest to local noon) with rain chance (the day's
      highest hour; hidden under 10%, otherwise to the nearest 10%, as everywhere in the app); tap a
      row for each hour's temperature and rain chance.
@@ -497,7 +501,7 @@ Shared with Android (the same cases on both platforms):
 - `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
-- `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen
+- `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy captions and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `MoonPhaseTests`: the phase from the date, checked against published phases
