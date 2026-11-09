@@ -434,6 +434,14 @@ private struct Painter {
     }
 }
 
+/// The notification scheduler's pictures, drawn by the view that draws the pets on screen.
+@MainActor
+struct PetSceneIconPictures: PetPictureRendering {
+    func png(mood: PetMood, southernHemisphere: Bool) -> Data? {
+        PetSceneIcon.png(mood: mood, southernHemisphere: southernHemisphere)
+    }
+}
+
 extension PetSceneIcon {
     /// The icon as a PNG, for a notification's picture: the scheduler gets the pets without drawing
     /// views itself.
