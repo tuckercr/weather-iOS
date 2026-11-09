@@ -773,6 +773,28 @@
         }
       }
     },
+    "Bit of sun, bit of cloud. Good sniffing weather." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bit of sun, bit of cloud. Good sniffing weather."
+          }
+        }
+      }
+    },
+    "Bit of sun, bit of cloud. Misty is chasing the sunny patches." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bit of sun, bit of cloud. Misty is chasing the sunny patches."
+          }
+        }
+      }
+    },
     "Blowy out there. Misty is staying put." : {
       "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
       "localizations" : {
@@ -2240,6 +2262,17 @@
         }
       }
     },
+    "Misty has found the one sunny spot on the floor." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty has found the one sunny spot on the floor."
+          }
+        }
+      }
+    },
     "Misty has gone full floof" : {
       "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
       "localizations" : {
@@ -3510,6 +3543,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Strong gale"
+          }
+        }
+      }
+    },
+    "Sun in, sun out. Misty is supervising from the window." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sun in, sun out. Misty is supervising from the window."
+          }
+        }
+      }
+    },
+    "Sun in, sun out. Sunny is ready either way." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sun in, sun out. Sunny is ready either way."
           }
         }
       }

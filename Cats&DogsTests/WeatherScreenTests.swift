@@ -54,6 +54,18 @@ final class WeatherScreenTests: XCTestCase {
         XCTAssertNotNil(lastUpdated)
     }
 
+    // MARK: - Hero caption
+
+    func testTheHeroCaptionFollowsTheSkyAsMistysViewReadsIt() {
+        // 1 Jan at noon: the daily pick is the second caption of the list.
+        let fewClouds = weatherState(make(current: .success(reading(observedAt: noon, iconCode: "02d", conditionMain: "Clouds", cloudPercent: 20))))
+        XCTAssertEqual(fewClouds?.mood, .cloudy)
+        XCTAssertEqual(fewClouds?.heroCaption, "Sun in, sun out. Sunny is ready either way.")
+        let overcast = weatherState(make(current: .success(reading(observedAt: noon, iconCode: "04d", conditionMain: "Clouds", cloudPercent: 95))))
+        XCTAssertEqual(overcast?.mood, .cloudy)
+        XCTAssertEqual(overcast?.heroCaption, "Nap weather, says Misty.")
+    }
+
     // MARK: - Today
 
     func testTodayGoesByTheCitysDateNotTheLabel() {
@@ -185,11 +197,16 @@ final class WeatherScreenTests: XCTestCase {
         return nil
     }
 
-    private func reading(observedAt: Int, iconCode: String = "01d") -> CurrentWeather {
+    private func reading(
+        observedAt: Int,
+        iconCode: String = "01d",
+        conditionMain: String = "Clear",
+        cloudPercent: Int = 10
+    ) -> CurrentWeather {
         CurrentWeather(
-            cityName: "Austin", conditionMain: "Clear", description: "Clear sky", iconCode: iconCode,
+            cityName: "Austin", conditionMain: conditionMain, description: "Clear sky", iconCode: iconCode,
             temperature: 20, feelsLike: 20, tempMin: 15, tempMax: 25, humidityPercent: 40, pressureHpa: 1013,
-            windSpeed: 3, windDeg: 90, visibilityMeters: 10_000, cloudPercent: 10, units: .metric,
+            windSpeed: 3, windDeg: 90, visibilityMeters: 10_000, cloudPercent: cloudPercent, units: .metric,
             sunriseEpoch: dayStart + 7 * hour, sunsetEpoch: dayStart + 17 * hour,
             timezoneOffsetSeconds: 0, observedAtEpoch: observedAt
         )
