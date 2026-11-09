@@ -55,9 +55,17 @@ enum PetMood: CaseIterable {
 
     /// Captions in the pets' voice. One is picked per day so it varies without changing on refresh.
     /// Night has a set for each part of it, so a 3 AM caption doesn't suggest an evening stroll.
-    /// Without a dog (Settings' Dog walking off), the captions leave out walks.
-    func captions(nightPart: NightPart = .evening, hasDog: Bool = true) -> [String] {
-        if !hasDog, let noDog = noDogCaptions(nightPart: nightPart) { return noDog }
+    /// Without a dog (Settings' Dog walking off), the captions leave out walks. A cloudy mood under
+    /// a partly cloudy (or clear) sky gets brighter captions than a grey one (`isPartlyCloudy`).
+    func captions(nightPart: NightPart = .evening, hasDog: Bool = true, partlyCloudy: Bool = false) -> [String] {
+        if !hasDog, let noDog = noDogCaptions(nightPart: nightPart, partlyCloudy: partlyCloudy) { return noDog }
+        if self == .cloudy, partlyCloudy {
+            return [
+                Self.goodSniffingWeather,
+                Self.sunnyIsReady,
+                Self.oneSunnySpot,
+            ]
+        }
         return switch self {
         case .fair: [
             Self.perfectWalkies,
@@ -71,7 +79,7 @@ enum PetMood: CaseIterable {
         ]
         case .cloudy: [
             Self.stillKeenForAWalk,
-            String(localized: "Nap weather, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            Self.napWeather,
             Self.stillTimeForAStroll,
         ]
         case .rain: [
@@ -115,8 +123,15 @@ enum PetMood: CaseIterable {
 
     /// The captions above with the walks and paw care swapped for things Misty would do. Nil for
     /// storm and late night, which have no walks and keep their own.
-    private func noDogCaptions(nightPart: NightPart) -> [String]? {
-        switch self {
+    private func noDogCaptions(nightPart: NightPart, partlyCloudy: Bool = false) -> [String]? {
+        if self == .cloudy, partlyCloudy {
+            return [
+                String(localized: "Bit of sun, bit of cloud. Misty is chasing the sunny patches.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                String(localized: "Sun in, sun out. Misty is supervising from the window.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                Self.oneSunnySpot,
+            ]
+        }
+        return switch self {
         case .fair: [
             String(localized: "Lovely day out. Misty will supervise from the window.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             String(localized: "Misty has claimed the sunniest windowsill.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
@@ -129,7 +144,7 @@ enum PetMood: CaseIterable {
         ]
         case .cloudy: [
             String(localized: "A bit grey. Misty says it's a blanket sort of day.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
-            String(localized: "Nap weather, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            Self.napWeather,
             String(localized: "No sun, no problem. The birds are still out, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .rain: [
@@ -168,21 +183,40 @@ enum PetMood: CaseIterable {
     /// Today's caption, chosen by the city's own date and (at night) hour, not the device's. When
     /// `walk` says now isn't the time for a walk (for anything but the dark, which the night
     /// captions allow for), the captions that suggest one are left out, and if that leaves none,
-    /// the captions without a dog stand in.
+    /// the captions without a dog stand in. Before noon in the city, the afternoon-only captions
+    /// are left out too, so the pick can change at noon.
     func caption(
         on date: Date = Date(),
         timeZone: TimeZone = .current,
         hasDog: Bool = true,
-        walk: WalkCheck? = nil
+        walk: WalkCheck? = nil,
+        partlyCloudy: Bool = false
     ) -> String {
         let calendar = Self.calendar(timeZone)
-        let nightPart = NightPart(hour: calendar.component(.hour, from: date))
-        var options = captions(nightPart: nightPart, hasDog: hasDog)
+        let hour = calendar.component(.hour, from: date)
+        let nightPart = NightPart(hour: hour)
+        // Before noon the afternoon-only captions are left out of every list, the no-dog fallback too.
+        func forTheHour(_ list: [String]) -> [String] {
+            hour < 12 ? list.filter { !Self.afternoonOnly.contains($0) } : list
+        }
+        var options = forTheHour(captions(nightPart: nightPart, hasDog: hasDog, partlyCloudy: partlyCloudy))
         if let walk, walk.factors.contains(where: { $0.reason != .dark && $0.level >= .wait }) {
             let quiet = options.filter { !Self.walkSuggestions.contains($0) }
-            options = quiet.isEmpty ? noDogCaptions(nightPart: nightPart) ?? options : quiet
+            options = quiet.isEmpty ? noDogCaptions(nightPart: nightPart, partlyCloudy: partlyCloudy).map(forTheHour) ?? options : quiet
         }
         return Self.pick(options, on: date, calendar)
+    }
+
+    /// Whether the cloudy mood's captions should be the partly cloudy ones: the sky as Misty's View
+    /// reads it is clear or partly cloudy. A forecast hour standing in for the reading has no cloud
+    /// cover, so its icon decides, as on the tile. Same rule as Android's `partlyCloudyCaptions`.
+    static func isPartlyCloudy(_ weather: CurrentWeather, showingForecast: Bool) -> Bool {
+        let sky = TodayDetails.skyCondition(
+            conditionMain: weather.conditionMain,
+            cloudPercent: showingForecast ? nil : weather.cloudPercent,
+            iconCode: weather.iconCode
+        )
+        return sky == .clear || sky == .partlyCloudy
     }
 
     /// The captions that suggest a walk now, which `caption` leaves out when now isn't the time.
@@ -192,9 +226,18 @@ enum PetMood: CaseIterable {
     private static let stillTimeForAStroll = String(localized: "No sun, no problem. Still time for a stroll.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
     private static let oneLastStroll = String(localized: "Quiet night. Time for one last stroll before bed?", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
     private static let oneMoreLap = String(localized: "Sunny thinks there's time for one more lap of the block.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let goodSniffingWeather = String(localized: "Bit of sun, bit of cloud. Good sniffing weather.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let sunnyIsReady = String(localized: "Sun in, sun out. Sunny is ready either way.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
     static let walkSuggestions: Set<String> = [
         perfectWalkies, stillKeenForAWalk, stillTimeForAStroll, oneLastStroll, oneMoreLap,
+        goodSniffingWeather, sunnyIsReady,
     ]
+
+    /// The captions that only fit the afternoon, which `caption` leaves out before noon in the city.
+    private static let napWeather = String(localized: "Nap weather, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.")
+    static let afternoonOnly: Set<String> = [napWeather]
+
+    private static let oneSunnySpot = String(localized: "Misty has found the one sunny spot on the floor.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.")
 
     /// The hero's caption: the walk's reason when it's one the scene can't show, then a seasonal
     /// theme's caption on its day, otherwise the weather's, leaving out walks when now isn't the time.
@@ -203,12 +246,13 @@ enum PetMood: CaseIterable {
         hasDog: Bool,
         themeCaption: String?,
         mood: PetMood,
+        partlyCloudy: Bool = false,
         on date: Date,
         timeZone: TimeZone
     ) -> String {
         walk.flatMap { walkCaption($0, hasDog: hasDog, on: date, timeZone: timeZone) }
             ?? themeCaption
-            ?? mood.caption(on: date, timeZone: timeZone, hasDog: hasDog, walk: walk)
+            ?? mood.caption(on: date, timeZone: timeZone, hasDog: hasDog, walk: walk, partlyCloudy: partlyCloudy)
     }
 
     /// When `walk` rules out more than a wait for a reason the scene can't show (the air, the

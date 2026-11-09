@@ -63,7 +63,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      The card shows the city, temperature, today's high and low (from
      the forecast, over the whole day and taking in the temperature now) and a caption in the
      pets' voice ("Sunny wants puddles. Misty wants a towel."). One caption is picked per day; at
-     night it follows the city's time of night (evening, late night, before dawn). The caption
+     night it follows the city's time of night (evening, late night, before dawn). The cloudy mood
+     covers a few clouds to overcast, so its captions follow the sky as Misty's View reads it: a
+     clear or partly cloudy sky gets brighter ones ("Sun in, sun out. Sunny is ready either way."),
+     anything greyer the grey-day ones. "Nap weather, says Misty." only shows from noon in the
+     city, so before noon the day's pick comes from the rest of the list. The caption
      follows the walk verdict (see **One walk verdict** below): when now isn't the time for a walk,
      captions that suggest one ("Perfect walkies weather! Off we go.") are left out, and when the
      reason is one the scene can't show it speaks to that instead, in place of a seasonal theme's
@@ -494,7 +498,7 @@ Shared with Android (the same cases on both platforms):
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen
-- `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
+- `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy captions and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present

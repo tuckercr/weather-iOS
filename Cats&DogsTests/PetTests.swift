@@ -117,6 +117,102 @@ final class PetMoodTests: XCTestCase {
         XCTAssertTrue(PetMood.cloudy.captions(hasDog: false).contains(caption))
     }
 
+    // MARK: - Cloudy captions
+
+    private static let partlyCloudyDog = [
+        "Bit of sun, bit of cloud. Good sniffing weather.",
+        "Sun in, sun out. Sunny is ready either way.",
+        "Misty has found the one sunny spot on the floor.",
+    ]
+    private static let partlyCloudyNoDog = [
+        "Bit of sun, bit of cloud. Misty is chasing the sunny patches.",
+        "Sun in, sun out. Misty is supervising from the window.",
+        "Misty has found the one sunny spot on the floor.",
+    ]
+
+    func testAPartlyCloudySkyPicksTheBrighterCaptions() {
+        XCTAssertEqual(PetMood.cloudy.captions(partlyCloudy: true), Self.partlyCloudyDog)
+        XCTAssertEqual(PetMood.cloudy.captions(hasDog: false, partlyCloudy: true), Self.partlyCloudyNoDog)
+        let utc = TimeZone(identifier: "UTC")!
+        let noon = Date(timeIntervalSince1970: TimeInterval(fixtureDayStart + 12 * 3600))
+        for day in 0 ..< 3 {
+            let date = noon.addingTimeInterval(Double(day) * 86_400)
+            XCTAssertTrue(Self.partlyCloudyDog.contains(PetMood.cloudy.caption(on: date, timeZone: utc, partlyCloudy: true)))
+            XCTAssertTrue(Self.partlyCloudyNoDog.contains(PetMood.cloudy.caption(on: date, timeZone: utc, hasDog: false, partlyCloudy: true)))
+        }
+        // The first two with a dog suggest a walk now.
+        XCTAssertTrue(PetMood.walkSuggestions.isSuperset(of: Self.partlyCloudyDog.prefix(2)))
+        XCTAssertFalse(PetMood.walkSuggestions.contains(Self.partlyCloudyDog[2]))
+    }
+
+    func testAGreySkyKeepsTheCloudyCaptionsAndOtherMoodsIgnoreTheSky() {
+        XCTAssertEqual(PetMood.cloudy.captions(), [
+            "A bit grey, but Sunny is still keen for a walk.",
+            "Nap weather, says Misty.",
+            "No sun, no problem. Still time for a stroll.",
+        ])
+        XCTAssertEqual(PetMood.cloudy.captions(hasDog: false), [
+            "A bit grey. Misty says it's a blanket sort of day.",
+            "Nap weather, says Misty.",
+            "No sun, no problem. The birds are still out, says Misty.",
+        ])
+        for mood in PetMood.allCases where mood != .cloudy {
+            XCTAssertEqual(mood.captions(partlyCloudy: true), mood.captions())
+            XCTAssertEqual(mood.captions(hasDog: false, partlyCloudy: true), mood.captions(hasDog: false))
+        }
+    }
+
+    func testTheNapCaptionNeverShowsBeforeNoonInTheCity() {
+        let utc = TimeZone(identifier: "UTC")!
+        // 1 Jan: the daily pick lands on the nap caption, which shows from 12:00.
+        let dayStart = Date(timeIntervalSince1970: TimeInterval(fixtureDayStart))
+        for hasDog in [true, false] {
+            XCTAssertEqual(PetMood.cloudy.caption(on: dayStart.addingTimeInterval(12 * 3600), timeZone: utc, hasDog: hasDog), "Nap weather, says Misty.")
+            XCTAssertEqual(PetMood.cloudy.caption(on: dayStart.addingTimeInterval(17 * 3600), timeZone: utc, hasDog: hasDog), "Nap weather, says Misty.")
+            for day in 0 ..< 7 {
+                for hour in 0 ..< 12 {
+                    let date = dayStart.addingTimeInterval(Double(day * 24 + hour) * 3600 + 59 * 60)
+                    XCTAssertNotEqual(PetMood.cloudy.caption(on: date, timeZone: utc, hasDog: hasDog), "Nap weather, says Misty.")
+                }
+            }
+        }
+        // A wait for a walk leaves only the nap among the dog's grey captions; before noon the
+        // no-dog captions stand in, still without the nap.
+        let wait = WalkCheck([WalkFactor(reason: .rain(likely: true), level: .wait)])
+        for day in 0 ..< 7 {
+            for hour in 0 ..< 12 {
+                let date = dayStart.addingTimeInterval(Double(day * 24 + hour) * 3600)
+                XCTAssertNotEqual(PetMood.cloudy.caption(on: date, timeZone: utc, walk: wait), "Nap weather, says Misty.")
+            }
+        }
+        XCTAssertEqual(PetMood.cloudy.caption(on: dayStart.addingTimeInterval(12 * 3600), timeZone: utc, walk: wait), "Nap weather, says Misty.")
+        // 12:00 UTC is 7 AM in New York: still the morning there.
+        let newYork = TimeZone(identifier: "America/New_York")!
+        XCTAssertNotEqual(PetMood.cloudy.caption(on: dayStart.addingTimeInterval(12 * 3600), timeZone: newYork), "Nap weather, says Misty.")
+        XCTAssertEqual(PetMood.afternoonOnly, ["Nap weather, says Misty."])
+    }
+
+    func testThePartlyCloudyFlagReadsTheSkyAsMistysViewDoes() {
+        // A few clouds is partly cloudy; overcast, mostly cloudy and mist are not.
+        XCTAssertTrue(PetMood.isPartlyCloudy(weather("Clouds", icon: "02d", clouds: 20), showingForecast: false))
+        XCTAssertTrue(PetMood.isPartlyCloudy(weather("Clear", icon: "01d", clouds: 0), showingForecast: false))
+        XCTAssertFalse(PetMood.isPartlyCloudy(weather("Clouds", icon: "04d", clouds: 95), showingForecast: false))
+        XCTAssertFalse(PetMood.isPartlyCloudy(weather("Clouds", icon: "03d", clouds: 70), showingForecast: false))
+        XCTAssertFalse(PetMood.isPartlyCloudy(weather("Mist", icon: "50d", clouds: 20), showingForecast: false))
+        // A forecast hour standing in has no cloud cover, so its icon decides.
+        XCTAssertTrue(PetMood.isPartlyCloudy(weather("Clouds", icon: "02d", clouds: 95), showingForecast: true))
+        XCTAssertFalse(PetMood.isPartlyCloudy(weather("Clouds", icon: "04d", clouds: 20), showingForecast: true))
+    }
+
+    private func weather(_ main: String, icon: String, clouds: Int) -> CurrentWeather {
+        CurrentWeather(
+            cityName: "London", conditionMain: main, description: main, iconCode: icon,
+            temperature: 9, feelsLike: 8, tempMin: 6, tempMax: 11, humidityPercent: 70, pressureHpa: 1013,
+            windSpeed: 3, windDeg: 180, visibilityMeters: 10_000, cloudPercent: clouds, units: .metric,
+            sunriseEpoch: nil, sunsetEpoch: nil, timezoneOffsetSeconds: 0
+        )
+    }
+
     func testTheCaptionFollowsTheCitysTimeZoneNotTheDevices() {
         // 03:00 UTC is 12:00 in Tokyo: a night caption there is evening's, here it's late night's.
         let date = ISO8601DateFormatter().date(from: "2026-10-26T03:00:00Z")!

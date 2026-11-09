@@ -220,6 +220,7 @@ struct WeatherScreenState {
             hasDog: hasDog,
             themeCaption: seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar),
             mood: mood,
+            partlyCloudy: PetMood.isPartlyCloudy(weather, showingForecast: showingForecast),
             on: now,
             timeZone: timeZone
         )

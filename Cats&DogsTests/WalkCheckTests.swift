@@ -228,6 +228,23 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertTrue(fair.contains("Perfect walkies weather! Off we go."))
     }
 
+    func testThePartlyCloudyWalkCaptionsAreLeftOutWhenNowIsNotTheTime() {
+        let chilly = check(slot(), feelsLikeC: 2)
+        for day in 0 ..< 3 {
+            let date = noon.addingTimeInterval(Double(day) * 86400)
+            XCTAssertEqual(
+                PetMood.cloudy.caption(on: date, timeZone: utc, hasDog: true, walk: chilly, partlyCloudy: true),
+                "Misty has found the one sunny spot on the floor."
+            )
+        }
+        let walkable = check(slot())
+        let captions = (0 ..< 3).map {
+            PetMood.cloudy.caption(on: noon.addingTimeInterval(Double($0) * 86400), timeZone: utc, walk: walkable, partlyCloudy: true)
+        }
+        XCTAssertTrue(captions.contains("Bit of sun, bit of cloud. Good sniffing weather."))
+        XCTAssertTrue(captions.contains("Sun in, sun out. Sunny is ready either way."))
+    }
+
     func testAnEveningWithRainUsesTheEveningCaptionsWithoutAWalkButDarkAloneKeepsThem() {
         let rainyNight = check(slot(icon: "10n"), conditionNow: "Rain")
         let caption = PetMood.night.caption(on: evening, timeZone: utc, hasDog: true, walk: rainyNight)
