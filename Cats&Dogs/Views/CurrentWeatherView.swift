@@ -106,7 +106,7 @@ struct CurrentWeatherView: View {
     }
 
     private var isSouthernHemisphere: Bool {
-        (viewModel.activeLocation?.latitude ?? 0) < 0
+        viewModel.activeLocation?.isSouthernHemisphere ?? false
     }
 
     private var navigationTitle: String {

@@ -374,6 +374,48 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(summary(.rain, 2), "2 more rain alerts")
     }
 
+    // MARK: - Pictures and records
+
+    func testThePictureIsTheBriefingsMoodTheWalkOrTheUmbrella() {
+        func planned(_ kind: NotificationKind, mood: PetMood? = nil, snow: Bool = false) -> PlannedNotification {
+            PlannedNotification(identifier: "x", kind: kind, date: at(8), title: "", body: "", snow: snow, mood: mood)
+        }
+        XCTAssertEqual(planned(.morningBriefing, mood: .cloudy).pictureMood, .cloudy)
+        XCTAssertNil(planned(.morningBriefing).pictureMood, "a briefing without the hour's weather has no picture")
+        XCTAssertEqual(planned(.walkTime).pictureMood, .sunny)
+        XCTAssertEqual(planned(.rain).pictureMood, .rain)
+        XCTAssertEqual(planned(.rain, snow: true).pictureMood, .snow)
+    }
+
+    func testOnlyNudgesThatHaveGoneOffCountAsGoneOff() {
+        XCTAssertEqual(NotificationPlanner.walkNudgesGoneOff(recorded: [at(-13), at(6), at(11)], now: at(7)), [at(-13), at(6)])
+    }
+
+    func testTheWalkRecordKeepsTodaysThatHaveGoneOffAndTheNewPlans() {
+        let walks = [
+            PlannedNotification(identifier: "walk_0", kind: .walkTime, date: at(15), title: "", body: ""),
+            PlannedNotification(identifier: "briefing_0", kind: .morningBriefing, date: at(32.5), title: "", body: ""),
+            PlannedNotification(identifier: "walk_1", kind: .walkTime, date: at(35), title: "", body: ""),
+        ]
+        XCTAssertEqual(
+            NotificationPlanner.walkNudgeRecord(goneOff: [at(-13), at(11)], plan: walks, now: at(12), calendar: calendar),
+            [at(11), at(15), at(35)]
+        )
+        XCTAssertTrue(NotificationPlanner.walkNudgeRecord(goneOff: [at(-13)], plan: [], now: at(12), calendar: calendar).isEmpty)
+    }
+
+    func testTheRainRecordIsTheAlertJustPlannedOrLeftAsItWas() {
+        let alert = plan(rainFrom(8.5), now: at(7), settings: NotificationSettings(rain: true))
+        XCTAssertEqual(NotificationPlanner.rainAlertRecord(plan: alert), RainAlertRecord(rainStart: dayStart + 8 * hour + 1800, fireDate: at(7.5)))
+        XCTAssertNil(NotificationPlanner.rainAlertRecord(plan: plan([day(dry.map { slot($0) })])))
+    }
+
+    func testTheSouthernHemisphereIsBelowTheEquatorAndANameOnlyCityIsNorthern() {
+        XCTAssertTrue(SavedLocation(label: "Sydney", latitude: -33.87, longitude: 151.21).isSouthernHemisphere)
+        XCTAssertFalse(SavedLocation(label: "London", latitude: 51.5, longitude: -0.13).isSouthernHemisphere)
+        XCTAssertFalse(SavedLocation(label: "Paris", latitude: nil, longitude: nil).isSouthernHemisphere)
+    }
+
     // MARK: - Rain alerts
 
     /// Dry, then rain from `startHours` after midnight, in 15-minute steps from 6 AM.

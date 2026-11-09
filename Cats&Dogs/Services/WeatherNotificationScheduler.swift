@@ -1,16 +1,93 @@
 import Foundation
 import UserNotifications
 
+/// The parts of `UNUserNotificationCenter` the scheduler uses, so tests can queue into a fake.
+@MainActor
+protocol UserNotificationCentre: AnyObject {
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
+    func authorizationStatus() async -> UNAuthorizationStatus
+    func add(_ request: UNNotificationRequest) async throws
+    func pendingRequestIdentifiers() async -> [String]
+    func removePendingRequests(withIdentifiers identifiers: [String])
+}
+
+/// The real notification centre.
+@MainActor
+final class SystemNotificationCentre: UserNotificationCentre {
+    private let center = UNUserNotificationCenter.current()
+
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
+        try await center.requestAuthorization(options: options)
+    }
+
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        await center.notificationSettings().authorizationStatus
+    }
+
+    func add(_ request: UNNotificationRequest) async throws {
+        try await center.add(request)
+    }
+
+    func pendingRequestIdentifiers() async -> [String] {
+        await center.pendingNotificationRequests().map(\.identifier)
+    }
+
+    func removePendingRequests(withIdentifiers identifiers: [String]) {
+        center.removePendingNotificationRequests(withIdentifiers: identifiers)
+    }
+}
+
+/// Draws the pets in `mood` as a PNG for a notification's picture. The live one
+/// (`PetSceneIconPictures`) lives with the views, so the scheduler never draws a view itself.
+@MainActor
+protocol PetPictureRendering {
+    func png(mood: PetMood, southernHemisphere: Bool) -> Data?
+}
+
+/// Remote Config's values the plan follows: the switches for everyone and the walk thresholds.
+@MainActor
+protocol NotificationRemoteConfig {
+    var dailyWeatherNotificationsEnabled: Bool { get }
+    var walkTimeNotificationsEnabled: Bool { get }
+    var rainNotificationsEnabled: Bool { get }
+    var petWeatherThresholds: PetWeatherThresholds { get }
+}
+
+extension RemoteConfigRepository: NotificationRemoteConfig {}
+
+/// Queues what `NotificationPlanner` plans: it reads the cache and the switches, keeps the walk
+/// nudge and rain alert records the planner works out, and hands the requests to the notification
+/// centre. The rules themselves are the planner's.
 @MainActor
 final class WeatherNotificationScheduler {
     static let shared = WeatherNotificationScheduler()
 
-    private let center = UNUserNotificationCenter.current()
     /// Every identifier this app has queued under, now or in older versions (the 9 AM / 1 PM / 7 PM
     /// "weather_daily" ones), so a reschedule clears them all and leaves nothing else alone.
     nonisolated static let identifierPrefixes = ["weather_daily", "briefing_", "walk_", "rain_"]
 
-    private init() {}
+    private let center: any UserNotificationCentre
+    private let preferences: PreferencesStore
+    private let remoteConfig: any NotificationRemoteConfig
+    private let pictures: any PetPictureRendering
+    private let now: () -> Date
+    private let calendar: Calendar
+
+    init(
+        center: (any UserNotificationCentre)? = nil,
+        preferences: PreferencesStore? = nil,
+        remoteConfig: (any NotificationRemoteConfig)? = nil,
+        pictures: (any PetPictureRendering)? = nil,
+        now: (() -> Date)? = nil,
+        calendar: Calendar? = nil
+    ) {
+        self.center = center ?? SystemNotificationCentre()
+        self.preferences = preferences ?? .shared
+        self.remoteConfig = remoteConfig ?? RemoteConfigRepository.shared
+        self.pictures = pictures ?? PetSceneIconPictures()
+        self.now = now ?? { Date() }
+        self.calendar = calendar ?? .autoupdatingCurrent
+    }
 
     /// `.providesAppNotificationSettings` adds the link to the Notifications screen in iOS Settings.
     private static let authorizationOptions: UNAuthorizationOptions = [
@@ -34,8 +111,7 @@ final class WeatherNotificationScheduler {
     }
 
     func authorizationStatus() async -> UNAuthorizationStatus {
-        let settings = await center.notificationSettings()
-        return settings.authorizationStatus
+        await center.authorizationStatus()
     }
 
     func isAuthorized() async -> Bool {
@@ -46,49 +122,38 @@ final class WeatherNotificationScheduler {
     /// Replaces the queued notifications with a fresh plan from the cached weather for the active
     /// city: the 8:30 AM briefings, the walk-time nudges and the next rain alert, as each switch
     /// allows. Callers run this after a refresh has written the cache, so it never needs the network.
-    func scheduleNotifications(preferences: PreferencesStore? = nil) async {
-        let preferences = preferences ?? .shared
+    func scheduleNotifications() async {
         let repository = LocationWeatherRepository(preferences: preferences)
         await removePendingNotifications()
         guard let location = preferences.savedLocations.notificationLocation, await isAuthorized() else { return }
-        let settings = NotificationSettings(preferences: preferences, remoteConfig: .shared)
-        let now = Date()
-        let calendar = Calendar.current
-        let walkNudgesGoneOff = preferences.walkNudgeDates.filter { $0 <= now }
+        let settings = NotificationSettings(preferences: preferences, remoteConfig: remoteConfig)
+        let now = now()
+        let walkNudgesGoneOff = NotificationPlanner.walkNudgesGoneOff(recorded: preferences.walkNudgeDates, now: now)
         let plan = NotificationPlanner.plan(
             weather: repository.cachedWeather(for: location),
             forecast: repository.cachedForecast(for: location) ?? [],
             now: now,
             settings: settings,
-            thresholds: RemoteConfigRepository.shared.petWeatherThresholds,
+            thresholds: remoteConfig.petWeatherThresholds,
             lastRainAlert: preferences.lastRainAlert,
             walkNudgesGoneOff: walkNudgesGoneOff,
-            forecastFetchedAt: repository.forecastFetchedAt(for: location)
+            forecastFetchedAt: repository.forecastFetchedAt(for: location),
+            calendar: calendar
         )
-        // Today's that have gone off stay on record, so a later replan doesn't send a second.
         preferences.setWalkNudgeDates(
-            walkNudgesGoneOff.filter { calendar.isDate($0, inSameDayAs: now) }
-                + plan.filter { $0.kind == .walkTime }.map(\.date)
+            NotificationPlanner.walkNudgeRecord(goneOff: walkNudgesGoneOff, plan: plan, now: now, calendar: calendar)
         )
 
-        let southern = (location.latitude ?? 0) < 0
         for planned in plan {
             let trigger = UNCalendarNotificationTrigger(
                 dateMatching: calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: planned.date),
                 repeats: false
             )
-            // The brand look: the pets, in the forecast's mood at 8:30 for a briefing that gives the
-            // hour's weather, out for a walk, or under the umbrella.
-            let mood: PetMood? = switch planned.kind {
-            case .morningBriefing: planned.mood
-            case .walkTime: .sunny
-            case .rain: planned.snow ? .snow : .rain
-            }
-            let content = content(for: planned, mood: mood, southernHemisphere: southern)
+            let content = content(for: planned, mood: planned.pictureMood, southernHemisphere: location.isSouthernHemisphere)
             try? await center.add(UNNotificationRequest(identifier: planned.identifier, content: content, trigger: trigger))
-            if let start = planned.rainStart {
-                preferences.setLastRainAlert(RainAlertRecord(rainStart: start, fireDate: planned.date))
-            }
+        }
+        if let record = NotificationPlanner.rainAlertRecord(plan: plan) {
+            preferences.setLastRainAlert(record)
         }
     }
 
@@ -101,7 +166,7 @@ final class WeatherNotificationScheduler {
         content.threadIdentifier = Self.threadIdentifier(planned.kind)
         // The category gives a stack its own summary ("3 more briefings").
         content.categoryIdentifier = Self.threadIdentifier(planned.kind)
-        if let mood, let png = petsPicture(mood: mood, southernHemisphere: southernHemisphere),
+        if let mood, let png = pictures.png(mood: mood, southernHemisphere: southernHemisphere),
            let attachment = Self.attachment(png, identifier: planned.identifier) {
             content.attachments = [attachment]
         }
@@ -112,9 +177,8 @@ final class WeatherNotificationScheduler {
     /// Debug builds only: one of each kind, plus a second briefing so a group forms, a few seconds
     /// apart with made-up text, through the same content code. Shows the look and the grouping
     /// without waiting for 8:30 or the weather.
-    func sendSamples(preferences: PreferencesStore? = nil) async {
+    func sendSamples() async {
         guard await isAuthorized() else { return }
-        let preferences = preferences ?? .shared
         // They follow "I have a dog", and use the notification city's name, as the real ones do.
         let hasDog = preferences.showWalkCard
         let location = preferences.savedLocations.notificationLocation
@@ -183,11 +247,6 @@ final class WeatherNotificationScheduler {
         }
     }
 
-    /// A PNG of the pets in `mood`, drawn by the view that draws them on screen.
-    private func petsPicture(mood: PetMood, southernHemisphere: Bool) -> Data? {
-        PetSceneIcon.png(mood: mood, southernHemisphere: southernHemisphere)
-    }
-
     /// Each notification needs its own file: iOS moves an attachment's file into its own store.
     private static func attachment(_ png: Data, identifier: String) -> UNNotificationAttachment? {
         let url = FileManager.default.temporaryDirectory
@@ -202,16 +261,16 @@ final class WeatherNotificationScheduler {
 
     /// Only this app's weather requests, so anything else queued is left alone.
     private func removePendingNotifications() async {
-        let pending = await center.pendingNotificationRequests()
-        let ours = pending.map(\.identifier).filter { id in Self.identifierPrefixes.contains { id.hasPrefix($0) } }
-        center.removePendingNotificationRequests(withIdentifiers: ours)
+        let pending = await center.pendingRequestIdentifiers()
+        let ours = pending.filter { id in Self.identifierPrefixes.contains { id.hasPrefix($0) } }
+        center.removePendingRequests(withIdentifiers: ours)
     }
 }
 
 extension NotificationSettings {
     /// The user's switches in Settings and Remote Config's for everyone.
     @MainActor
-    init(preferences: PreferencesStore, remoteConfig: RemoteConfigRepository) {
+    init(preferences: PreferencesStore, remoteConfig: any NotificationRemoteConfig) {
         self.init(
             morningBriefing: preferences.notifyMorningBriefing,
             walkTime: preferences.notifyWalkTime,

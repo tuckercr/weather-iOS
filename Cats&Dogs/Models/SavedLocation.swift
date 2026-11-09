@@ -17,6 +17,12 @@ struct SavedLocation: Codable, Equatable, Identifiable {
         return label.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
+    /// The moon is lit from the other side down south, on screen and in a notification's picture.
+    /// A name-only city counts as northern.
+    var isSouthernHemisphere: Bool {
+        (latitude ?? 0) < 0
+    }
+
     init(
         label: String,
         latitude: Double?,

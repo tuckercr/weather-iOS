@@ -17,6 +17,16 @@ struct PlannedNotification: Equatable {
     var snow = false
     /// For a briefing that gives the hour's weather: the pets' mood then, for its picture.
     var mood: PetMood? = nil
+
+    /// The pets in its picture, the brand look: in the forecast's mood at 8:30 for a briefing that
+    /// gives the hour's weather (none otherwise), out for a walk, or under the umbrella.
+    var pictureMood: PetMood? {
+        switch kind {
+        case .morningBriefing: mood
+        case .walkTime: .sunny
+        case .rain: snow ? .snow : .rain
+        }
+    }
 }
 
 /// The rain alert last queued, so a shower isn't alerted twice once its alert has gone off.
@@ -161,6 +171,31 @@ enum NotificationPlanner {
             planned.append(alert)
         }
         return planned.sorted { $0.date < $1.date }
+    }
+
+    /// The walk nudges on record that have gone off by `now`: what `plan` takes as
+    /// `walkNudgesGoneOff`, so a day that has had one doesn't get a second.
+    static func walkNudgesGoneOff(recorded: [Date], now: Date) -> [Date] {
+        recorded.filter { $0 <= now }
+    }
+
+    /// The walk nudges to keep on record after planning: today's that have gone off, so a later
+    /// replan doesn't send a second, and the ones `plan` has just queued.
+    static func walkNudgeRecord(
+        goneOff: [Date],
+        plan: [PlannedNotification],
+        now: Date,
+        calendar: Calendar = .current
+    ) -> [Date] {
+        goneOff.filter { calendar.isDate($0, inSameDayAs: now) } + plan.filter { $0.kind == .walkTime }.map(\.date)
+    }
+
+    /// The rain alert to keep on record after planning: the one `plan` has just queued, if any.
+    /// Nil leaves the record as it was, so rain already alerted about still isn't alerted again.
+    static func rainAlertRecord(plan: [PlannedNotification]) -> RainAlertRecord? {
+        plan.last { $0.rainStart != nil }.flatMap { planned in
+            planned.rainStart.map { RainAlertRecord(rainStart: $0, fireDate: planned.date) }
+        }
     }
 
     /// The 8:30s walk nudges are planned from, on the device's clock: today's, even once it has
