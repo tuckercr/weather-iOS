@@ -2909,12 +2909,13 @@
         }
       }
     },
-    "Privacy policy" : {
+    "Privacy Policy" : {
+      "comment" : "Settings, About: link to the privacy policy on the website",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy policy"
+            "value" : "Privacy Policy"
           }
         }
       }
@@ -3638,6 +3639,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to see today's weather."
+          }
+        }
+      }
+    },
+    "Terms of Use" : {
+      "comment" : "Settings, About: link to the terms of use on the website",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use"
           }
         }
       }
