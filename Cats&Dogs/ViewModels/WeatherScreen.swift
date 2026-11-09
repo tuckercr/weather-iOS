@@ -135,6 +135,10 @@ struct WeatherScreenState {
     let mood: PetMood
     /// Today's seasonal theme by the city's own date, so it ends by itself when its day does.
     let seasonalTheme: SeasonalTheme?
+    /// Dark in the city by the clock: the hero's colours and the theme's extras take their night
+    /// look, whatever the weather (a rainy Halloween evening is still night). The pets' weather
+    /// follows the mood.
+    let darkNow: Bool
     /// Today's forecast, by the city's own date; nil before the forecast has today.
     let today: DayForecast?
     /// Today's high and low in whole degrees, taking in the temperature now.
@@ -184,6 +188,9 @@ struct WeatherScreenState {
         iconCodeNow = StaleWeather.iconCode(weather, at: now)
         mood = PetMood.forReading(weather, at: now, thresholds: config.thresholds)
         seasonalTheme = SeasonalThemes.theme(on: now, timeZone: timeZone, in: config.seasonalThemes)
+        // The hero's own day or night by the clock.
+        let darkNow = iconCodeNow.hasSuffix("n")
+        self.darkNow = darkNow
         let today = days.first.flatMap { $0.isDay(of: now, in: timeZone) ? $0 : nil }
         self.today = today
         let highLow = TodayDetails.highLow(current: weather, today: today)
@@ -215,10 +222,13 @@ struct WeatherScreenState {
         walkCard = showsWalkCard ? walkAdvice.map(WalkCardContent.init) : nil
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = timeZone
+        // The theme's night caption is for the evening of its day: dark in the small hours, before
+        // sunrise, is still the day's start ("Too many doorbells" at 3 AM was wrong).
+        let eveningNow = darkNow && calendar.component(.hour, from: now) >= 12
         heroCaption = PetMood.heroCaption(
             walk: walkAdvice?.now,
             hasDog: hasDog,
-            themeCaption: seasonalTheme?.caption(night: mood == .night, on: now, calendar: calendar),
+            themeCaption: seasonalTheme?.caption(night: eveningNow, on: now, calendar: calendar),
             mood: mood,
             partlyCloudy: PetMood.isPartlyCloudy(weather, showingForecast: showingForecast),
             on: now,

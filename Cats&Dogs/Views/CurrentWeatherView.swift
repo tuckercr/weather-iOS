@@ -257,7 +257,8 @@ private struct CurrentWeatherContent: View {
 
     private var isWide: Bool { contentWidth >= Self.wideLayoutMinWidth }
     private var weather: CurrentWeather { state.weather }
-    private var night: Bool { state.mood == .night }
+    /// The hero's night colours go by the clock, so a rainy evening on a theme's day has them too.
+    private var night: Bool { state.darkNow }
 
     var body: some View {
         let outlook = state.rainOutlook
@@ -360,7 +361,7 @@ private struct CurrentWeatherContent: View {
         } label: {
             VStack(spacing: 4) {
                 // Kept smaller than the card so the scene doesn't dominate, especially on wide screens.
-                PetScene(mood: state.mood, moonPhase: MoonPhase(at: state.now), decorations: state.seasonalTheme?.decorations ?? [])
+                PetScene(mood: state.mood, moonPhase: MoonPhase(at: state.now), decorations: state.seasonalTheme?.decorations ?? [], dark: state.darkNow)
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
                 // Medium weight on the small lines so they hold up on the brighter hero colours.

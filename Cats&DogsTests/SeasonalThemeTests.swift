@@ -27,9 +27,24 @@ final class SeasonalThemeTests: XCTestCase {
       "decorations": ["bats", "witchHat", "turkey"]}]
     """
 
-    func testTheShippedListHasHalloween() {
-        XCTAssertEqual(SeasonalThemes.builtIn.map(\.id), ["halloween"])
+    func testTheShippedListHasHalloweenThenThanksgiving() {
+        XCTAssertEqual(SeasonalThemes.builtIn.map(\.id), ["halloween", "thanksgiving"])
         XCTAssertEqual(SeasonalThemes.builtIn.first?.decorations, [.bats, .witchHat, .bandana, .jackOLantern])
+        let thanksgiving = SeasonalThemes.builtIn.last
+        XCTAssertEqual(thanksgiving?.decorations, [.autumnLeaves, .pie])
+        XCTAssertEqual(thanksgiving?.colors.tileHeaderLight?.rgb, 0x8F3E0E)
+        XCTAssertEqual(thanksgiving?.colors.tileHeaderDark?.rgb, 0xF2B27A)
+        XCTAssertEqual(thanksgiving?.captions.day, ["Sunny is on crumb patrol under the table."])
+        XCTAssertEqual(thanksgiving?.captions.night, ["Too full to move. Misty is napping on the coats."])
+    }
+
+    func testThanksgivingIsTheFourthThursdayOfNovember() {
+        let themes = SeasonalThemes.builtIn
+        let newYork = TimeZone(identifier: "America/New_York")!
+        XCTAssertEqual(SeasonalThemes.theme(on: date("2026-11-26 09:00", "America/New_York"), timeZone: newYork, in: themes)?.id, "thanksgiving")
+        XCTAssertEqual(SeasonalThemes.theme(on: date("2027-11-25 21:00", "America/New_York"), timeZone: newYork, in: themes)?.id, "thanksgiving")
+        XCTAssertNil(SeasonalThemes.theme(on: date("2026-11-19 12:00", "America/New_York"), timeZone: newYork, in: themes))
+        XCTAssertNil(SeasonalThemes.theme(on: date("2026-11-27 00:00", "America/New_York"), timeZone: newYork, in: themes))
     }
 
     func testHalloweenIsTheCitysOwn31OctoberAndEndsWithIt() {
@@ -65,6 +80,48 @@ final class SeasonalThemeTests: XCTestCase {
         let theme = try XCTUnwrap(SeasonalThemes.parse(Data(halloweenJSON.utf8))?.first)
         XCTAssertEqual(theme.decorations, [.bats, .witchHat])
         XCTAssertEqual(theme.caption(night: true, on: date("2026-10-31 22:00"), calendar: utcCalendar()), "Night")
+    }
+
+    func testAnUnknownDecorationKeepsTheRestOfTheThemeAndTheList() throws {
+        let thanksgiving = """
+        {"id": "thanksgiving", "dates": {"type": "nthWeekday", "month": 11, "weekday": 5, "n": 4},
+         "colors": {"heroDay": "#8C3F14", "heroNight": "#2E1A12", "inkDay": "#FFF2E2", "inkNight": "#F6E3CF",
+                    "cardLight": "#F7E6D2", "cardDark": "#3A2416"},
+         "captions": {"day": ["Day"], "night": ["Night"]},
+         "decorations": ["turkey", "autumnLeaves", "pie", "pilgrimHat"]}
+        """
+        let list = "[\(halloweenJSON.dropFirst().dropLast()), \(thanksgiving)]"
+        let themes = try XCTUnwrap(SeasonalThemes.parse(Data(list.utf8)))
+        XCTAssertEqual(themes.map(\.id), ["halloween", "thanksgiving"])
+        XCTAssertEqual(themes.last?.decorations, [.autumnLeaves, .pie])
+        XCTAssertEqual(themes.last?.captions.day, ["Day"])
+        // Nothing this version can draw still leaves the colours and captions.
+        let none = thanksgiving.replacingOccurrences(of: #""autumnLeaves", "pie", "#, with: "")
+        XCTAssertEqual(try XCTUnwrap(SeasonalThemes.parse(Data("[\(none)]".utf8))?.first).decorations, [])
+    }
+
+    // MARK: - What the pets wear
+
+    func testACostumeOnlyReplacesWhatItCovers() {
+        let halloween: Set<SceneDecoration> = [.bats, .witchHat, .bandana, .jackOLantern]
+        // Sunny keeps his sunglasses beside the witch; the bandana goes round his neck.
+        XCTAssertEqual(PetOutfit.accessories(mood: .sunny, decorations: halloween, dark: false), [.sunglasses, .witchHat, .bandana])
+        // In the cold the bandana takes Sunny's scarf's place; Misty keeps hers under the hat.
+        XCTAssertEqual(PetOutfit.accessories(mood: .cold, decorations: halloween, dark: false), [.catScarf, .witchHat, .bandana])
+        // A theme with only the hat leaves Sunny's scarf alone.
+        XCTAssertEqual(PetOutfit.accessories(mood: .snow, decorations: [.witchHat], dark: false), [.dogScarf, .catScarf, .witchHat])
+        // The umbrella stays over the costumes.
+        XCTAssertEqual(PetOutfit.accessories(mood: .rain, decorations: halloween, dark: false), [.umbrella, .witchHat, .bandana])
+    }
+
+    func testCostumesComeOffAfterDarkWhateverTheWeather() {
+        let halloween: Set<SceneDecoration> = [.bats, .witchHat, .bandana, .jackOLantern]
+        XCTAssertEqual(PetOutfit.accessories(mood: .rain, decorations: halloween, dark: true), [.umbrella])
+        XCTAssertEqual(PetOutfit.accessories(mood: .cold, decorations: halloween, dark: true), [.dogScarf, .catScarf])
+        XCTAssertEqual(PetOutfit.accessories(mood: .night, decorations: halloween, dark: true), [])
+        // Thanksgiving has no costumes: the weather's props as on any day.
+        XCTAssertEqual(PetOutfit.accessories(mood: .sunny, decorations: [.autumnLeaves, .pie], dark: false), [.sunglasses])
+        XCTAssertEqual(PetOutfit.accessories(mood: .fair, decorations: [], dark: false), [])
     }
 
     func testTilesKeepTheBrandColourWhenAThemeLeavesTheirsOut() throws {

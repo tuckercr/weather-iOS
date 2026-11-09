@@ -10,6 +10,9 @@ struct PetScene: View {
     var knockedOverRouter = false
     /// Today's seasonal theme's extras (costumes, a jack-o'-lantern, bats); none on an ordinary day.
     var decorations: Set<SceneDecoration> = []
+    /// Dark in the city by the clock, which puts the theme's extras in their night look (costumes
+    /// off, the pumpkin lit) whatever the weather. Nil goes by the mood.
+    var dark: Bool?
     @Environment(\.southernHemisphere) private var southernHemisphere
 
     // The scene is authored on a 260 x 150 grid and scaled to fit.
@@ -25,7 +28,8 @@ struct PetScene: View {
                 moonPhase: moonPhase,
                 southernHemisphere: southernHemisphere,
                 knockedOverRouter: knockedOverRouter,
-                decorations: decorations
+                decorations: decorations,
+                dark: dark ?? (mood == .night)
             )
         }
         .aspectRatio(Self.sceneWidth / Self.sceneHeight, contentMode: .fit)
@@ -44,11 +48,14 @@ extension PetScene {
         moonPhase: MoonPhase,
         southernHemisphere: Bool,
         knockedOverRouter: Bool = false,
-        decorations: Set<SceneDecoration> = []
+        decorations: Set<SceneDecoration> = [],
+        dark: Bool? = nil
     ) {
+        let dark = dark ?? (mood == .night)
         let painter = Painter(context: context, scale: scale)
         painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere)
-        if decorations.contains(.bats) { painter.bats(night: mood == .night) }
+        if decorations.contains(.autumnLeaves) { painter.autumnLeaves(dim: dark) }
+        if decorations.contains(.bats) { painter.bats(night: dark) }
         painter.oval(Palette.ground, cx: 130, cy: 140, rx: 110, ry: 8)
         // The pets are authored cat-left, dog-right; mirrored so Sunny (the dog) stands on the
         // left, matching the name. The sky stays put, and the ground shadow is symmetrical.
@@ -58,10 +65,8 @@ extension PetScene {
         let pets = Painter(context: mirrored, scale: scale)
         pets.cat(mood)
         pets.dog(mood)
-        // A costume replaces the weather's own props (sunglasses, scarves); the umbrella stays.
-        let dressedUp = !decorations.isDisjoint(with: [.witchHat, .bandana]) && mood != .night
-        if !dressedUp || mood == .rain { pets.props(mood) }
-        pets.decorations(decorations, mood: mood)
+        pets.dress(PetOutfit.accessories(mood: mood, decorations: decorations, dark: dark), catDrop: mood == .storm ? 14 : 0)
+        pets.groundDecorations(decorations, dark: dark)
         if knockedOverRouter {
             // Tipped back on the ground to Misty's right, antennas splayed.
             let pivot = CGPoint(x: 216 * scale, y: 128 * scale)
@@ -142,6 +147,13 @@ private enum Palette {
     static let pumpkinFace = Color(hex: 0x412402)
     static let pumpkinGlow = Color(hex: 0xFAEEDA)
     static let pumpkinStem = Color(hex: 0x3B6D11)
+    static let leafOrange = Color(hex: 0xE39B3A)
+    static let leafRust = Color(hex: 0xC9572A)
+    static let leafGold = Color(hex: 0xF2C14E)
+    static let pieCrust = Color(hex: 0xE8A23A)
+    static let pieTop = Color(hex: 0xD2862A)
+    static let steam = Color.white.opacity(0.75)
+    static let leafVein = Color(hex: 0xFFF2E2).opacity(0.55)
 }
 
 /// Draws in scene units, scaling everything by `scale`.
@@ -341,7 +353,7 @@ private struct Painter {
         context.fill(path, with: .color(color))
     }
 
-    /// Bats by day; by night bats and a few stars round the moon.
+    /// Bats by day; by night bats and a few stars.
     func bats(night: Bool) {
         if night {
             for (x, y) in [(30, 16), (78, 30), (140, 12)] as [(CGFloat, CGFloat)] {
@@ -355,23 +367,104 @@ private struct Painter {
         }
     }
 
-    /// The costumes and props in `decorations`. Asleep at night the pets have taken their costumes
-    /// off; the jack-o'-lantern on Misty's side is lit then. Drawn in the pets' mirrored space, so
-    /// Misty is at x 95 and the pumpkin at x 38.
-    func decorations(_ decorations: Set<SceneDecoration>, mood: PetMood) {
-        let night = mood == .night
-        let dy: CGFloat = mood == .storm ? 14 : 0
-        if decorations.contains(.witchHat), !night {
-            poly(Palette.witchHat, [(80, 62 + dy), (99, 22 + dy), (111, 62 + dy)])
+    /// A leaf: a pointed oval `size` scene units long, turned `degrees`, with a short stem and a pale
+    /// midrib, so the rust one still reads on Thanksgiving's rust-brown hero.
+    private func leaf(_ color: Color, cx: CGFloat, cy: CGFloat, size: CGFloat, degrees: Double, opacity: Double) {
+        var turned = context
+        turned.translateBy(x: cx * scale, y: cy * scale)
+        turned.rotate(by: .degrees(degrees))
+        let h = size / 2 * scale
+        var blade = Path()
+        blade.move(to: CGPoint(x: -h, y: 0))
+        blade.addQuadCurve(to: CGPoint(x: h, y: 0), control: CGPoint(x: 0, y: -h * 0.75))
+        blade.addQuadCurve(to: CGPoint(x: -h, y: 0), control: CGPoint(x: 0, y: h * 0.75))
+        turned.fill(blade, with: .color(color.opacity(opacity)))
+        var stem = Path()
+        stem.move(to: CGPoint(x: h * 0.6, y: 0))
+        stem.addLine(to: CGPoint(x: h * 1.35, y: h * 0.2))
+        turned.stroke(stem, with: .color(color.opacity(opacity)), style: StrokeStyle(lineWidth: 1.2 * scale, lineCap: .round))
+        var midrib = Path()
+        midrib.move(to: CGPoint(x: -h * 0.7, y: 0))
+        midrib.addLine(to: CGPoint(x: h * 0.7, y: 0))
+        turned.stroke(midrib, with: .color(Palette.leafVein.opacity(opacity)), style: StrokeStyle(lineWidth: 0.8 * scale, lineCap: .round))
+    }
+
+    /// Five leaves drifting in the sky, clear of the sun or moon and the pets' heads; dimmer after
+    /// dark.
+    func autumnLeaves(dim: Bool) {
+        let opacity = dim ? 0.6 : 1
+        let leaves: [(Color, CGFloat, CGFloat, CGFloat, Double)] = [
+            (Palette.leafOrange, 22, 26, 13, -30),
+            (Palette.leafRust, 52, 60, 11, 40),
+            (Palette.leafGold, 126, 14, 10, 15),
+            (Palette.leafOrange, 204, 74, 11, -55),
+            (Palette.leafRust, 246, 60, 10, 25),
+        ]
+        for (color, x, y, size, degrees) in leaves {
+            leaf(color, cx: x, cy: y, size: size, degrees: degrees, opacity: opacity)
+        }
+    }
+
+    /// What `PetOutfit` says the pets wear. Drawn in the pets' mirrored space, so Misty is at x 95.
+    /// Misty sits `catDrop` lower in a storm. Under the umbrella her hat is shorter, so its point
+    /// stays under the canopy, which is drawn after it and reads in front.
+    func dress(_ accessories: Set<PetAccessory>, catDrop dy: CGFloat) {
+        if accessories.contains(.witchHat) {
+            let tip: CGFloat = accessories.contains(.umbrella) ? 42 : 22
+            poly(Palette.witchHat, [(80, 62 + dy), (99, tip + dy), (111, 62 + dy)])
             oval(Palette.witchHat, cx: 95, cy: 63 + dy, rx: 27, ry: 4.5)
             rect(Palette.hatBand, x: 81, y: 56 + dy, width: 29, height: 5)
         }
-        if decorations.contains(.bandana), !night {
+        if accessories.contains(.umbrella) {
+            var canopy = Path()
+            canopy.move(to: point(70, 56))
+            canopy.addQuadCurve(to: point(190, 56), control: point(128, 0))
+            canopy.closeSubpath()
+            context.fill(canopy, with: .color(Palette.umbrella))
+            rect(Palette.outline, x: 128, y: 54, width: 3, height: 42)
+        }
+        if accessories.contains(.sunglasses) {
+            rect(Palette.outline, x: 146, y: 68, width: 12, height: 7)
+            rect(Palette.outline, x: 162, y: 68, width: 12, height: 7)
+            rect(Palette.outline, x: 157, y: 70, width: 6, height: 2)
+        }
+        if accessories.contains(.dogScarf) { rect(Palette.scarf, x: 136, y: 94, width: 48, height: 9) }
+        if accessories.contains(.catScarf) { rect(Palette.scarfAlt, x: 72, y: 96, width: 46, height: 8) }
+        if accessories.contains(.bandana) {
             poly(Palette.bandana, [(142, 97), (178, 97), (160, 111)])
             circle(Palette.pumpkinFace, cx: 153, cy: 101, r: 1.6)
             circle(Palette.pumpkinFace, cx: 167, cy: 101, r: 1.6)
         }
-        if decorations.contains(.jackOLantern) { jackOLantern(lit: night) }
+    }
+
+    /// The things a theme puts on the ground on Misty's side (x 38 in the pets' mirrored space): the
+    /// jack-o'-lantern, lit after dark, and the pie, steaming by day. With both, the pie moves to
+    /// Sunny's side.
+    func groundDecorations(_ decorations: Set<SceneDecoration>, dark: Bool) {
+        if decorations.contains(.jackOLantern) { jackOLantern(lit: dark) }
+        if decorations.contains(.pie) {
+            pie(cx: decorations.contains(.jackOLantern) ? 222 : 38, steaming: !dark)
+        }
+    }
+
+    private func pie(cx: CGFloat, steaming: Bool) {
+        // The dish's side, the crust's rim, the filling, then two vents cut in the top.
+        poly(Palette.pieCrust, [(cx - 20, 129), (cx + 20, 129), (cx + 16, 139), (cx - 16, 139)])
+        oval(Palette.pieCrust, cx: cx, cy: 129, rx: 21, ry: 6)
+        oval(Palette.pieTop, cx: cx, cy: 129, rx: 17, ry: 4.2)
+        var vents = Path()
+        for x in [cx - 5, cx + 5] {
+            vents.move(to: point(x - 2, 127.5))
+            vents.addLine(to: point(x + 2, 130.5))
+        }
+        context.stroke(vents, with: .color(Palette.pieCrust), style: StrokeStyle(lineWidth: 1.6 * scale, lineCap: .round))
+        guard steaming else { return }
+        var steam = Path()
+        for x in [cx - 5, cx + 4] {
+            steam.move(to: point(x, 121))
+            steam.addCurve(to: point(x, 105), control1: point(x - 5, 116), control2: point(x + 5, 110))
+        }
+        context.stroke(steam, with: .color(Palette.steam), style: StrokeStyle(lineWidth: 1.6 * scale, lineCap: .round))
     }
 
     private func jackOLantern(lit: Bool) {
@@ -395,28 +488,6 @@ private struct Painter {
         context.fill(Path(roundedRect: body, cornerRadius: 3 * scale), with: .color(Palette.router))
         for x in [206.0, 214.0, 222.0] {
             circle(Palette.routerLight, cx: x, cy: 127, r: 1.8)
-        }
-    }
-
-    func props(_ mood: PetMood) {
-        switch mood {
-        case .rain:
-            var canopy = Path()
-            canopy.move(to: point(70, 56))
-            canopy.addQuadCurve(to: point(190, 56), control: point(128, 0))
-            canopy.closeSubpath()
-            context.fill(canopy, with: .color(Palette.umbrella))
-            rect(Palette.outline, x: 128, y: 54, width: 3, height: 42)
-        case .sunny:
-            // Sunglasses on the dog.
-            rect(Palette.outline, x: 146, y: 68, width: 12, height: 7)
-            rect(Palette.outline, x: 162, y: 68, width: 12, height: 7)
-            rect(Palette.outline, x: 157, y: 70, width: 6, height: 2)
-        case .snow, .cold:
-            rect(Palette.scarf, x: 136, y: 94, width: 48, height: 9)
-            rect(Palette.scarfAlt, x: 72, y: 96, width: 46, height: 8)
-        default:
-            break
         }
     }
 }

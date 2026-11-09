@@ -3,7 +3,7 @@ import Foundation
 /// A look for a day or a stretch of days: the pets' props, the hero card's colours and caption, and
 /// a warmer tint on the cards below. Themes are data, not code: the app ships them in
 /// SeasonalThemes.json and Remote Config's `seasonal_themes` can replace the whole list, so a new
-/// theme (Thanksgiving, say) needs no app update as long as it uses decorations the app can draw.
+/// theme (Easter, say) needs no app update as long as it uses decorations the app can draw.
 /// `seasonal_themes_enabled` switches them all off. Today's theme comes from the city's own date,
 /// so it ends by itself when its day does. Same format and rules as Android's `SeasonalTheme`.
 struct SeasonalTheme: Decodable, Equatable, Identifiable {
@@ -156,12 +156,16 @@ struct SeasonalTheme: Decodable, Equatable, Identifiable {
 enum SceneDecoration: String, CaseIterable, Decodable {
     /// Bats by day; bats and stars after dark.
     case bats
-    /// Misty's witch hat, by day.
+    /// Misty's witch hat, by day. It takes the place of anything the weather puts on Misty's head.
     case witchHat
-    /// Sunny's bandana, by day.
+    /// Sunny's bandana, by day. It takes the place of anything the weather puts round Sunny's neck.
     case bandana
     /// A jack-o'-lantern on Misty's side, lit after dark.
     case jackOLantern
+    /// A few autumn leaves drifting in the sky, dimmer after dark.
+    case autumnLeaves
+    /// A pie on the ground on Misty's side, steaming by day.
+    case pie
 }
 
 /// "#F5A94E" in JSON.

@@ -66,6 +66,52 @@ final class WeatherScreenTests: XCTestCase {
         XCTAssertEqual(overcast?.heroCaption, "Nap weather, says Misty.")
     }
 
+    // MARK: - Seasonal theme by the clock
+
+    /// A theme on every day, so the fixture's 1 January has it.
+    private var everyDayTheme: WeatherScreenConfig {
+        var config = WeatherScreenConfig()
+        config.seasonalThemes = [SeasonalTheme(
+            id: "test",
+            dates: .range(fromMonth: 1, fromDay: 1, throughMonth: 12, throughDay: 31),
+            colors: SeasonalThemes.builtIn[0].colors,
+            captions: SeasonalTheme.Captions(day: ["Theme day"], night: ["Theme night"]),
+            decorations: [.witchHat, .jackOLantern]
+        )]
+        return config
+    }
+
+    func testARainyEveningOnTheDayGetsTheNightLook() {
+        // 7 PM, after the fixture's 5 PM sunset, raining: the mood is rain, the theme's look night.
+        // The reading is from 4 PM, so the clock, not its daytime icon, says it's dark.
+        let evening = dayStart + 19 * hour
+        let state = weatherState(make(
+            current: .success(reading(observedAt: evening - 3 * hour + 1, iconCode: "10d", conditionMain: "Rain", cloudPercent: 90)),
+            now: Date(timeIntervalSince1970: TimeInterval(evening)),
+            config: everyDayTheme
+        ))
+        XCTAssertEqual(state?.mood, .rain)
+        XCTAssertEqual(state?.darkNow, true)
+        XCTAssertEqual(state?.heroCaption, "Theme night")
+    }
+
+    func testThreeInTheMorningOnTheDayHasTheNightColoursAndTheDayCaption() {
+        let small = dayStart + 3 * hour
+        let state = weatherState(make(
+            current: .success(reading(observedAt: small, iconCode: "01n")),
+            now: Date(timeIntervalSince1970: TimeInterval(small)),
+            config: everyDayTheme
+        ))
+        XCTAssertEqual(state?.darkNow, true)
+        XCTAssertEqual(state?.heroCaption, "Theme day")
+    }
+
+    func testNoonOnTheDayGetsTheDayLook() {
+        let state = weatherState(make(current: .success(reading(observedAt: noon)), config: everyDayTheme))
+        XCTAssertEqual(state?.darkNow, false)
+        XCTAssertEqual(state?.heroCaption, "Theme day")
+    }
+
     // MARK: - Today
 
     func testTodayGoesByTheCitysDateNotTheLabel() {
