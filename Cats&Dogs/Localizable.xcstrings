@@ -2141,6 +2141,17 @@
         }
       }
     },
+    "Misty can see the stars" : {
+      "comment" : "Misty's line about the view at night, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty can see the stars"
+          }
+        }
+      }
+    },
     "Misty can see the whole street" : {
       "comment" : "Misty's line about how far she can see, on the Misty's View tile",
       "localizations" : {
@@ -2148,6 +2159,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Misty can see the whole street"
+          }
+        }
+      }
+    },
+    "Misty can spot a few stars" : {
+      "comment" : "Misty's line about the view at night, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty can spot a few stars"
           }
         }
       }
@@ -2470,6 +2492,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No locations added yet"
+          }
+        }
+      }
+    },
+    "No stars for Misty tonight" : {
+      "comment" : "Misty's line about the view at night, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No stars for Misty tonight"
           }
         }
       }
@@ -3627,6 +3660,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The end of the street looks fuzzy"
+          }
+        }
+      }
+    },
+    "The streetlights look fuzzy" : {
+      "comment" : "Misty's line about the view at night, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The streetlights look fuzzy"
           }
         }
       }

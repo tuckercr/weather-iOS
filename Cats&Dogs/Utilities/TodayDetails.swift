@@ -133,6 +133,26 @@ enum TodayDetails {
         }
     }
 
+    /// Misty's line when it's dark in the city, in place of `VisibilityBand.mistyLine`: she can't
+    /// see down the street at night, so it's the streetlights and the stars. Poor visibility keeps
+    /// its day line, then a moderate band or a murky sky makes the streetlights fuzzy, then the
+    /// cloud cover decides how many stars she can see.
+    static func mistyNightLine(band: VisibilityBand, sky: SkyCondition) -> String {
+        if band == .poor { return band.mistyLine }
+        let fuzzy = String(localized: "The streetlights look fuzzy", comment: "Misty's line about the view at night, on the Misty's View tile")
+        if band == .moderate { return fuzzy }
+        switch sky {
+        case .mist, .haze, .fog, .smoke, .dust:
+            return fuzzy
+        case .clear:
+            return String(localized: "Misty can see the stars", comment: "Misty's line about the view at night, on the Misty's View tile")
+        case .partlyCloudy:
+            return String(localized: "Misty can spot a few stars", comment: "Misty's line about the view at night, on the Misty's View tile")
+        case .mostlyCloudy, .overcast:
+            return String(localized: "No stars for Misty tonight", comment: "Misty's line about the view at night, on the Misty's View tile")
+        }
+    }
+
     /// What the pavement means for paws, from the Remote Config thresholds the walk advice uses.
     /// `pavementOK` is pavement that's fine while the air itself is too hot or too cold for paws, so
     /// the tile doesn't call it "Safe for paws" beside a walk card saying the opposite.

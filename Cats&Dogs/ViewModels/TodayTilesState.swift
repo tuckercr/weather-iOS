@@ -49,7 +49,7 @@ struct TodayTilesState {
             if !uvTile, let uvIndex { tile.uvNote = String(localized: "UV \(Int(uvIndex.rounded())) · \(WeatherFormatting.uvLevel(uvIndex))", comment: "Daylight tile: the UV index and its category") }
             return tile
         }
-        sky = switches.sky ? SkyTile(weather: weather, showingForecast: showingForecast, distanceInMiles: distanceInMiles) : nil
+        sky = switches.sky ? SkyTile(weather: weather, showingForecast: showingForecast, distanceInMiles: distanceInMiles, now: now) : nil
     }
 }
 
@@ -208,12 +208,13 @@ struct DaylightTile {
     }
 }
 
-/// Misty's View: the sky and how far she can see, and her line about it.
+/// Misty's View: the sky and how far she can see, and her line about it. After dark the line is
+/// about the streetlights and the stars instead (`TodayDetails.mistyNightLine`).
 struct SkyTile {
     let headline: String
     let mistyLine: String?
 
-    init(weather: CurrentWeather, showingForecast: Bool, distanceInMiles: Bool) {
+    init(weather: CurrentWeather, showingForecast: Bool, distanceInMiles: Bool, now: Date) {
         // A forecast hour standing in for the reading has no cloud cover or visibility.
         let sky = TodayDetails.skyCondition(
             conditionMain: weather.conditionMain,
@@ -232,6 +233,8 @@ struct SkyTile {
             sky.name
         }
         self.headline = TodayDetails.keepUnitsTogether(headline)
-        mistyLine = band?.mistyLine
+        // Dark by today's sun times in the city, as the rest of the screen goes by.
+        let dark = StaleWeather.isDark(StaleWeather.withSunTimesToday(weather, at: now), at: now)
+        mistyLine = band.map { dark ? TodayDetails.mistyNightLine(band: $0, sky: sky) : $0.mistyLine }
     }
 }
