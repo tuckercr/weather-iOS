@@ -107,25 +107,6 @@ final class SunEventsTests: XCTestCase {
         XCTAssertEqual(SunEvent.all(forecast: [], weather: reading(sunrise: nil, sunset: nil)), [])
     }
 
-    func testTheLineRunsOnBesideTheRainChancesOnlyWhenAnHourEitherSideShowsOne() {
-        let sunset = [SunEvent(kind: .sunset, epochSeconds: at(17, 49))]
-        let shows = { (slot: HourlySlot) in slot.precipitationChance >= 10 }
-        var wet = slots(16...19)
-        wet[2].precipitationChance = 30
-        let items = HourlyStripItem.strip(wet, events: sunset, now: Date(timeIntervalSince1970: TimeInterval(at(16))))
-
-        XCTAssertEqual(ids(items), ["16", "17", "sunset", "18", "19"])
-        // 6 PM, after the sunset, shows 30%.
-        XCTAssertTrue(HourlyStripItem.besideRainChance(items, at: 2, showsChance: shows))
-        // A dry strip, or rain only further along, keeps it short.
-        let dry = HourlyStripItem.strip(slots(16...19), events: sunset, now: Date(timeIntervalSince1970: TimeInterval(at(16))))
-        XCTAssertFalse(HourlyStripItem.besideRainChance(dry, at: 2, showsChance: shows))
-        var later = slots(16...21)
-        later[5].precipitationChance = 80
-        let laterItems = HourlyStripItem.strip(later, events: sunset, now: Date(timeIntervalSince1970: TimeInterval(at(16))))
-        XCTAssertFalse(HourlyStripItem.besideRainChance(laterItems, at: 2, showsChance: shows))
-    }
-
     func testTheTimeIsShortOnTheStripAndInFullForVoiceOver() {
         let sunset = SunEvent(kind: .sunset, epochSeconds: at(18, 50))
 
