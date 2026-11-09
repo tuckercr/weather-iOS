@@ -1,0 +1,4637 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    " · L %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : " · L %lld°"
+          }
+        }
+      }
+    },
+    "%@ added" : {
+      "comment" : "Confirmation after adding a location. The argument is its name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ added"
+          }
+        }
+      }
+    },
+    "%@ at %@" : {
+      "comment" : "When an old reading was taken: a short weekday name, then a time",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ at %@"
+          }
+        }
+      }
+    },
+    "%@ in" : {
+      "comment" : "Rain amount with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ in"
+          }
+        }
+      }
+    },
+    "%@ left" : {
+      "comment" : "Daylight tile summary. The argument is a duration.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ left"
+          }
+        }
+      }
+    },
+    "%@ m/s" : {
+      "comment" : "Wind speed with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ m/s"
+          }
+        }
+      }
+    },
+    "%@ mi" : {
+      "comment" : "Visibility distance with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ mi"
+          }
+        }
+      }
+    },
+    "%@ mm" : {
+      "comment" : "Rain amount with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ mm"
+          }
+        }
+      }
+    },
+    "%@ today" : {
+      "comment" : "Bad air in notifications, followed by more of the sentence. The argument is the bad air, as in Smoky air.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ today"
+          }
+        }
+      }
+    },
+    "%@ today. Misty's keeping the windows shut." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ today. Misty's keeping the windows shut."
+          }
+        }
+      }
+    },
+    "%@ today. Quick potty breaks, then back on the sofa." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ today. Quick potty breaks, then back on the sofa."
+          }
+        }
+      }
+    },
+    "%@ · %@" : {
+      "comment" : "Misty's View tile headline: the sky and how far you can see",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@"
+          }
+        }
+      }
+    },
+    "%@ · %@, %@" : {
+      "comment" : "Misty's View tile headline: the sky, how far you can see and the distance",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@, %@"
+          }
+        }
+      }
+    },
+    "%@ · %lld%%" : {
+      "comment" : "Rain outlook bar label: hour, chance of rain and amount",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld%%"
+          }
+        }
+      }
+    },
+    "%@ · %lld%% · %@" : {
+      "comment" : "Rain outlook bar label: hour, chance of rain and amount",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld%% · %@"
+          }
+        }
+      }
+    },
+    "%@, %@" : {
+      "comment" : "Spoken by VoiceOver: Sunrise or Sunset, then the time",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@"
+          }
+        }
+      }
+    },
+    "%@, %lld%% chance of rain" : {
+      "comment" : "Rain outlook bar, spoken by VoiceOver: hour and chance of rain",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld%% chance of rain"
+          }
+        }
+      }
+    },
+    "%@, %lld%% chance of rain, about %@" : {
+      "comment" : "Rain outlook bar, spoken by VoiceOver: hour, chance of rain and amount",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %lld%% chance of rain, about %@"
+          }
+        }
+      }
+    },
+    "%@, so a short one." : {
+      "comment" : "Walk reminder notification, after the walk. The argument is the bad air, as in Smoky air today.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, so a short one."
+          }
+        }
+      }
+    },
+    "%@, so keep it short." : {
+      "comment" : "Morning briefing notification, about the walk. The argument is the bad air, as in Smoky air today.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, so keep it short."
+          }
+        }
+      }
+    },
+    "%@, so potty breaks only." : {
+      "comment" : "Morning briefing notification, about walks. The argument is the bad air, as in Smoky air today.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, so potty breaks only."
+          }
+        }
+      }
+    },
+    "%@. Potty breaks only." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@. Potty breaks only."
+          }
+        }
+      }
+    },
+    "%@. Stay in. Potty breaks only." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@. Stay in. Potty breaks only."
+          }
+        }
+      }
+    },
+    "%lld h" : {
+      "comment" : "Duration in hours and minutes, abbreviated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld h"
+          }
+        }
+      }
+    },
+    "%lld h %lld min" : {
+      "comment" : "Duration in hours and minutes, abbreviated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld h %lld min"
+          }
+        }
+      }
+    },
+    "%lld km" : {
+      "comment" : "Visibility distance with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld km"
+          }
+        }
+      }
+    },
+    "%lld m" : {
+      "comment" : "Visibility distance with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld m"
+          }
+        }
+      }
+    },
+    "%lld m/s" : {
+      "comment" : "Wind speed with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld m/s"
+          }
+        }
+      }
+    },
+    "%lld mi" : {
+      "comment" : "Visibility distance with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld mi"
+          }
+        }
+      }
+    },
+    "%lld min" : {
+      "comment" : "Duration in hours and minutes, abbreviated",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld min"
+          }
+        }
+      }
+    },
+    "%lld mph" : {
+      "comment" : "Wind speed with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld mph"
+          }
+        }
+      }
+    },
+    "%lld on" : {
+      "comment" : "Settings: how many kinds of notification are on",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld on"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld%%"
+          }
+        }
+      }
+    },
+    "%lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld°"
+          }
+        }
+      }
+    },
+    "%lld° and %@ in %@" : {
+      "comment" : "Morning briefing title: temperature, the sky or weather (lower case), and the city",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld° and %@ in %@"
+          }
+        }
+      }
+    },
+    "%lld° and %@ in %@. Sunny's waiting by the door." : {
+      "comment" : "Walk reminder notification: temperature, the sky or weather (lower case), and the city. Sunny is the dog.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld° and %@ in %@. Sunny's waiting by the door."
+          }
+        }
+      }
+    },
+    "%lld° cooler than it is" : {
+      "comment" : "Feels Like tile: how far it feels from the actual temperature",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld° cooler than it is"
+          }
+        }
+      }
+    },
+    "%lld° warmer than it is" : {
+      "comment" : "Feels Like tile: how far it feels from the actual temperature",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld° warmer than it is"
+          }
+        }
+      }
+    },
+    "%u more briefings" : {
+      "comment" : "Summary of a stack of morning briefings in Notification Centre. The argument is how many more there are.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more briefing"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more briefings"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%u more rain alerts" : {
+      "comment" : "Summary of a stack of rain alerts in Notification Centre. The argument is how many more there are.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more rain alert"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more rain alerts"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%u more walk reminders" : {
+      "comment" : "Summary of a stack of walk reminders in Notification Centre. The argument is how many more there are.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more walk reminder"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%u more walk reminders"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "0 mph" : {
+      "comment" : "Wind speed with its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "0 mph"
+          }
+        }
+      }
+    },
+    "A bit grey, but Sunny is still keen for a walk." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bit grey, but Sunny is still keen for a walk."
+          }
+        }
+      }
+    },
+    "A bit grey. Misty says it's a blanket sort of day." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A bit grey. Misty says it's a blanket sort of day."
+          }
+        }
+      }
+    },
+    "A chance of rain around %@" : {
+      "comment" : "Rain outlook headline. The argument is an hour.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A chance of rain around %@"
+          }
+        }
+      }
+    },
+    "A chance of rain now" : {
+      "comment" : "Rain outlook headline",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A chance of rain now"
+          }
+        }
+      }
+    },
+    "A new version is out" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new version is out"
+          }
+        }
+      }
+    },
+    "A nudge at the day's best time for a walk" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A nudge at the day's best time for a walk"
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About"
+          }
+        }
+      }
+    },
+    "About %@" : {
+      "comment" : "Paw Check tile: estimated pavement temperature",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@"
+          }
+        }
+      }
+    },
+    "About %@ inches in all." : {
+      "comment" : "Rain outlook: how much rain falls in all. The argument is a decimal number of inches.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@ inches in all."
+          }
+        }
+      }
+    },
+    "About %@ mm in all." : {
+      "comment" : "Rain outlook: how much rain falls in all",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About %@ mm in all."
+          }
+        }
+      }
+    },
+    "About 1 inch in all." : {
+      "comment" : "Rain outlook: how much rain falls in all",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About 1 inch in all."
+          }
+        }
+      }
+    },
+    "Add %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add %@"
+          }
+        }
+      }
+    },
+    "Add My Location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add My Location"
+          }
+        }
+      }
+    },
+    "Add location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add location"
+          }
+        }
+      }
+    },
+    "Add your first location to get started." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add your first location to get started."
+          }
+        }
+      }
+    },
+    "Add “%@”" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add “%@”"
+          }
+        }
+      }
+    },
+    "Air Quality" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Air Quality"
+          }
+        }
+      }
+    },
+    "Air's not great. Short walks for older and flat-faced dogs." : {
+      "comment" : "Walk card caption after a walk now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Air's not great. Short walks for older and flat-faced dogs."
+          }
+        }
+      }
+    },
+    "Allow location access" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow location access"
+          }
+        }
+      }
+    },
+    "Allow notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow notifications"
+          }
+        }
+      }
+    },
+    "Anonymous counts of which features get used, to help improve Sunny & Misty. Never your location." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonymous counts of which features get used, to help improve Sunny & Misty. Never your location."
+          }
+        }
+      }
+    },
+    "Around %@" : {
+      "comment" : "Walk card headline. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Around %@"
+          }
+        }
+      }
+    },
+    "At today's peak" : {
+      "comment" : "UV Index tile line. The number is the UV index.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At today's peak"
+          }
+        }
+      }
+    },
+    "Bad air" : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bad air"
+          }
+        }
+      }
+    },
+    "Below freezing" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Below freezing"
+          }
+        }
+      }
+    },
+    "Best Walk Time" : {
+      "comment" : "Walk card title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best Walk Time"
+          }
+        }
+      }
+    },
+    "Blowy out there. Misty is staying put." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blowy out there. Misty is staying put."
+          }
+        }
+      }
+    },
+    "Blowy out there. Misty won't go near the door." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blowy out there. Misty won't go near the door."
+          }
+        }
+      }
+    },
+    "Brrr. Short walks and warm blankets." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brrr. Short walks and warm blankets."
+          }
+        }
+      }
+    },
+    "Brrr. Warm blankets all round." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brrr. Warm blankets all round."
+          }
+        }
+      }
+    },
+    "Cache" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache"
+          }
+        }
+      }
+    },
+    "Cache cleared" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cache cleared"
+          }
+        }
+      }
+    },
+    "Calm" : {
+      "comment" : "Beaufort wind force name on the Wind tile, also its note when there is no wind",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calm"
+          }
+        }
+      }
+    },
+    "Chance of precipitation %lld%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chance of precipitation %lld%%"
+          }
+        }
+      }
+    },
+    "Chance of rain each hour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chance of rain each hour"
+          }
+        }
+      }
+    },
+    "Chilly" : {
+      "comment" : "Feels Like band name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chilly"
+          }
+        }
+      }
+    },
+    "Clear" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        }
+      }
+    },
+    "Clear cached weather" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear cached weather"
+          }
+        }
+      }
+    },
+    "Clear search" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear search"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Close"
+          }
+        }
+      }
+    },
+    "Coat weather for small dogs today." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coat weather for small dogs today."
+          }
+        }
+      }
+    },
+    "Coat weather today. Misty is staying by the radiator." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coat weather today. Misty is staying by the radiator."
+          }
+        }
+      }
+    },
+    "Cold" : {
+      "comment" : "Feels Like band name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cold"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
+    "Could not determine your location. You can still add locations manually." : {
+      "comment" : "Onboarding: asking for the location",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not determine your location. You can still add locations manually."
+          }
+        }
+      }
+    },
+    "Couldn't find your location. Try again, or search for a town or city." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't find your location. Try again, or search for a town or city."
+          }
+        }
+      }
+    },
+    "Danger" : {
+      "comment" : "Walk card title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Danger"
+          }
+        }
+      }
+    },
+    "Dangerously hot" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dangerously hot"
+          }
+        }
+      }
+    },
+    "Daylight" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daylight"
+          }
+        }
+      }
+    },
+    "Debug" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Debug"
+          }
+        }
+      }
+    },
+    "Dew point %@" : {
+      "comment" : "Fluff Factor tile: the dew point temperature",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dew point %@"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        }
+      }
+    },
+    "Dry air, static fur" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dry air, static fur"
+          }
+        }
+      }
+    },
+    "Drying out after %@." : {
+      "comment" : "Rain outlook: when the rain ends. The argument is an hour.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drying out after %@."
+          }
+        }
+      }
+    },
+    "Dusty" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dusty"
+          }
+        }
+      }
+    },
+    "Dusty air" : {
+      "comment" : "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dusty air"
+          }
+        }
+      }
+    },
+    "E" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E"
+          }
+        }
+      }
+    },
+    "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk." : {
+      "comment" : "Onboarding: what the notifications will be",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each morning, Sunny & Misty will send a weather briefing for your location, and Sunny will nudge you at the best time for a walk."
+          }
+        }
+      }
+    },
+    "Each morning, Sunny & Misty will send a weather briefing for your location." : {
+      "comment" : "Onboarding: what the notifications will be",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Each morning, Sunny & Misty will send a weather briefing for your location."
+          }
+        }
+      }
+    },
+    "Easing off now" : {
+      "comment" : "UV Index tile line. The number is the UV index.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Easing off now"
+          }
+        }
+      }
+    },
+    "Enter a town or city manually" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a town or city manually"
+          }
+        }
+      }
+    },
+    "Evening zoomies, courtesy of Misty." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Evening zoomies, courtesy of Misty."
+          }
+        }
+      }
+    },
+    "Excellent visibility" : {
+      "comment" : "Visibility band on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Excellent visibility"
+          }
+        }
+      }
+    },
+    "Extreme" : {
+      "comment" : "UV exposure category (WHO)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extreme"
+          }
+        }
+      }
+    },
+    "Extremely poor" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extremely poor"
+          }
+        }
+      }
+    },
+    "Fair" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fair"
+          }
+        }
+      }
+    },
+    "Feels Like" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feels Like"
+          }
+        }
+      }
+    },
+    "Fine for most people" : {
+      "comment" : "Air Quality tile: what the air means for people",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine for most people"
+          }
+        }
+      }
+    },
+    "Fine for most walks" : {
+      "comment" : "Air Quality tile: what the air means for a dog walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine for most walks"
+          }
+        }
+      }
+    },
+    "Fine underfoot" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine underfoot"
+          }
+        }
+      }
+    },
+    "Fluff Factor" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fluff Factor"
+          }
+        }
+      }
+    },
+    "Fog" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fog"
+          }
+        }
+      }
+    },
+    "Follow my location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow my location"
+          }
+        }
+      }
+    },
+    "Follow your location?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Follow your location?"
+          }
+        }
+      }
+    },
+    "Forecast data by Open-Meteo.com" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forecast data by Open-Meteo.com"
+          }
+        }
+      }
+    },
+    "Forecast · %@" : {
+      "comment" : "Radar frame label. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forecast · %@"
+          }
+        }
+      }
+    },
+    "Fresh air all round" : {
+      "comment" : "Air Quality tile: what the air means for people",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fresh air all round"
+          }
+        }
+      }
+    },
+    "Fresh breeze" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fresh breeze"
+          }
+        }
+      }
+    },
+    "Fresh water bowls today. It is a scorcher." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fresh water bowls today. It is a scorcher."
+          }
+        }
+      }
+    },
+    "From the %@" : {
+      "comment" : "Wind tile note: where the wind comes from, a compass point",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the %@"
+          }
+        }
+      }
+    },
+    "From the %@, %@" : {
+      "comment" : "Spoken by VoiceOver: where the wind comes from and the wind force name (lower case)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the %@, %@"
+          }
+        }
+      }
+    },
+    "From the %@, %@, gusts %@" : {
+      "comment" : "Spoken by VoiceOver: where the wind comes from, the wind force name (lower case) and the gust speed",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the %@, %@, gusts %@"
+          }
+        }
+      }
+    },
+    "From the %@, gusts %@" : {
+      "comment" : "Wind tile note: where the wind comes from (a compass point) and the gust speed, without its unit",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From the %@, gusts %@"
+          }
+        }
+      }
+    },
+    "Gale" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gale"
+          }
+        }
+      }
+    },
+    "Gale force winds! Misty won't go near the door." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gale force winds! Misty won't go near the door."
+          }
+        }
+      }
+    },
+    "Gale force winds! Quick potty breaks, then back in." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gale force winds! Quick potty breaks, then back in."
+          }
+        }
+      }
+    },
+    "Gale force winds. Potty breaks only." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gale force winds. Potty breaks only."
+          }
+        }
+      }
+    },
+    "Gentle breeze" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gentle breeze"
+          }
+        }
+      }
+    },
+    "Get started" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        }
+      }
+    },
+    "Gets dark in about %lld hours." : {
+      "comment" : "Walk card caption after a walk now",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Gets dark in about %lld hour."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Gets dark in about %lld hours."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Gets dark in about an hour." : {
+      "comment" : "Walk card caption after a walk now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gets dark in about an hour."
+          }
+        }
+      }
+    },
+    "Getting dark soon." : {
+      "comment" : "Walk card caption after a walk now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Getting dark soon."
+          }
+        }
+      }
+    },
+    "Getting hot" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Getting hot"
+          }
+        }
+      }
+    },
+    "Go to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Go to %@"
+          }
+        }
+      }
+    },
+    "Good" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good"
+          }
+        }
+      }
+    },
+    "Good air for a long walk" : {
+      "comment" : "Air Quality tile: what the air means for a dog walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good air for a long walk"
+          }
+        }
+      }
+    },
+    "Good until %@, then bad air." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then bad air."
+          }
+        }
+      }
+    },
+    "Good until %@, then hot pavement." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then hot pavement."
+          }
+        }
+      }
+    },
+    "Good until %@, then maybe rain." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then maybe rain."
+          }
+        }
+      }
+    },
+    "Good until %@, then maybe snow." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then maybe snow."
+          }
+        }
+      }
+    },
+    "Good until %@, then maybe storms." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then maybe storms."
+          }
+        }
+      }
+    },
+    "Good until %@, then rain." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then rain."
+          }
+        }
+      }
+    },
+    "Good until %@, then snow." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then snow."
+          }
+        }
+      }
+    },
+    "Good until %@, then storms." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then storms."
+          }
+        }
+      }
+    },
+    "Good until %@, then too cold." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then too cold."
+          }
+        }
+      }
+    },
+    "Good until %@, then too hot." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then too hot."
+          }
+        }
+      }
+    },
+    "Good until %@, then very windy." : {
+      "comment" : "Walk card caption after a walk now: when the good spell ends and why. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good until %@, then very windy."
+          }
+        }
+      }
+    },
+    "Good visibility" : {
+      "comment" : "Visibility band on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good visibility"
+          }
+        }
+      }
+    },
+    "Grab a raincoat. Misty is NOT going out in this." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grab a raincoat. Misty is NOT going out in this."
+          }
+        }
+      }
+    },
+    "H %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H %lld°"
+          }
+        }
+      }
+    },
+    "H %lld° · L %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "H %lld° · L %lld°"
+          }
+        }
+      }
+    },
+    "Hazardous" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hazardous"
+          }
+        }
+      }
+    },
+    "Hazy" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hazy"
+          }
+        }
+      }
+    },
+    "Heavy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Heavy"
+          }
+        }
+      }
+    },
+    "High" : {
+      "comment" : "UV exposure category (WHO)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        }
+      }
+    },
+    "High %lld°, low %lld°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High %lld°, low %lld°"
+          }
+        }
+      }
+    },
+    "High %lld°, low %lld°, %lld%% chance of rain." : {
+      "comment" : "Morning briefing notification: the day's high and low temperatures and the chance of rain",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High %lld°, low %lld°, %lld%% chance of rain."
+          }
+        }
+      }
+    },
+    "High %lld°, low %lld°." : {
+      "comment" : "Morning briefing notification: the day's high and low temperatures",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High %lld°, low %lld°."
+          }
+        }
+      }
+    },
+    "High ozone" : {
+      "comment" : "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High ozone"
+          }
+        }
+      }
+    },
+    "Hot" : {
+      "comment" : "Feels Like band name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hot"
+          }
+        }
+      }
+    },
+    "Hot pavement! Sunny's sticking to the grass today." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hot pavement! Sunny's sticking to the grass today."
+          }
+        }
+      }
+    },
+    "Hourly data not available for this day." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hourly data not available for this day."
+          }
+        }
+      }
+    },
+    "Humidity %lld%%" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Humidity %lld%%"
+          }
+        }
+      }
+    },
+    "Hurricane force" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force"
+          }
+        }
+      }
+    },
+    "Hurricane force winds" : {
+      "comment" : "Walk card headline. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds"
+          }
+        }
+      }
+    },
+    "Hurricane force winds! Everyone inside, away from the windows." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds! Everyone inside, away from the windows."
+          }
+        }
+      }
+    },
+    "I have a dog" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I have a dog"
+          }
+        }
+      }
+    },
+    "Icy, watch for salt" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icy, watch for salt"
+          }
+        }
+      }
+    },
+    "If there is, Sunny will suggest the best time for a walk. You can change this later in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If there is, Sunny will suggest the best time for a walk. You can change this later in Settings."
+          }
+        }
+      }
+    },
+    "Imperial (°F)" : {
+      "comment" : "Settings: unit choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imperial (°F)"
+          }
+        }
+      }
+    },
+    "Is there a dog at home?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is there a dog at home?"
+          }
+        }
+      }
+    },
+    "Last updated %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last updated %@."
+          }
+        }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light"
+          }
+        }
+      }
+    },
+    "Light breeze" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light breeze"
+          }
+        }
+      }
+    },
+    "Light wind" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light wind"
+          }
+        }
+      }
+    },
+    "Lights out. Misty has claimed the warm spot." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lights out. Misty has claimed the warm spot."
+          }
+        }
+      }
+    },
+    "Limit time outdoors" : {
+      "comment" : "Air Quality tile: what the air means for people",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limit time outdoors"
+          }
+        }
+      }
+    },
+    "Loading radar…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading radar…"
+          }
+        }
+      }
+    },
+    "Location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
+          }
+        }
+      }
+    },
+    "Location access: Always" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location access: Always"
+          }
+        }
+      }
+    },
+    "Location access: While Using the App" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location access: While Using the App"
+          }
+        }
+      }
+    },
+    "Location data based on GeoNames" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location data based on GeoNames"
+          }
+        }
+      }
+    },
+    "Lovely day out. Misty will supervise from the window." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lovely day out. Misty will supervise from the window."
+          }
+        }
+      }
+    },
+    "Loves a walk in almost any weather, and always knows the best time to head out." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loves a walk in almost any weather, and always knows the best time to head out."
+          }
+        }
+      }
+    },
+    "Low" : {
+      "comment" : "UV exposure category (WHO)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low"
+          }
+        }
+      }
+    },
+    "Manage Locations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage Locations"
+          }
+        }
+      }
+    },
+    "Manage locations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manage locations"
+          }
+        }
+      }
+    },
+    "Meet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meet"
+          }
+        }
+      }
+    },
+    "Meet Sunny & Misty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meet Sunny & Misty"
+          }
+        }
+      }
+    },
+    "Metric (°C)" : {
+      "comment" : "Settings: unit choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metric (°C)"
+          }
+        }
+      }
+    },
+    "Mild" : {
+      "comment" : "Feels Like band name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mild"
+          }
+        }
+      }
+    },
+    "Mist" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mist"
+          }
+        }
+      }
+    },
+    "Misty" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty"
+          }
+        }
+      }
+    },
+    "Misty can see down the block" : {
+      "comment" : "Misty's line about how far she can see, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty can see down the block"
+          }
+        }
+      }
+    },
+    "Misty can see the whole street" : {
+      "comment" : "Misty's line about how far she can see, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty can see the whole street"
+          }
+        }
+      }
+    },
+    "Misty can't see past the garden" : {
+      "comment" : "Misty's line about how far she can see, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty can't see past the garden"
+          }
+        }
+      }
+    },
+    "Misty has claimed the sunniest windowsill." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty has claimed the sunniest windowsill."
+          }
+        }
+      }
+    },
+    "Misty has gone full floof" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty has gone full floof"
+          }
+        }
+      }
+    },
+    "Misty is under the bed until this wind drops." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty is under the bed until this wind drops."
+          }
+        }
+      }
+    },
+    "Misty is watching the snow from somewhere warm." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty is watching the snow from somewhere warm."
+          }
+        }
+      }
+    },
+    "Misty knocked the Wi-Fi off the shelf." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty knocked the Wi-Fi off the shelf."
+          }
+        }
+      }
+    },
+    "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are." : {
+      "comment" : "Onboarding: asking for the location",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are."
+          }
+        }
+      }
+    },
+    "Misty's View" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's View"
+          }
+        }
+      }
+    },
+    "Misty's fluffing up" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's fluffing up"
+          }
+        }
+      }
+    },
+    "Misty's fur is behaving" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's fur is behaving"
+          }
+        }
+      }
+    },
+    "Misty's getting puffy" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's getting puffy"
+          }
+        }
+      }
+    },
+    "Misty's staying in." : {
+      "comment" : "Rain alert notification without a dog. Misty is the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's staying in."
+          }
+        }
+      }
+    },
+    "Moderate" : {
+      "comment" : "UV exposure category (WHO), or air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderate"
+          }
+        }
+      }
+    },
+    "Moderate breeze" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderate breeze"
+          }
+        }
+      }
+    },
+    "Moderate visibility" : {
+      "comment" : "Visibility band on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moderate visibility"
+          }
+        }
+      }
+    },
+    "Morning briefing" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morning briefing"
+          }
+        }
+      }
+    },
+    "Mostly %@" : {
+      "comment" : "Air Quality tile: the main pollutant",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostly %@"
+          }
+        }
+      }
+    },
+    "Mostly cloudy" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostly cloudy"
+          }
+        }
+      }
+    },
+    "My Location" : {
+      "comment" : "The saved location that follows the device, and its name when the place can't be named",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Location"
+          }
+        }
+      }
+    },
+    "My Locations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Locations"
+          }
+        }
+      }
+    },
+    "My Pets" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "My Pets"
+          }
+        }
+      }
+    },
+    "N" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N"
+          }
+        }
+      }
+    },
+    "NE" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NE"
+          }
+        }
+      }
+    },
+    "NW" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NW"
+          }
+        }
+      }
+    },
+    "Nap weather, says Misty." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nap weather, says Misty."
+          }
+        }
+      }
+    },
+    "Near gale" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Near gale"
+          }
+        }
+      }
+    },
+    "No" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No"
+          }
+        }
+      }
+    },
+    "No connection" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No connection"
+          }
+        }
+      }
+    },
+    "No location selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No location selected"
+          }
+        }
+      }
+    },
+    "No locations added yet" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No locations added yet"
+          }
+        }
+      }
+    },
+    "No sun, no problem. Still time for a stroll." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sun, no problem. Still time for a stroll."
+          }
+        }
+      }
+    },
+    "No sun, no problem. The birds are still out, says Misty." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sun, no problem. The birds are still out, says Misty."
+          }
+        }
+      }
+    },
+    "Not a good day for walkies" : {
+      "comment" : "Walk card headline. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not a good day for walkies"
+          }
+        }
+      }
+    },
+    "Not a good day for walkies." : {
+      "comment" : "Morning briefing notification",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not a good day for walkies."
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
+    "Notifications are for My Location, otherwise the top location." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are for My Location, otherwise the top location."
+          }
+        }
+      }
+    },
+    "Notifications enabled" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications enabled"
+          }
+        }
+      }
+    },
+    "Notifications for wherever you are, even when the app is closed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications for wherever you are, even when the app is closed"
+          }
+        }
+      }
+    },
+    "Now is a great time" : {
+      "comment" : "Walk card headline. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now is a great time"
+          }
+        }
+      }
+    },
+    "Now · %@" : {
+      "comment" : "Radar frame label. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now · %@"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "comment" : "Settings: how many kinds of notification are on",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "One of each kind, a few seconds apart. Debug builds only." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One of each kind, a few seconds apart. Debug builds only."
+          }
+        }
+      }
+    },
+    "Open Settings to enable location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings to enable location"
+          }
+        }
+      }
+    },
+    "Open Settings to enable notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Settings to enable notifications"
+          }
+        }
+      }
+    },
+    "Open settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open settings"
+          }
+        }
+      }
+    },
+    "Overcast" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Overcast"
+          }
+        }
+      }
+    },
+    "Partly cloudy" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partly cloudy"
+          }
+        }
+      }
+    },
+    "Pause radar animation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pause radar animation"
+          }
+        }
+      }
+    },
+    "Paw Check" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paw Check"
+          }
+        }
+      }
+    },
+    "Paw check: about %lld° now. Dangerously hot." : {
+      "comment" : "Walk card caption. The argument is the pavement temperature.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paw check: about %lld° now. Dangerously hot."
+          }
+        }
+      }
+    },
+    "Paw check: about %lld° now. Getting hot." : {
+      "comment" : "Walk card caption. The argument is the pavement temperature.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paw check: about %lld° now. Getting hot."
+          }
+        }
+      }
+    },
+    "Paw check: about %lld° now. Too hot for paws." : {
+      "comment" : "Walk card caption. The argument is the pavement temperature.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paw check: about %lld° now. Too hot for paws."
+          }
+        }
+      }
+    },
+    "Peak %lld at %@" : {
+      "comment" : "UV Index tile line. The number is the UV index.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak %lld at %@"
+          }
+        }
+      }
+    },
+    "Peak %lld today" : {
+      "comment" : "UV Index tile line. The number is the UV index.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak %lld today"
+          }
+        }
+      }
+    },
+    "Perfect walkies weather! Off we go." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perfect walkies weather! Off we go."
+          }
+        }
+      }
+    },
+    "Pick a town or city from the list" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a town or city from the list"
+          }
+        }
+      }
+    },
+    "Play radar animation" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play radar animation"
+          }
+        }
+      }
+    },
+    "Please enter a city name." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a city name."
+          }
+        }
+      }
+    },
+    "Poor" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor"
+          }
+        }
+      }
+    },
+    "Poor air" : {
+      "comment" : "Bad air of no particular kind, at the start of a sentence (Poor air today.)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor air"
+          }
+        }
+      }
+    },
+    "Poor for some" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor for some"
+          }
+        }
+      }
+    },
+    "Poor visibility" : {
+      "comment" : "Visibility band on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poor visibility"
+          }
+        }
+      }
+    },
+    "Potty breaks only today" : {
+      "comment" : "Air Quality tile: what the air means for a dog walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Potty breaks only today"
+          }
+        }
+      }
+    },
+    "Prefers the window seat, and will tell you when it's a day for staying in." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prefers the window seat, and will tell you when it's a day for staying in."
+          }
+        }
+      }
+    },
+    "Privacy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy"
+          }
+        }
+      }
+    },
+    "Privacy policy" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy policy"
+          }
+        }
+      }
+    },
+    "Puffy fur, panting pup" : {
+      "comment" : "Fluff Factor tile line about humidity, in Misty's voice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puffy fur, panting pup"
+          }
+        }
+      }
+    },
+    "Pull to try again." : {
+      "comment" : "Added to the offline banner: pulling down refreshes",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pull to try again."
+          }
+        }
+      }
+    },
+    "Quiet night. Misty is doing her evening rounds." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet night. Misty is doing her evening rounds."
+          }
+        }
+      }
+    },
+    "Quiet night. Time for one last stroll before bed?" : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet night. Time for one last stroll before bed?"
+          }
+        }
+      }
+    },
+    "Radar frame" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radar frame"
+          }
+        }
+      }
+    },
+    "Radar unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radar unavailable"
+          }
+        }
+      }
+    },
+    "Radar unavailable\n(coordinates not available)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radar unavailable\n(coordinates not available)"
+          }
+        }
+      }
+    },
+    "Rain alerts" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain alerts"
+          }
+        }
+      }
+    },
+    "Rain for the next 2 hours" : {
+      "comment" : "Next rain line",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain for the next 2 hours"
+          }
+        }
+      }
+    },
+    "Rain likely around %@" : {
+      "comment" : "Rain outlook headline. The argument is an hour.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain likely around %@"
+          }
+        }
+      }
+    },
+    "Rain likely now" : {
+      "comment" : "Rain outlook headline",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain likely now"
+          }
+        }
+      }
+    },
+    "Rain on the way in %@." : {
+      "comment" : "Rain alert notification. The argument is the city.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain on the way in %@."
+          }
+        }
+      }
+    },
+    "Rain on the window. Misty is watching every drop." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain on the window. Misty is watching every drop."
+          }
+        }
+      }
+    },
+    "Rain starting around %@" : {
+      "comment" : "Next rain line. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain starting around %@"
+          }
+        }
+      }
+    },
+    "Rain stopping around %@" : {
+      "comment" : "Next rain line. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rain stopping around %@"
+          }
+        }
+      }
+    },
+    "Retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        }
+      }
+    },
+    "S" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "S"
+          }
+        }
+      }
+    },
+    "SE" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SE"
+          }
+        }
+      }
+    },
+    "SW" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SW"
+          }
+        }
+      }
+    },
+    "Safe for paws" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Safe for paws"
+          }
+        }
+      }
+    },
+    "Same as it is" : {
+      "comment" : "Feels Like tile: how far it feels from the actual temperature",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as it is"
+          }
+        }
+      }
+    },
+    "Saved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved"
+          }
+        }
+      }
+    },
+    "Search for a town or city" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search for a town or city"
+          }
+        }
+      }
+    },
+    "Send sample notifications" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send sample notifications"
+          }
+        }
+      }
+    },
+    "Sensitive people should take it easy" : {
+      "comment" : "Air Quality tile: what the air means for people",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sensitive people should take it easy"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Settings"
+          }
+        }
+      }
+    },
+    "Shade for pale noses" : {
+      "comment" : "UV Index tile line. The number is the UV index.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shade for pale noses"
+          }
+        }
+      }
+    },
+    "Share usage statistics" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share usage statistics"
+          }
+        }
+      }
+    },
+    "Short walks for older and flat-faced dogs" : {
+      "comment" : "Air Quality tile: what the air means for a dog walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Short walks for older and flat-faced dogs"
+          }
+        }
+      }
+    },
+    "Showing saved weather." : {
+      "comment" : "Banner over old weather when a refresh fails. The argument is when it was observed.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing saved weather."
+          }
+        }
+      }
+    },
+    "Showing the forecast from %@." : {
+      "comment" : "Banner over old weather when a refresh fails. The argument is when it was observed.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing the forecast from %@."
+          }
+        }
+      }
+    },
+    "Showing weather from %@." : {
+      "comment" : "Banner over old weather when a refresh fails. The argument is when it was observed.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing weather from %@."
+          }
+        }
+      }
+    },
+    "Smoky" : {
+      "comment" : "The sky on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smoky"
+          }
+        }
+      }
+    },
+    "Smoky air" : {
+      "comment" : "Bad air named by its main pollutant, at the start of a sentence (Smoky air today.)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smoky air"
+          }
+        }
+      }
+    },
+    "Snow for the next 2 hours" : {
+      "comment" : "Next rain line",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snow for the next 2 hours"
+          }
+        }
+      }
+    },
+    "Snow on the way in %@." : {
+      "comment" : "Rain alert notification. The argument is the city.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snow on the way in %@."
+          }
+        }
+      }
+    },
+    "Snow starting around %@" : {
+      "comment" : "Next rain line. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snow starting around %@"
+          }
+        }
+      }
+    },
+    "Snow stopping around %@" : {
+      "comment" : "Next rain line. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snow stopping around %@"
+          }
+        }
+      }
+    },
+    "Snow zoomies, then straight back to the blanket." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snow zoomies, then straight back to the blanket."
+          }
+        }
+      }
+    },
+    "Stay in the loop" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay in the loop"
+          }
+        }
+      }
+    },
+    "Stay in. Potty breaks only" : {
+      "comment" : "Air Quality tile: what the air means for a dog walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay in. Potty breaks only"
+          }
+        }
+      }
+    },
+    "Stay indoors" : {
+      "comment" : "Air Quality tile: what the air means for people",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay indoors"
+          }
+        }
+      }
+    },
+    "Stay inside, away from the windows." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stay inside, away from the windows."
+          }
+        }
+      }
+    },
+    "Still dark out. Misty wants breakfast anyway." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still dark out. Misty wants breakfast anyway."
+          }
+        }
+      }
+    },
+    "Still dark out. Sunny is already waiting by the door." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Still dark out. Sunny is already waiting by the door."
+          }
+        }
+      }
+    },
+    "Storm" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storm"
+          }
+        }
+      }
+    },
+    "Storm force winds. Everyone stays in today." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storm force winds. Everyone stays in today."
+          }
+        }
+      }
+    },
+    "Storm force winds. Keep pets inside." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storm force winds. Keep pets inside."
+          }
+        }
+      }
+    },
+    "Stormy out there. Sofa cuddles today." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stormy out there. Sofa cuddles today."
+          }
+        }
+      }
+    },
+    "Strong breeze" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strong breeze"
+          }
+        }
+      }
+    },
+    "Strong gale" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strong gale"
+          }
+        }
+      }
+    },
+    "Sunglasses on. It's a warm one today." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunglasses on. It's a warm one today."
+          }
+        }
+      }
+    },
+    "Sunny" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny"
+          }
+        }
+      }
+    },
+    "Sunny & Misty" : {
+      "comment" : "The app's name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny & Misty"
+          }
+        }
+      }
+    },
+    "Sunny & Misty uses your location to send weather for where you are, even when the app is closed or not in use. It's only used for the weather." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny & Misty uses your location to send weather for where you are, even when the app is closed or not in use. It's only used for the weather."
+          }
+        }
+      }
+    },
+    "Sunny and Misty are curled up asleep." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny and Misty are curled up asleep."
+          }
+        }
+      }
+    },
+    "Sunny says now's a great time for a walk." : {
+      "comment" : "Morning briefing notification. Sunny is the dog.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny says now's a great time for a walk."
+          }
+        }
+      }
+    },
+    "Sunny the dog and Misty the cat reacting to the weather" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny the dog and Misty the cat reacting to the weather"
+          }
+        }
+      }
+    },
+    "Sunny thinks there's time for one more lap of the block." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny thinks there's time for one more lap of the block."
+          }
+        }
+      }
+    },
+    "Sunny wants puddles. Misty wants a towel." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny wants puddles. Misty wants a towel."
+          }
+        }
+      }
+    },
+    "Sunny's picked %@ for a walk." : {
+      "comment" : "Morning briefing notification. Sunny is the dog. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunny's picked %@ for a walk."
+          }
+        }
+      }
+    },
+    "Sunrise" : {
+      "comment" : "Sunrise or sunset marker in the hourly strip",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunrise"
+          }
+        }
+      }
+    },
+    "Sunrise in %@" : {
+      "comment" : "Daylight tile summary. The argument is a duration.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunrise in %@"
+          }
+        }
+      }
+    },
+    "Sunset" : {
+      "comment" : "Sunrise or sunset marker in the hourly strip",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunset"
+          }
+        }
+      }
+    },
+    "Sunshine and tail wags all round." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sunshine and tail wags all round."
+          }
+        }
+      }
+    },
+    "Tap to see today's weather." : {
+      "comment" : "Morning briefing notification when there is no forecast",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to see today's weather."
+          }
+        }
+      }
+    },
+    "The air's not great. Misty is happy indoors." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The air's not great. Misty is happy indoors."
+          }
+        }
+      }
+    },
+    "The air's not great. Sunny's big walk can wait." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The air's not great. Sunny's big walk can wait."
+          }
+        }
+      }
+    },
+    "The chance stays up past %@." : {
+      "comment" : "Rain outlook: when the rain ends. The argument is an hour.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The chance stays up past %@."
+          }
+        }
+      }
+    },
+    "The end of the street looks fuzzy" : {
+      "comment" : "Misty's line about how far she can see, on the Misty's View tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The end of the street looks fuzzy"
+          }
+        }
+      }
+    },
+    "The sun has set" : {
+      "comment" : "Daylight tile summary",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The sun has set"
+          }
+        }
+      }
+    },
+    "The weather service is napping. Try again in a few minutes." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The weather service is napping. Try again in a few minutes."
+          }
+        }
+      }
+    },
+    "This version of Sunny & Misty has stopped working. Sunny's packed, Misty's pretending not to notice. Update to keep the walks coming." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This version of Sunny & Misty has stopped working. Sunny's packed, Misty's pretending not to notice. Update to keep the walks coming."
+          }
+        }
+      }
+    },
+    "Thunder! Misty is under the bed. Keep pets inside." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thunder! Misty is under the bed. Keep pets inside."
+          }
+        }
+      }
+    },
+    "Thunderstorms. Keep pets inside." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thunderstorms. Keep pets inside."
+          }
+        }
+      }
+    },
+    "Time for a walk" : {
+      "comment" : "Walk reminder notification title",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time for a walk"
+          }
+        }
+      }
+    },
+    "Time for an update" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time for an update"
+          }
+        }
+      }
+    },
+    "Today's forecast for %@" : {
+      "comment" : "Morning briefing title from the day's forecast. The argument is the city.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's forecast for %@"
+          }
+        }
+      }
+    },
+    "Today's weather and a walk time, each morning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's weather and a walk time, each morning"
+          }
+        }
+      }
+    },
+    "Today's weather each morning" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's weather each morning"
+          }
+        }
+      }
+    },
+    "Together they check the sky so you know what to expect, for you and your pets." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Together they check the sky so you know what to expect, for you and your pets."
+          }
+        }
+      }
+    },
+    "Tomorrow around %@" : {
+      "comment" : "Walk card headline. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow around %@"
+          }
+        }
+      }
+    },
+    "Too cold for paws." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too cold for paws."
+          }
+        }
+      }
+    },
+    "Too dark to get up, says Misty. She's pretending to be asleep." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too dark to get up, says Misty. She's pretending to be asleep."
+          }
+        }
+      }
+    },
+    "Too hot for long walks. Plenty of water today." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too hot for long walks. Plenty of water today."
+          }
+        }
+      }
+    },
+    "Too hot for paws" : {
+      "comment" : "Paw Check tile line: what the pavement means for paws",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too hot for paws"
+          }
+        }
+      }
+    },
+    "Too hot for paws." : {
+      "comment" : "Walk card caption: why now isn't the time for a walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too hot for paws."
+          }
+        }
+      }
+    },
+    "Too hot to move, says Misty. She's found the cool tiles." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too hot to move, says Misty. She's found the cool tiles."
+          }
+        }
+      }
+    },
+    "Too hot underfoot. Short trips on the grass." : {
+      "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too hot underfoot. Short trips on the grass."
+          }
+        }
+      }
+    },
+    "Too many requests. Please wait a moment and try again." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too many requests. Please wait a moment and try again."
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        }
+      }
+    },
+    "UV %lld · %@" : {
+      "comment" : "Daylight tile: the UV index and its category",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UV %lld · %@"
+          }
+        }
+      }
+    },
+    "UV Index" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "UV Index"
+          }
+        }
+      }
+    },
+    "Unhealthy" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unhealthy"
+          }
+        }
+      }
+    },
+    "Units" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Units"
+          }
+        }
+      }
+    },
+    "Update" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update"
+          }
+        }
+      }
+    },
+    "Update for the latest features and fixes." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update for the latest features and fixes."
+          }
+        }
+      }
+    },
+    "Update from the App Store." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update from the App Store."
+          }
+        }
+      }
+    },
+    "Use my location" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use my location"
+          }
+        }
+      }
+    },
+    "Use system setting" : {
+      "comment" : "Settings: unit choice",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use system setting"
+          }
+        }
+      }
+    },
+    "Use your location?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use your location?"
+          }
+        }
+      }
+    },
+    "Version %@ · Debug build" : {
+      "comment" : "Settings footer: the app version",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Version %@ · Debug build"
+          }
+        }
+      }
+    },
+    "Very high" : {
+      "comment" : "UV exposure category (WHO)",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very high"
+          }
+        }
+      }
+    },
+    "Very poor" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very poor"
+          }
+        }
+      }
+    },
+    "Very unhealthy" : {
+      "comment" : "Air quality band name on the Air Quality tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very unhealthy"
+          }
+        }
+      }
+    },
+    "Violent storm" : {
+      "comment" : "Beaufort wind force name on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Violent storm"
+          }
+        }
+      }
+    },
+    "W" : {
+      "comment" : "Compass point abbreviation a wind comes from, on the Wind tile",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W"
+          }
+        }
+      }
+    },
+    "Walk now or wait it out." : {
+      "comment" : "Rain alert notification, about the walk",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walk now or wait it out."
+          }
+        }
+      }
+    },
+    "Walk time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walk time"
+          }
+        }
+      }
+    },
+    "Walk times, pavement checks and walk reminders" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walk times, pavement checks and walk reminders"
+          }
+        }
+      }
+    },
+    "Warm" : {
+      "comment" : "Feels Like band name",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm"
+          }
+        }
+      }
+    },
+    "Warm out. Misty has found the coolest spot in the house." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm out. Misty has found the coolest spot in the house."
+          }
+        }
+      }
+    },
+    "Warm out. Shady walks and plenty of water." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warm out. Shady walks and plenty of water."
+          }
+        }
+      }
+    },
+    "We couldn't find that town or city. Try a different search." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't find that town or city. Try a different search."
+          }
+        }
+      }
+    },
+    "Weather data by OpenWeather" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather data by OpenWeather"
+          }
+        }
+      }
+    },
+    "Weather data is not available right now. Please try again later." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather data is not available right now. Please try again later."
+          }
+        }
+      }
+    },
+    "Weather service is not configured. Check your API key in Secrets.plist." : {
+      "comment" : "Error message when the weather can't be loaded",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather service is not configured. Check your API key in Secrets.plist."
+          }
+        }
+      }
+    },
+    "Weather unavailable" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weather unavailable"
+          }
+        }
+      }
+    },
+    "Wet out there. Misty has found the warmest lap in the house." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wet out there. Misty has found the warmest lap in the house."
+          }
+        }
+      }
+    },
+    "Wet paws ahead. Keep a towel by the door." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wet paws ahead. Keep a towel by the door."
+          }
+        }
+      }
+    },
+    "When rain or snow is about to start" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "When rain or snow is about to start"
+          }
+        }
+      }
+    },
+    "Wind" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wind"
+          }
+        }
+      }
+    },
+    "Wipe those paws when you come in." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wipe those paws when you come in."
+          }
+        }
+      }
+    },
+    "Yes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yes"
+          }
+        }
+      }
+    },
+    "You can turn on rain alerts in Settings." : {
+      "comment" : "Onboarding: what the notifications will be",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can turn on rain alerts in Settings."
+          }
+        }
+      }
+    },
+    "[© OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · Radar by [RainViewer](https://www.rainviewer.com)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "[© OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · Radar by [RainViewer](https://www.rainviewer.com)"
+          }
+        }
+      }
+    },
+    "carbon monoxide" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "carbon monoxide"
+          }
+        }
+      }
+    },
+    "clear sky" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "clear sky"
+          }
+        }
+      }
+    },
+    "cloudy" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "cloudy"
+          }
+        }
+      }
+    },
+    "coarse particles" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "coarse particles"
+          }
+        }
+      }
+    },
+    "drizzle" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "drizzle"
+          }
+        }
+      }
+    },
+    "east" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "east"
+          }
+        }
+      }
+    },
+    "fine particles" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fine particles"
+          }
+        }
+      }
+    },
+    "fog" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fog"
+          }
+        }
+      }
+    },
+    "freezing drizzle" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freezing drizzle"
+          }
+        }
+      }
+    },
+    "freezing rain" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "freezing rain"
+          }
+        }
+      }
+    },
+    "heavy rain" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "heavy rain"
+          }
+        }
+      }
+    },
+    "heavy snow" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "heavy snow"
+          }
+        }
+      }
+    },
+    "light rain" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "light rain"
+          }
+        }
+      }
+    },
+    "light snow" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "light snow"
+          }
+        }
+      }
+    },
+    "mainly clear" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mainly clear"
+          }
+        }
+      }
+    },
+    "moderate rain" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "moderate rain"
+          }
+        }
+      }
+    },
+    "moderate snow" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "moderate snow"
+          }
+        }
+      }
+    },
+    "nitrogen dioxide" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nitrogen dioxide"
+          }
+        }
+      }
+    },
+    "north" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "north"
+          }
+        }
+      }
+    },
+    "northeast" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "northeast"
+          }
+        }
+      }
+    },
+    "northwest" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "northwest"
+          }
+        }
+      }
+    },
+    "overcast" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "overcast"
+          }
+        }
+      }
+    },
+    "ozone" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ozone"
+          }
+        }
+      }
+    },
+    "partly cloudy" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "partly cloudy"
+          }
+        }
+      }
+    },
+    "rain showers" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rain showers"
+          }
+        }
+      }
+    },
+    "snow grains" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "snow grains"
+          }
+        }
+      }
+    },
+    "snow showers" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "snow showers"
+          }
+        }
+      }
+    },
+    "south" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "south"
+          }
+        }
+      }
+    },
+    "southeast" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "southeast"
+          }
+        }
+      }
+    },
+    "southwest" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "southwest"
+          }
+        }
+      }
+    },
+    "sulphur dioxide" : {
+      "comment" : "Air pollutant, lower case, as in Mostly fine particles",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sulphur dioxide"
+          }
+        }
+      }
+    },
+    "thunderstorm" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "thunderstorm"
+          }
+        }
+      }
+    },
+    "thunderstorm with hail" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "thunderstorm with hail"
+          }
+        }
+      }
+    },
+    "violent rain showers" : {
+      "comment" : "Weather description, lower case, shown on the hero and in notifications",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "violent rain showers"
+          }
+        }
+      }
+    },
+    "west" : {
+      "comment" : "Compass point a wind comes from, spoken by VoiceOver",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "west"
+          }
+        }
+      }
+    },
+    "yesterday at %@" : {
+      "comment" : "When an old reading was taken. The argument is a time.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday at %@"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
