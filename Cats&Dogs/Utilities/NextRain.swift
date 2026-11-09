@@ -38,11 +38,19 @@ enum NextRain: Equatable {
     func line(timeZone: TimeZone) -> String {
         switch self {
         case let .starting(epoch, snow):
-            "\(snow ? "Snow" : "Rain") starting around \(WeatherFormatting.epochTime(epoch, timeZone: timeZone))"
+            let time = WeatherFormatting.epochTime(epoch, timeZone: timeZone)
+            return snow
+                ? String(localized: "Snow starting around \(time)", comment: "Next rain line. The argument is a time.")
+                : String(localized: "Rain starting around \(time)", comment: "Next rain line. The argument is a time.")
         case let .stopping(epoch, snow):
-            "\(snow ? "Snow" : "Rain") stopping around \(WeatherFormatting.epochTime(epoch, timeZone: timeZone))"
+            let time = WeatherFormatting.epochTime(epoch, timeZone: timeZone)
+            return snow
+                ? String(localized: "Snow stopping around \(time)", comment: "Next rain line. The argument is a time.")
+                : String(localized: "Rain stopping around \(time)", comment: "Next rain line. The argument is a time.")
         case let .continuing(snow):
-            "\(snow ? "Snow" : "Rain") for the next 2 hours"
+            return snow
+                ? String(localized: "Snow for the next 2 hours", comment: "Next rain line")
+                : String(localized: "Rain for the next 2 hours", comment: "Next rain line")
         }
     }
 

@@ -61,39 +61,39 @@ enum PetMood: CaseIterable {
         return switch self {
         case .fair: [
             Self.perfectWalkies,
-            "Misty has claimed the sunniest windowsill.",
-            "Sunshine and tail wags all round.",
+            String(localized: "Misty has claimed the sunniest windowsill.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Sunshine and tail wags all round.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .sunny: [
-            "Sunglasses on. It's a warm one today.",
-            "Warm out. Shady walks and plenty of water.",
-            "Misty has claimed the sunniest windowsill.",
+            String(localized: "Sunglasses on. It's a warm one today.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Warm out. Shady walks and plenty of water.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Misty has claimed the sunniest windowsill.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .cloudy: [
             Self.stillKeenForAWalk,
-            "Nap weather, says Misty.",
+            String(localized: "Nap weather, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             Self.stillTimeForAStroll,
         ]
         case .rain: [
-            "Sunny wants puddles. Misty wants a towel.",
-            "Grab a raincoat. Misty is NOT going out in this.",
-            "Wet paws ahead. Keep a towel by the door.",
+            String(localized: "Sunny wants puddles. Misty wants a towel.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Grab a raincoat. Misty is NOT going out in this.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Wet paws ahead. Keep a towel by the door.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .storm: [
-            "Thunder! Misty is under the bed. Keep pets inside.",
-            "Stormy out there. Sofa cuddles today.",
+            String(localized: "Thunder! Misty is under the bed. Keep pets inside.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Stormy out there. Sofa cuddles today.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .snow: [
-            "Snow zoomies, then straight back to the blanket.",
-            "Wipe those paws when you come in.",
+            String(localized: "Snow zoomies, then straight back to the blanket.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Wipe those paws when you come in.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .hot: [
-            "Too hot for long walks. Plenty of water today.",
-            "Fresh water bowls today. It is a scorcher.",
+            String(localized: "Too hot for long walks. Plenty of water today.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Fresh water bowls today. It is a scorcher.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .cold: [
-            "Brrr. Short walks and warm blankets.",
-            "Coat weather for small dogs today.",
+            String(localized: "Brrr. Short walks and warm blankets.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Coat weather for small dogs today.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .night:
             switch nightPart {
@@ -102,12 +102,12 @@ enum PetMood: CaseIterable {
                 Self.oneMoreLap,
             ]
             case .lateNight: [
-                "Sunny and Misty are curled up asleep.",
-                "Lights out. Misty has claimed the warm spot.",
+                String(localized: "Sunny and Misty are curled up asleep.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                String(localized: "Lights out. Misty has claimed the warm spot.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             ]
             case .beforeDawn: [
-                "Still dark out. Sunny is already waiting by the door.",
-                "Too dark to get up, says Misty. She's pretending to be asleep.",
+                String(localized: "Still dark out. Sunny is already waiting by the door.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                String(localized: "Too dark to get up, says Misty. She's pretending to be asleep.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             ]
             }
         }
@@ -118,48 +118,48 @@ enum PetMood: CaseIterable {
     private func noDogCaptions(nightPart: NightPart) -> [String]? {
         switch self {
         case .fair: [
-            "Lovely day out. Misty will supervise from the window.",
-            "Misty has claimed the sunniest windowsill.",
-            "Sunshine and tail wags all round.",
+            String(localized: "Lovely day out. Misty will supervise from the window.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Misty has claimed the sunniest windowsill.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Sunshine and tail wags all round.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .sunny: [
-            "Sunglasses on. It's a warm one today.",
-            "Warm out. Misty has found the coolest spot in the house.",
-            "Misty has claimed the sunniest windowsill.",
+            String(localized: "Sunglasses on. It's a warm one today.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Warm out. Misty has found the coolest spot in the house.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Misty has claimed the sunniest windowsill.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .cloudy: [
-            "A bit grey. Misty says it's a blanket sort of day.",
-            "Nap weather, says Misty.",
-            "No sun, no problem. The birds are still out, says Misty.",
+            String(localized: "A bit grey. Misty says it's a blanket sort of day.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Nap weather, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "No sun, no problem. The birds are still out, says Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .rain: [
-            "Rain on the window. Misty is watching every drop.",
-            "Grab a raincoat. Misty is NOT going out in this.",
-            "Wet out there. Misty has found the warmest lap in the house.",
+            String(localized: "Rain on the window. Misty is watching every drop.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Grab a raincoat. Misty is NOT going out in this.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Wet out there. Misty has found the warmest lap in the house.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .storm: nil
         case .snow: [
-            "Snow zoomies, then straight back to the blanket.",
-            "Misty is watching the snow from somewhere warm.",
+            String(localized: "Snow zoomies, then straight back to the blanket.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Misty is watching the snow from somewhere warm.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .hot: [
-            "Too hot to move, says Misty. She's found the cool tiles.",
-            "Fresh water bowls today. It is a scorcher.",
+            String(localized: "Too hot to move, says Misty. She's found the cool tiles.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Fresh water bowls today. It is a scorcher.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .cold: [
-            "Brrr. Warm blankets all round.",
-            "Coat weather today. Misty is staying by the radiator.",
+            String(localized: "Brrr. Warm blankets all round.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+            String(localized: "Coat weather today. Misty is staying by the radiator.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
         ]
         case .night:
             switch nightPart {
             case .evening: [
-                "Quiet night. Misty is doing her evening rounds.",
-                "Evening zoomies, courtesy of Misty.",
+                String(localized: "Quiet night. Misty is doing her evening rounds.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                String(localized: "Evening zoomies, courtesy of Misty.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             ]
             case .lateNight: nil
             case .beforeDawn: [
-                "Still dark out. Misty wants breakfast anyway.",
-                "Too dark to get up, says Misty. She's pretending to be asleep.",
+                String(localized: "Still dark out. Misty wants breakfast anyway.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
+                String(localized: "Too dark to get up, says Misty. She's pretending to be asleep.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat."),
             ]
             }
         }
@@ -187,11 +187,11 @@ enum PetMood: CaseIterable {
 
     /// The captions that suggest a walk now, which `caption` leaves out when now isn't the time.
     /// Each is written once, here, and `captions` uses the same constant.
-    private static let perfectWalkies = "Perfect walkies weather! Off we go."
-    private static let stillKeenForAWalk = "A bit grey, but Sunny is still keen for a walk."
-    private static let stillTimeForAStroll = "No sun, no problem. Still time for a stroll."
-    private static let oneLastStroll = "Quiet night. Time for one last stroll before bed?"
-    private static let oneMoreLap = "Sunny thinks there's time for one more lap of the block."
+    private static let perfectWalkies = String(localized: "Perfect walkies weather! Off we go.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let stillKeenForAWalk = String(localized: "A bit grey, but Sunny is still keen for a walk.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let stillTimeForAStroll = String(localized: "No sun, no problem. Still time for a stroll.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let oneLastStroll = String(localized: "Quiet night. Time for one last stroll before bed?", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
+    private static let oneMoreLap = String(localized: "Sunny thinks there's time for one more lap of the block.", comment: "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.")
     static let walkSuggestions: Set<String> = [
         perfectWalkies, stillKeenForAWalk, stillTimeForAStroll, oneLastStroll, oneMoreLap,
     ]
@@ -229,21 +229,21 @@ enum PetMood: CaseIterable {
         switch worst.reason {
         case let .wind(force):
             if force >= WalkConditions.hurricaneForce {
-                return ["Hurricane force winds! Everyone inside, away from the windows."]
+                return [String(localized: "Hurricane force winds! Everyone inside, away from the windows.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
             }
             if force >= WalkConditions.stormForce {
-                return ["Storm force winds. Everyone stays in today.", "Misty is under the bed until this wind drops."]
+                return [String(localized: "Storm force winds. Everyone stays in today.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "Misty is under the bed until this wind drops.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
             }
             return hasDog
-                ? ["Gale force winds! Quick potty breaks, then back in.", "Blowy out there. Misty won't go near the door."]
-                : ["Gale force winds! Misty won't go near the door.", "Blowy out there. Misty is staying put."]
+                ? [String(localized: "Gale force winds! Quick potty breaks, then back in.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "Blowy out there. Misty won't go near the door.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
+                : [String(localized: "Gale force winds! Misty won't go near the door.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "Blowy out there. Misty is staying put.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
         case let .air(_, pollutant):
-            let air = WalkReason.airName(pollutant) ?? "Poor air"
+            let air = WalkReason.airName(pollutant) ?? String(localized: "Poor air", comment: "Bad air of no particular kind, at the start of a sentence (Poor air today.)")
             return hasDog
-                ? ["\(air) today. Quick potty breaks, then back on the sofa.", "The air's not great. Sunny's big walk can wait."]
-                : ["\(air) today. Misty's keeping the windows shut.", "The air's not great. Misty is happy indoors."]
+                ? [String(localized: "\(air) today. Quick potty breaks, then back on the sofa.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "The air's not great. Sunny's big walk can wait.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
+                : [String(localized: "\(air) today. Misty's keeping the windows shut.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "The air's not great. Misty is happy indoors.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
         case .pavement:
-            return ["Hot pavement! Sunny's sticking to the grass today.", "Too hot underfoot. Short trips on the grass."]
+            return [String(localized: "Hot pavement! Sunny's sticking to the grass today.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat."), String(localized: "Too hot underfoot. Short trips on the grass.", comment: "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.")]
         default:
             return nil
         }

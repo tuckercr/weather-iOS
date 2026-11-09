@@ -6,15 +6,15 @@ protocol SettingsScreen: View {}
 
 extension SettingsScreen {
     /// The system's header grey is only about 3.3:1 on the brand surface; this one is 8.8:1.
-    func sectionHeader(_ title: String) -> some View {
+    func sectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title).foregroundStyle(Color.secondaryText)
     }
 
     /// Takes the value rather than reading it inside the binding, so the body observes it and the
     /// switch redraws when it changes.
     func switchRow(
-        _ title: String,
-        summary: String? = nil,
+        _ title: LocalizedStringKey,
+        summary: LocalizedStringKey? = nil,
         isOn: Bool,
         set: @escaping (Bool) -> Void
     ) -> some View {
@@ -33,9 +33,9 @@ extension SettingsScreen {
     @ViewBuilder
     func permissionRow(
         status: PermissionStatus,
-        grantedText: String,
-        requestTitle: String,
-        openSettingsTitle: String,
+        grantedText: LocalizedStringKey,
+        requestTitle: LocalizedStringKey,
+        openSettingsTitle: LocalizedStringKey,
         settingsURL: String,
         onRequest: @escaping () -> Void
     ) -> some View {

@@ -50,13 +50,13 @@ struct WelcomeView: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private func titleText(_ text: String) -> some View {
+    private func titleText(_ text: LocalizedStringKey) -> some View {
         Text(text)
             .font(.brand(.largeTitle, weight: .bold))
             .multilineTextAlignment(.center)
     }
 
-    private func character(name: String, body: String) -> some View {
+    private func character(name: LocalizedStringKey, body: LocalizedStringKey) -> some View {
         VStack(spacing: 2) {
             Text(name)
                 .font(.brand(.title2))

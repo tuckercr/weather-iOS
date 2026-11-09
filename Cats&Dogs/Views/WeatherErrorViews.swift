@@ -62,8 +62,8 @@ struct StaleWeatherBanner: View {
     private static let foreground = Color(hex: 0x633806)
 
     private var lead: String {
-        guard let readingTime = StaleWeather.readingTime(weather, now: now) else { return "Showing saved weather." }
-        return showingForecast ? "Showing the forecast from \(readingTime)." : "Showing weather from \(readingTime)."
+        guard let readingTime = StaleWeather.readingTime(weather, now: now) else { return String(localized: "Showing saved weather.", comment: "Banner over old weather when a refresh fails. The argument is when it was observed.") }
+        return showingForecast ? String(localized: "Showing the forecast from \(readingTime).", comment: "Banner over old weather when a refresh fails. The argument is when it was observed.") : String(localized: "Showing weather from \(readingTime).", comment: "Banner over old weather when a refresh fails. The argument is when it was observed.")
     }
 
     /// The banner has no button, so the offline message says how to retry; the other messages

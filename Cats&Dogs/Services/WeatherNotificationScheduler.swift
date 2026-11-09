@@ -150,7 +150,7 @@ final class WeatherNotificationScheduler {
     #endif
 
     /// One category per kind, so a stack of them reads "3 more briefings" rather than "3 more
-    /// notifications". The format is looked up when shown, so Localizable.stringsdict can pick
+    /// notifications". The format is looked up when shown, so Localizable.xcstrings can pick
     /// "1 more briefing".
     nonisolated static var categories: Set<UNNotificationCategory> {
         Set(NotificationKind.allCases.map { kind in

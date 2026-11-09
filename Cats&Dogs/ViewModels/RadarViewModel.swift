@@ -175,8 +175,8 @@ final class RadarViewModel {
         guard frames.indices.contains(frameIndex) else { return nil }
         let frame = frames[frameIndex]
         let time = WeatherFormatting.epochTime(frame.timeEpochSeconds, timeZone: timeZone)
-        if frameIndex == nowIndex { return "Now · \(time)" }
-        if frame.isForecast { return "Forecast · \(time)" }
+        if frameIndex == nowIndex { return String(localized: "Now · \(time)", comment: "Radar frame label. The argument is a time.") }
+        if frame.isForecast { return String(localized: "Forecast · \(time)", comment: "Radar frame label. The argument is a time.") }
         return time
     }
 

@@ -1,26 +1,26 @@
 import Foundation
 
 enum WeatherErrorMessages {
-    static let pullToRetry = "Pull to try again."
+    static let pullToRetry = String(localized: "Pull to try again.", comment: "Added to the offline banner: pulling down refreshes")
 
     static func message(for errorKey: String) -> String {
         switch errorKey {
         case "offline":
             // No "try again" here: the full-screen error has a Try again button, and the banner adds
             // `pullToRetry`, as pulling to refresh is the only way to retry there.
-            "Misty knocked the Wi-Fi off the shelf."
+            String(localized: "Misty knocked the Wi-Fi off the shelf.", comment: "Error message when the weather can't be loaded")
         case "city_not_found":
-            "We couldn't find that town or city. Try a different search."
+            String(localized: "We couldn't find that town or city. Try a different search.", comment: "Error message when the weather can't be loaded")
         case "missing_api_key", "bad_api_key":
-            "Weather service is not configured. Check your API key in Secrets.plist."
+            String(localized: "Weather service is not configured. Check your API key in Secrets.plist.", comment: "Error message when the weather can't be loaded")
         case "rate_limited":
-            "Too many requests. Please wait a moment and try again."
+            String(localized: "Too many requests. Please wait a moment and try again.", comment: "Error message when the weather can't be loaded")
         case "server_error":
-            "The weather service is napping. Try again in a few minutes."
+            String(localized: "The weather service is napping. Try again in a few minutes.", comment: "Error message when the weather can't be loaded")
         case "empty_query":
-            "Please enter a city name."
+            String(localized: "Please enter a city name.", comment: "Error message when the weather can't be loaded")
         default:
-            "Weather data is not available right now. Please try again later."
+            String(localized: "Weather data is not available right now. Please try again later.", comment: "Error message when the weather can't be loaded")
         }
     }
 

@@ -150,26 +150,26 @@ struct SettingsView: SettingsScreen {
 
     /// "Off" until notifications are allowed, then how many of the switches are on.
     private var notificationsSummary: String {
-        guard settingsViewModel.notificationPermission == .granted else { return "Off" }
+        guard settingsViewModel.notificationPermission == .granted else { return String(localized: "Off", comment: "Settings: how many kinds of notification are on") }
         let count = settingsViewModel.notificationsOnCount
-        return count == 0 ? "Off" : "\(count) on"
+        return count == 0 ? String(localized: "Off", comment: "Settings: how many kinds of notification are on") : String(localized: "\(count) on", comment: "Settings: how many kinds of notification are on")
     }
 
     /// "Version 1.0", plus "· Debug build" in debug builds, so a screenshot says what was tested.
     static var versionText: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         #if DEBUG
-        return "Version \(version) · Debug build"
+        return String(localized: "Version \(version) · Debug build", comment: "Settings footer: the app version")
         #else
-        return "Version \(version)"
+        return String(localized: "Version \(version)", comment: "Settings footer: the app version")
         #endif
     }
 
     private func unitLabel(for override: UnitOverride) -> String {
         switch override {
-        case .system: "Use system setting"
-        case .metric: "Metric (°C)"
-        case .imperial: "Imperial (°F)"
+        case .system: String(localized: "Use system setting", comment: "Settings: unit choice")
+        case .metric: String(localized: "Metric (°C)", comment: "Settings: unit choice")
+        case .imperial: String(localized: "Imperial (°F)", comment: "Settings: unit choice")
         }
     }
 }

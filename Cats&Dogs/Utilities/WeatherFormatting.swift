@@ -25,9 +25,9 @@ enum WeatherFormatting {
     static func wind(_ speed: Double, units: WeatherUnits) -> String {
         switch units {
         case .metric where isCalm(speed, units: units): "0 m/s"
-        case .metric where speed < wholeMetersPerSecondFrom: String(format: "%.1f m/s", speed)
-        case .metric: "\(Int(speed.rounded())) m/s"
-        case .imperial: isCalm(speed, units: units) ? "0 mph" : "\(Int(speed.rounded())) mph"
+        case .metric where speed < wholeMetersPerSecondFrom: String(localized: "\(String(format: "%.1f", speed)) m/s", comment: "Wind speed with its unit")
+        case .metric: String(localized: "\(Int(speed.rounded())) m/s", comment: "Wind speed with its unit")
+        case .imperial: isCalm(speed, units: units) ? String(localized: "0 mph", comment: "Wind speed with its unit") : String(localized: "\(Int(speed.rounded())) mph", comment: "Wind speed with its unit")
         }
     }
 
@@ -64,11 +64,11 @@ enum WeatherFormatting {
     /// The WHO exposure category for a UV index, e.g. "High" for 6.
     static func uvLevel(_ uv: Double) -> String {
         switch Int(uv.rounded()) {
-        case ...2: "Low"
-        case 3...5: "Moderate"
-        case 6...7: "High"
-        case 8...10: "Very high"
-        default: "Extreme"
+        case ...2: String(localized: "Low", comment: "UV exposure category (WHO)")
+        case 3...5: String(localized: "Moderate", comment: "UV exposure category (WHO), or air quality band name on the Air Quality tile")
+        case 6...7: String(localized: "High", comment: "UV exposure category (WHO)")
+        case 8...10: String(localized: "Very high", comment: "UV exposure category (WHO)")
+        default: String(localized: "Extreme", comment: "UV exposure category (WHO)")
         }
     }
 

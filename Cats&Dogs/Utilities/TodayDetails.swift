@@ -25,10 +25,10 @@ enum TodayDetails {
     ) -> (text: String, isPetLine: Bool) {
         guard let peak, let peakUV = peak.uvIndex else { return ("", false) }
         let rounded = Int(peakUV.rounded())
-        guard let start = peak.date else { return ("Peak \(rounded) today", false) }
-        if start > now { return ("Peak \(rounded) at \(peak.timeLabel)", false) }
-        if hasDog, rounded >= 6 { return ("Shade for pale noses", true) }
-        return start.addingTimeInterval(60 * 60) > now ? ("At today's peak", false) : ("Easing off now", false)
+        guard let start = peak.date else { return (String(localized: "Peak \(rounded) today", comment: "UV Index tile line. The number is the UV index."), false) }
+        if start > now { return (String(localized: "Peak \(rounded) at \(peak.timeLabel)", comment: "UV Index tile line. The number is the UV index."), false) }
+        if hasDog, rounded >= 6 { return (String(localized: "Shade for pale noses", comment: "UV Index tile line. The number is the UV index."), true) }
+        return start.addingTimeInterval(60 * 60) > now ? (String(localized: "At today's peak", comment: "UV Index tile line. The number is the UV index."), false) : (String(localized: "Easing off now", comment: "UV Index tile line. The number is the UV index."), false)
     }
 
     /// How far you can see, in the bands Misty's View names.
@@ -37,20 +37,20 @@ enum TodayDetails {
 
         var name: String {
             switch self {
-            case .excellent: "Excellent visibility"
-            case .good: "Good visibility"
-            case .moderate: "Moderate visibility"
-            case .poor: "Poor visibility"
+            case .excellent: String(localized: "Excellent visibility", comment: "Visibility band on the Misty's View tile")
+            case .good: String(localized: "Good visibility", comment: "Visibility band on the Misty's View tile")
+            case .moderate: String(localized: "Moderate visibility", comment: "Visibility band on the Misty's View tile")
+            case .poor: String(localized: "Poor visibility", comment: "Visibility band on the Misty's View tile")
             }
         }
 
         /// Misty, watching from the window.
         var mistyLine: String {
             switch self {
-            case .excellent: "Misty can see the whole street"
-            case .good: "Misty can see down the block"
-            case .moderate: "The end of the street looks fuzzy"
-            case .poor: "Misty can't see past the garden"
+            case .excellent: String(localized: "Misty can see the whole street", comment: "Misty's line about how far she can see, on the Misty's View tile")
+            case .good: String(localized: "Misty can see down the block", comment: "Misty's line about how far she can see, on the Misty's View tile")
+            case .moderate: String(localized: "The end of the street looks fuzzy", comment: "Misty's line about how far she can see, on the Misty's View tile")
+            case .poor: String(localized: "Misty can't see past the garden", comment: "Misty's line about how far she can see, on the Misty's View tile")
             }
         }
     }
@@ -74,28 +74,35 @@ enum TodayDetails {
         guard visibilityBand(meters: meters) != .excellent else { return nil }
         let miles = Double(meters) / metersPerMile
         if inMiles, meters < 1_000 {
-            return String(format: "%.1f mi", max(1, (miles * 10).rounded()) / 10)
+            let tenths = String(format: "%.1f", max(1, (miles * 10).rounded()) / 10)
+            return String(localized: "\(tenths) mi", comment: "Visibility distance with its unit")
         }
         if inMiles {
-            return "\(max(1, Int(miles.rounded()))) mi"
+            return String(localized: "\(max(1, Int(miles.rounded()))) mi", comment: "Visibility distance with its unit")
         }
         if meters < 1_000 {
-            return "\(max(1, Int((Double(meters) / 100).rounded())) * 100) m"
+            return String(localized: "\(max(1, Int((Double(meters) / 100).rounded())) * 100) m", comment: "Visibility distance with its unit")
         }
-        return "\(Int((Double(meters) / 1_000).rounded())) km"
+        return String(localized: "\(Int((Double(meters) / 1_000).rounded())) km", comment: "Visibility distance with its unit")
     }
 
     /// Misty's View's word for the sky.
-    enum SkyCondition: String, Equatable {
-        case clear = "Clear"
-        case partlyCloudy = "Partly cloudy"
-        case mostlyCloudy = "Mostly cloudy"
-        case overcast = "Overcast"
-        case mist = "Mist"
-        case haze = "Hazy"
-        case fog = "Fog"
-        case smoke = "Smoky"
-        case dust = "Dusty"
+    enum SkyCondition: Equatable {
+        case clear, partlyCloudy, mostlyCloudy, overcast, mist, haze, fog, smoke, dust
+
+        var name: String {
+            switch self {
+            case .clear: String(localized: "Clear", comment: "The sky on the Misty's View tile")
+            case .partlyCloudy: String(localized: "Partly cloudy", comment: "The sky on the Misty's View tile")
+            case .mostlyCloudy: String(localized: "Mostly cloudy", comment: "The sky on the Misty's View tile")
+            case .overcast: String(localized: "Overcast", comment: "The sky on the Misty's View tile")
+            case .mist: String(localized: "Mist", comment: "The sky on the Misty's View tile")
+            case .haze: String(localized: "Hazy", comment: "The sky on the Misty's View tile")
+            case .fog: String(localized: "Fog", comment: "The sky on the Misty's View tile")
+            case .smoke: String(localized: "Smoky", comment: "The sky on the Misty's View tile")
+            case .dust: String(localized: "Dusty", comment: "The sky on the Misty's View tile")
+            }
+        }
     }
 
     /// Mist, haze, fog, smoke and dust come from OpenWeather's condition group, since they are what
@@ -134,13 +141,13 @@ enum TodayDetails {
 
         var line: String {
             switch self {
-            case .dangerous: "Dangerously hot"
-            case .tooHot: "Too hot for paws"
-            case .warm: "Getting hot"
-            case .safe: "Safe for paws"
-            case .pavementOK: "Fine underfoot"
-            case .freezing: "Below freezing"
-            case .icy: "Icy, watch for salt"
+            case .dangerous: String(localized: "Dangerously hot", comment: "Paw Check tile line: what the pavement means for paws")
+            case .tooHot: String(localized: "Too hot for paws", comment: "Paw Check tile line: what the pavement means for paws")
+            case .warm: String(localized: "Getting hot", comment: "Paw Check tile line: what the pavement means for paws")
+            case .safe: String(localized: "Safe for paws", comment: "Paw Check tile line: what the pavement means for paws")
+            case .pavementOK: String(localized: "Fine underfoot", comment: "Paw Check tile line: what the pavement means for paws")
+            case .freezing: String(localized: "Below freezing", comment: "Paw Check tile line: what the pavement means for paws")
+            case .icy: String(localized: "Icy, watch for salt", comment: "Paw Check tile line: what the pavement means for paws")
             }
         }
 
@@ -181,11 +188,11 @@ enum TodayDetails {
 
         var name: String {
             switch self {
-            case .cold: "Cold"
-            case .chilly: "Chilly"
-            case .mild: "Mild"
-            case .warm: "Warm"
-            case .hot: "Hot"
+            case .cold: String(localized: "Cold", comment: "Feels Like band name")
+            case .chilly: String(localized: "Chilly", comment: "Feels Like band name")
+            case .mild: String(localized: "Mild", comment: "Feels Like band name")
+            case .warm: String(localized: "Warm", comment: "Feels Like band name")
+            case .hot: String(localized: "Hot", comment: "Feels Like band name")
             }
         }
     }
@@ -228,8 +235,8 @@ enum TodayDetails {
     /// No unit: the number above carries it, and the line has to fit beside a half-width tile's edge.
     static func feelsLikeGap(feelsLike: Double, temperature: Double) -> String {
         let gap = Int(feelsLike.rounded()) - Int(temperature.rounded())
-        if abs(gap) <= 1 { return "Same as it is" }
-        return gap > 0 ? "\(gap)° warmer than it is" : "\(-gap)° cooler than it is"
+        if abs(gap) <= 1 { return String(localized: "Same as it is", comment: "Feels Like tile: how far it feels from the actual temperature") }
+        return gap > 0 ? String(localized: "\(gap)° warmer than it is", comment: "Feels Like tile: how far it feels from the actual temperature") : String(localized: "\(-gap)° cooler than it is", comment: "Feels Like tile: how far it feels from the actual temperature")
     }
 
     /// Joins each number to its unit with a no-break space, so large text never leaves "°F", "mph" or
@@ -239,9 +246,9 @@ enum TodayDetails {
         text.replacing(/(\d)[ \u{202F}](?=°|%|mph\b|m\/s|km\b|mi\b|m\b|AM\b|PM\b)/) { "\($0.1)\u{00A0}" }
     }
 
-    private static let spokenCompassPoints = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"]
+    private static let spokenCompassPoints = [String(localized: "north", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "northeast", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "east", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "southeast", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "south", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "southwest", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "west", comment: "Compass point a wind comes from, spoken by VoiceOver"), String(localized: "northwest", comment: "Compass point a wind comes from, spoken by VoiceOver")]
 
-    private static let compassPoints = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+    private static let compassPoints = [String(localized: "N", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "NE", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "E", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "SE", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "S", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "SW", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "W", comment: "Compass point abbreviation a wind comes from, on the Wind tile"), String(localized: "NW", comment: "Compass point abbreviation a wind comes from, on the Wind tile")]
 
     /// The compass point a wind comes from, as a word, for VoiceOver.
     static func spokenCompassPoint(_ deg: Int) -> String {
@@ -274,11 +281,11 @@ enum TodayDetails {
     /// panting, so with a dog that band says so.
     static func fluffLine(_ level: FluffLevel, hasDog: Bool) -> String {
         switch level {
-        case .dry: "Dry air, static fur"
-        case .comfy: "Misty's fur is behaving"
-        case .sticky: "Misty's fluffing up"
-        case .muggy: hasDog ? "Puffy fur, panting pup" : "Misty's getting puffy"
-        case .soupy: "Misty has gone full floof"
+        case .dry: String(localized: "Dry air, static fur", comment: "Fluff Factor tile line about humidity, in Misty's voice")
+        case .comfy: String(localized: "Misty's fur is behaving", comment: "Fluff Factor tile line about humidity, in Misty's voice")
+        case .sticky: String(localized: "Misty's fluffing up", comment: "Fluff Factor tile line about humidity, in Misty's voice")
+        case .muggy: hasDog ? String(localized: "Puffy fur, panting pup", comment: "Fluff Factor tile line about humidity, in Misty's voice") : String(localized: "Misty's getting puffy", comment: "Fluff Factor tile line about humidity, in Misty's voice")
+        case .soupy: String(localized: "Misty has gone full floof", comment: "Fluff Factor tile line about humidity, in Misty's voice")
         }
     }
 
@@ -304,16 +311,23 @@ enum TodayDetails {
     /// the note gives where it comes from, and gusts that stand out: "From the SW, gusts 24".
     static func windNote(speed: Double, deg: Int, gust: Double?, units: WeatherUnits) -> (text: String, spoken: String) {
         let force = windForce(speed: speed, units: units)
-        if force == 0 || WeatherFormatting.isCalm(speed, units: units) { return ("Calm", "Calm") }
+        if force == 0 || WeatherFormatting.isCalm(speed, units: units) { return (String(localized: "Calm", comment: "Beaufort wind force name on the Wind tile, also its note when there is no wind"), String(localized: "Calm", comment: "Beaufort wind force name on the Wind tile, also its note when there is no wind")) }
         let toMetersPerSecond = units == .imperial ? metersPerSecondPerMph : 1
-        var text = "From the \(compassPoint(deg))"
-        var spoken = "From the \(spokenCompassPoint(deg)), \(windForceNames[force].lowercased())"
+        let point = compassPoint(deg)
+        let spokenPoint = spokenCompassPoint(deg)
+        let forceName = windForceNames[force].lowercased()
         if let gust, (gust - speed) * toMetersPerSecond >= gustGapMetersPerSecond {
             let formatted = WeatherFormatting.wind(gust, units: units)
-            text += ", gusts \(formatted.split(separator: " ").first.map(String.init) ?? formatted)"
-            spoken += ", gusts \(formatted)"
+            let gustNumber = formatted.split(separator: " ").first.map(String.init) ?? formatted
+            return (
+                String(localized: "From the \(point), gusts \(gustNumber)", comment: "Wind tile note: where the wind comes from (a compass point) and the gust speed, without its unit"),
+                String(localized: "From the \(spokenPoint), \(forceName), gusts \(formatted)", comment: "Spoken by VoiceOver: where the wind comes from, the wind force name (lower case) and the gust speed")
+            )
         }
-        return (text, spoken)
+        return (
+            String(localized: "From the \(point)", comment: "Wind tile note: where the wind comes from, a compass point"),
+            String(localized: "From the \(spokenPoint), \(forceName)", comment: "Spoken by VoiceOver: where the wind comes from and the wind force name (lower case)")
+        )
     }
 
     /// Dew point in Celsius (Magnus formula); nil when the humidity is 0, where it's undefined.
@@ -327,8 +341,8 @@ enum TodayDetails {
 
     /// The Beaufort scale's names, which the Wind tile shows under the speed.
     static let windForceNames = [
-        "Calm", "Light wind", "Light breeze", "Gentle breeze", "Moderate breeze", "Fresh breeze", "Strong breeze",
-        "Near gale", "Gale", "Strong gale", "Storm", "Violent storm", "Hurricane force",
+        String(localized: "Calm", comment: "Beaufort wind force name on the Wind tile, also its note when there is no wind"), String(localized: "Light wind", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Light breeze", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Gentle breeze", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Moderate breeze", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Fresh breeze", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Strong breeze", comment: "Beaufort wind force name on the Wind tile"),
+        String(localized: "Near gale", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Gale", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Strong gale", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Storm", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Violent storm", comment: "Beaufort wind force name on the Wind tile"), String(localized: "Hurricane force", comment: "Beaufort wind force name on the Wind tile"),
     ]
 
     /// The WMO upper bounds of each force, in m/s.
@@ -360,9 +374,9 @@ enum TodayDetails {
         let totalMinutes = seconds / 60
         let hours = totalMinutes / 60
         let minutes = totalMinutes % 60
-        if hours == 0 { return "\(minutes) min" }
-        if minutes == 0 { return "\(hours) h" }
-        return "\(hours) h \(minutes) min"
+        if hours == 0 { return String(localized: "\(minutes) min", comment: "Duration in hours and minutes, abbreviated") }
+        if minutes == 0 { return String(localized: "\(hours) h", comment: "Duration in hours and minutes, abbreviated") }
+        return String(localized: "\(hours) h \(minutes) min", comment: "Duration in hours and minutes, abbreviated")
     }
 
     /// Today's high and low for the hero. OpenWeather's current reading has its own min and max,

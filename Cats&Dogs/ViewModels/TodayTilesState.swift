@@ -46,7 +46,7 @@ struct TodayTilesState {
         self.daylight = daylight.map { tile in
             var tile = tile
             // Without a UV tile, Daylight carries the UV index.
-            if !uvTile, let uvIndex { tile.uvNote = "UV \(Int(uvIndex.rounded())) · \(WeatherFormatting.uvLevel(uvIndex))" }
+            if !uvTile, let uvIndex { tile.uvNote = String(localized: "UV \(Int(uvIndex.rounded())) · \(WeatherFormatting.uvLevel(uvIndex))", comment: "Daylight tile: the UV index and its category") }
             return tile
         }
         sky = switches.sky ? SkyTile(weather: weather, showingForecast: showingForecast, distanceInMiles: distanceInMiles) : nil
@@ -110,7 +110,7 @@ struct FluffTile {
         )
         humidityPercent = weather.humidityPercent
         dewPoint = dewC.map {
-            "Dew point \(WeatherFormatting.temperature(weather.units.fromCelsius($0), units: weather.units, showsUnit: false))"
+            String(localized: "Dew point \(WeatherFormatting.temperature(weather.units.fromCelsius($0), units: weather.units, showsUnit: false))", comment: "Fluff Factor tile: the dew point temperature")
         }
         level = TodayDetails.fluffLevel(dewPointC: dewC, humidityPercent: weather.humidityPercent)
         line = TodayDetails.fluffLine(level, hasDog: hasDog)
@@ -124,7 +124,7 @@ struct PawCheckTile {
 
     init(pavement: Double, weather: CurrentWeather, groundWet: Bool, thresholds: PetWeatherThresholds) {
         // An estimate for dark asphalt in direct sun, so a whole number, and said to be one.
-        value = "About \(WeatherFormatting.temperature(pavement, units: weather.units))"
+        value = String(localized: "About \(WeatherFormatting.temperature(pavement, units: weather.units))", comment: "Paw Check tile: estimated pavement temperature")
         band = TodayDetails.pavementBand(
             pavementC: weather.units.toCelsius(pavement),
             groundWet: groundWet,
@@ -193,15 +193,15 @@ struct DaylightTile {
         case .beforeSunrise(let secondsUntil):
             fraction = 0
             isUp = false
-            summary = "Sunrise in \(TodayDetails.duration(seconds: secondsUntil))"
+            summary = String(localized: "Sunrise in \(TodayDetails.duration(seconds: secondsUntil))", comment: "Daylight tile summary. The argument is a duration.")
         case .daytime(let secondsLeft, let dayFraction):
             fraction = dayFraction
             isUp = true
-            summary = "\(TodayDetails.duration(seconds: secondsLeft)) left"
+            summary = String(localized: "\(TodayDetails.duration(seconds: secondsLeft)) left", comment: "Daylight tile summary. The argument is a duration.")
         case .afterSunset:
             fraction = 1
             isUp = false
-            summary = "The sun has set"
+            summary = String(localized: "The sun has set", comment: "Daylight tile summary")
         }
         self.sunrise = WeatherFormatting.epochTime(sunrise, timeZone: timeZone)
         self.sunset = WeatherFormatting.epochTime(sunset, timeZone: timeZone)
@@ -224,12 +224,12 @@ struct SkyTile {
         let band = visibility.map { TodayDetails.visibilityBand(meters: $0) }
         let headline: String = if let visibility, let band {
             if let distance = TodayDetails.visibilityDistance(meters: visibility, inMiles: distanceInMiles) {
-                "\(sky.rawValue) · \(band.name), \(distance)"
+                String(localized: "\(sky.name) · \(band.name), \(distance)", comment: "Misty's View tile headline: the sky, how far you can see and the distance")
             } else {
-                "\(sky.rawValue) · \(band.name)"
+                String(localized: "\(sky.name) · \(band.name)", comment: "Misty's View tile headline: the sky and how far you can see")
             }
         } else {
-            sky.rawValue
+            sky.name
         }
         self.headline = TodayDetails.keepUnitsTogether(headline)
         mistyLine = band?.mistyLine

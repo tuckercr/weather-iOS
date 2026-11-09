@@ -22,22 +22,25 @@ struct RainOutlook: Equatable {
             guard let amountMm else { return nil }
             switch units {
             case .metric:
-                return amountMm >= 0.1 ? "\(RainOutlook.oneDecimal(amountMm)) mm" : nil
+                return amountMm >= 0.1 ? String(localized: "\(RainOutlook.oneDecimal(amountMm)) mm", comment: "Rain amount with its unit") : nil
             case .imperial:
                 let inches = amountMm / RainOutlook.mmPerInch
-                return inches >= 0.01 ? "\(RainOutlook.hundredths(inches)) in" : nil
+                return inches >= 0.01 ? String(localized: "\(RainOutlook.hundredths(inches)) in", comment: "Rain amount with its unit") : nil
             }
         }
 
         /// Shown above the bar when it's tapped: "3 PM · 70%", or "3 PM · 70% · 2.5 mm".
         var label: String {
-            guard let amountText else { return "\(hour) · \(chance)%" }
-            return "\(hour) · \(chance)% · \(amountText)"
+            guard let amountText else { return String(localized: "\(hour) · \(chance)%", comment: "Rain outlook bar label: hour, chance of rain and amount") }
+            return String(localized: "\(hour) · \(chance)% · \(amountText)", comment: "Rain outlook bar label: hour, chance of rain and amount")
         }
 
         /// "3 PM, 70% chance of rain, about 2.5 mm".
         var accessibilityLabel: String {
-            "\(hour), \(chance)% chance of rain" + (amountText.map { ", about \($0)" } ?? "")
+            if let amountText {
+                return String(localized: "\(hour), \(chance)% chance of rain, about \(amountText)", comment: "Rain outlook bar, spoken by VoiceOver: hour, chance of rain and amount")
+            }
+            return String(localized: "\(hour), \(chance)% chance of rain", comment: "Rain outlook bar, spoken by VoiceOver: hour and chance of rain")
         }
     }
 
@@ -77,14 +80,20 @@ struct RainOutlook: Equatable {
         if let nextRainLine {
             headline = nextRainLine
         } else {
-            let lead = highest >= likelyChance ? "Rain likely" : "A chance of rain"
-            headline = peak == 0 ? "\(lead) now" : "\(lead) around \(window[peak].timeLabel)"
+            let likely = highest >= likelyChance
+            let time = window[peak].timeLabel
+            headline = switch (likely, peak == 0) {
+            case (true, true): String(localized: "Rain likely now", comment: "Rain outlook headline")
+            case (true, false): String(localized: "Rain likely around \(time)", comment: "Rain outlook headline. The argument is an hour.")
+            case (false, true): String(localized: "A chance of rain now", comment: "Rain outlook headline")
+            case (false, false): String(localized: "A chance of rain around \(time)", comment: "Rain outlook headline. The argument is an hour.")
+            }
         }
 
         var sentences = [
             lastWet == window.count - 1
-                ? "The chance stays up past \(window[lastWet].timeLabel)."
-                : "Drying out after \(window[lastWet].timeLabel).",
+                ? String(localized: "The chance stays up past \(window[lastWet].timeLabel).", comment: "Rain outlook: when the rain ends. The argument is an hour.")
+                : String(localized: "Drying out after \(window[lastWet].timeLabel).", comment: "Rain outlook: when the rain ends. The argument is an hour."),
         ]
         let totalMm = window.reduce(0) { $0 + ($1.precipitationMm ?? 0) }
         if let amount = amountSentence(totalMm: totalMm, units: units) {
@@ -107,12 +116,14 @@ struct RainOutlook: Equatable {
         case .metric:
             guard totalMm >= minTotalMm else { return nil }
             let shown = totalMm < 10 ? oneDecimal(totalMm) : String(Int(totalMm.rounded()))
-            return "About \(shown) mm in all."
+            return String(localized: "About \(shown) mm in all.", comment: "Rain outlook: how much rain falls in all")
         case .imperial:
             let inches = totalMm / mmPerInch
             guard inches >= minTotalInches else { return nil }
             let shown = hundredths(inches)
-            return shown == "1" ? "About 1 inch in all." : "About \(shown) inches in all."
+            return shown == "1"
+                ? String(localized: "About 1 inch in all.", comment: "Rain outlook: how much rain falls in all")
+                : String(localized: "About \(shown) inches in all.", comment: "Rain outlook: how much rain falls in all. The argument is a decimal number of inches.")
         }
     }
 

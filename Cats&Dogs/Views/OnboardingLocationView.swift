@@ -64,9 +64,9 @@ struct OnboardingLocationView: View {
     private var bodyText: String {
         switch viewModel.state {
         case .failed:
-            "Could not determine your location. You can still add locations manually."
+            String(localized: "Could not determine your location. You can still add locations manually.", comment: "Onboarding: asking for the location")
         default:
-            "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are."
+            String(localized: "Misty likes to know which window she's looking out of. Allow your location to see the weather where you are.", comment: "Onboarding: asking for the location")
         }
     }
 }
