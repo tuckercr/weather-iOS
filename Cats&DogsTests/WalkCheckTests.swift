@@ -85,6 +85,33 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(check(slot(rain: 40, icon: "11d")).level, .wait)
     }
 
+    func testTheRainRulesReadTheChanceAsTheHourlyStripShowsIt() {
+        // 55% shows as 60%: "then rain". 54% shows as 50%: "then maybe rain".
+        XCTAssertEqual(check(slot(rain: 55, icon: "10d")).reason, .rain(likely: true))
+        XCTAssertEqual(check(slot(rain: 54, icon: "10d")).reason, .rain(likely: false))
+        XCTAssertEqual(check(slot(rain: 55, icon: "11d")).level, .stayIn)
+        XCTAssertEqual(check(slot(rain: 54, icon: "11d")).level, .wait)
+        // With the walk limit at 30: 25% shows as 30% and counts, 24% shows as 20% and doesn't.
+        XCTAssertEqual(thresholds.maxRainChance, 30)
+        XCTAssertEqual(check(slot(rain: 25, icon: "10d")).reason, .rain(likely: false))
+        XCTAssertEqual(check(slot(rain: 24, icon: "10d")).level, .great)
+        // 5% isn't shown at all: no rain, even with no walk limit.
+        var anyChance = PetWeatherThresholds.standard
+        anyChance.maxRainChance = 1
+        XCTAssertNil(check(slot(rain: 5, icon: "10d"), thresholds: anyChance).reason)
+        XCTAssertEqual(check(slot(rain: 10, icon: "10d"), thresholds: anyChance).reason, .rain(likely: false))
+    }
+
+    func testShownRainChance() {
+        XCTAssertEqual(WeatherFormatting.shownRainChance(5), 0)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(9), 0)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(24), 20)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(25), 30)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(54), 50)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(55), 60)
+        XCTAssertEqual(WeatherFormatting.shownRainChance(100), 100)
+    }
+
     func testDarkIsAWait() {
         XCTAssertEqual(check(slot(icon: "01n")).reason, .dark)
         XCTAssertEqual(check(slot(), darkNow: true).level, .wait)

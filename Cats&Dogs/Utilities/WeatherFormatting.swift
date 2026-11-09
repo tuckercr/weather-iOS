@@ -37,6 +37,13 @@ enum WeatherFormatting {
         percent < 10 ? nil : (percent + 5) / 10 * 10
     }
 
+    /// An hour's chance of rain as the hourly strip shows it, with a hidden chance (under 10%) as 0.
+    /// Every rule that weighs an hour's chance (the walk limit, "rain" against "maybe rain") reads
+    /// this, so an hour shown as 60% is "rain" and one shown as 30% meets a 30% walk limit.
+    static func shownRainChance(_ percent: Int) -> Int {
+        rainChance(percent) ?? 0
+    }
+
     /// A speed that would show as 0 (whole mph, or m/s to one decimal): written as a plain 0, and calm.
     static func isCalm(_ speed: Double, units: WeatherUnits) -> Bool {
         speed < (units == .imperial ? 0.5 : 0.05)
