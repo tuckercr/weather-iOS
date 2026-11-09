@@ -222,8 +222,8 @@ enum WalkConditions {
         }
     }
 
-    /// Rain, snow or storms now (`conditionNow`), or a chance of them at or above the walk limit,
-    /// whichever is worse: drizzle now under an hour of likely thunderstorms is storms. Storms that
+    /// Rain, snow or storms now (`conditionNow`), or a chance of them at or above the walk limit
+    /// (the chance as shown, `WeatherFormatting.shownRainChance`), whichever is worse: drizzle now under an hour of likely thunderstorms is storms. Storms that
     /// are happening or likely keep pets inside; the rest is a wait for a dry spell.
     private static func precipitation(
         _ slot: HourlySlot,
@@ -237,8 +237,10 @@ enum WalkConditions {
         default: nil
         }
         var forecast: (WalkReason, WalkLevel)?
-        if slot.precipitationChance >= thresholds.maxRainChance {
-            let likely = slot.precipitationChance >= WalkAdvisor.likelyRainChance
+        // The chance as the hourly strip shows it, so the words match the number on screen.
+        let chance = WeatherFormatting.shownRainChance(slot.precipitationChance)
+        if chance >= thresholds.maxRainChance {
+            let likely = chance >= WalkAdvisor.likelyRainChance
             forecast = switch slot.iconCode.prefix(2) {
             case "11": (.storms(likely: likely), likely ? .stayIn : .wait)
             case "13": (.snow(likely: likely), .wait)

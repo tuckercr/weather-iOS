@@ -73,7 +73,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
    - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
      around 7 AM" when it falls on the city's next day), or "Not a good day for walkies" when nothing
-     in the next 24 hours qualifies. A good hour is under 30% rain chance, at a comfortable
+     in the next 24 hours qualifies. A good hour is under 30% rain chance (the chance as the hourly
+     strip shows it, so an hour shown as 30% counts and one shown as 60% is "rain", not "maybe
+     rain"), at a comfortable
      feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 40 °C
      (104 °F), and when it is raining now, now never counts, whatever the hourly forecast says. The
      paw is tinted by the rating, and a caption gives the reason when it's more than a wait: the
