@@ -254,7 +254,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Privacy**: *Share usage statistics* turns analytics on or off. It starts on, except in the EU,
      EEA, UK and Switzerland, where it starts off until the user turns it on.
    - **About**: OpenWeather and Open-Meteo attribution, the
-     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0.1" for build 2,
+     [privacy policy](https://sunnyandmisty.com/privacy), the [terms of use](https://sunnyandmisty.com/terms),
+     and the version at the bottom ("Version 1.0.1" for build 2,
      with "· Debug build" in debug builds).
 8. **Update prompts**, from Remote Config: below `ios_min_supported_version` the app shows only
    "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
@@ -651,7 +652,8 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
 - `ITSAppUsesNonExemptEncryption` is false in `Info.plist`, so uploads skip the export-compliance
   question.
 - The app icons have no alpha channel, which App Store Connect requires.
-- The privacy policy is at [sunnyandmisty.com/privacy](https://sunnyandmisty.com/privacy), linked from Settings.
+- The privacy policy is at [sunnyandmisty.com/privacy](https://sunnyandmisty.com/privacy) and the terms of use at
+  [sunnyandmisty.com/terms](https://sunnyandmisty.com/terms), both linked from Settings › About.
 - **TestFlight**: create the app record in App Store Connect (bundle ID `com.fangjet.weather`, SKU
   and name from `listing.md`), archive `main` in Xcode (Product › Archive, signing with FangJet LLC,
   team `3V3NR8HP58`), and upload from the Organizer. Bump the build number (`CURRENT_PROJECT_VERSION`)
