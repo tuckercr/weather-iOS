@@ -12,9 +12,9 @@ struct WalkCard: View {
     @ScaledMetric(relativeTo: .headline) private var headlineLastOffset: CGFloat = 2
 
     /// The dark shade on the light theme's card and the pale one on the dark theme's, so the paw and
-    /// the caption stay clear (at least 4.5:1) on either.
+    /// the caption stay clear (at least 4.5:1) on either. A danger warning is red whatever now is.
     private var tint: Color {
-        let (light, dark): (UInt32, UInt32) = switch content.rating {
+        let (light, dark): (UInt32, UInt32) = switch content.isDanger ? .danger : content.rating {
         case .great: (0x27500A, 0xC0DD97)
         case .okay: (0x633806, 0xFAC775)
         case .poor: (0x444441, 0xD3D1C7)
@@ -72,6 +72,8 @@ struct WalkCard: View {
             bestTimeLabel: nil,
             now: WalkCheck([WalkFactor(reason: .wind(force: 12), level: .danger)])
         )))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .great, bestTimeLabel: nil, warning: .hurricane(from: "6 PM"))))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .okay, bestTimeLabel: "2 PM", warning: .storms(from: "4 PM"))))
         WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .poor, bestTimeLabel: nil)))
         WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .tooCold, bestTimeLabel: "11 AM")))
     }

@@ -2,7 +2,7 @@ import Foundation
 
 /// The walk card's headline category: `WalkCheck`'s verdict on now, and whether there's a better
 /// time. `windy` is a gale or worse, `stormy` thunderstorms now or likely, and `danger` hurricane
-/// force wind, which the card shows as a warning even without a dog.
+/// force wind now, which the card shows as a warning even without a dog.
 enum WalkRating: Equatable {
     case great, okay, poor, pawsHot, tooCold, badAir, windy, stormy, danger
 }
@@ -23,12 +23,21 @@ enum WalkChange: Equatable {
     case storms, maybeStorms, rain, maybeRain, snow, maybeSnow, wind, heat, hotPavement, cold, badAir
 }
 
+/// Something on its way in the next few hours that the verdict on now doesn't cover: hurricane
+/// force wind, or likely thunderstorms, from the hour labelled `from`. Same as Android's
+/// `WalkWarning`.
+enum WalkWarning: Equatable {
+    case hurricane(from: String)
+    case storms(from: String)
+}
+
 /// `bestTimeLabel` is nil when now is a good time, or when there is no good window soon.
 /// `pavementNow` is the estimated pavement temperature for the current hour, in the forecast's
 /// units, when the source provides it. `bestTimeIsTomorrow` is set when the best time falls on the
 /// city's next day, since the label alone ("7 AM") doesn't say which morning. `outlook` is set only
 /// when now is a great time. `now` is the verdict on the hour under way, which `rating` sums up and
-/// whose reason the card's caption gives.
+/// whose reason the card's caption gives. `warning` is about later: hurricane force wind or likely
+/// storms in the next few hours that now doesn't already have.
 struct WalkAdvice: Equatable {
     let rating: WalkRating
     let bestTimeLabel: String?
@@ -36,6 +45,14 @@ struct WalkAdvice: Equatable {
     var bestTimeIsTomorrow = false
     var outlook: WalkOutlook? = nil
     var now = WalkCheck([])
+    var warning: WalkWarning? = nil
+
+    /// Hurricane force wind now or on its way: the card is a danger warning, shown even without a dog.
+    var isDanger: Bool {
+        if rating == .danger { return true }
+        if case .hurricane = warning { return true }
+        return false
+    }
 }
 
 enum WalkAdvisor {
@@ -47,7 +64,7 @@ enum WalkAdvisor {
     private static let outlookSeconds = 6 * 3600
     /// Sunset this close is worth a mention.
     private static let darkSoonSeconds = 3 * 3600
-    /// Hurricane force wind forecast this soon is a danger now: time to get everyone inside.
+    /// Hurricane force wind or likely storms forecast this soon is worth a warning.
     private static let dangerAheadSeconds = 6 * 3600
     /// A chance of rain at or above this is "rain"; from the walk limit up to it, "maybe rain".
     static let likelyRainChance = 60
@@ -64,8 +81,8 @@ enum WalkAdvisor {
     /// `conditionNow` is the current observation's condition group ("Rain", "Thunderstorm"). The
     /// hourly forecast can say the hour in progress is dry while it's raining, so when it's raining
     /// now, now is never the walk time. `windForceNow` and `gustForceNow` are the current reading's
-    /// wind and gusts (Beaufort), as the Wind tile shows them. Hurricane force wind forecast in the
-    /// next few hours counts as now. Without a dog (`hasDog` false) the verdict on now leaves the
+    /// wind and gusts (Beaufort), as the Wind tile shows them. Hurricane force wind or likely storms in
+    /// the next few hours are a `warning`, not part of the verdict on now. Without a dog (`hasDog` false) the verdict on now leaves the
     /// pavement out. `sunsetEpoch` is today's sunset, for the "gets dark" line.
     /// `darkNow` is the clock's word on darkness: the hour in progress keeps its daytime icon for the
     /// whole hour the sun sets in, so without it now could be "a great time" for up to an hour after
@@ -86,7 +103,7 @@ enum WalkAdvisor {
         let horizon = Int(now.timeIntervalSince1970) + lookaheadSeconds
         let slots = upcoming.prefix(lookaheadSlots).filter { ($0.epochSeconds ?? 0) <= horizon }
         guard let first = slots.first else { return nil }
-        var check = WalkConditions.check(
+        let check = WalkConditions.check(
             first,
             thresholds: thresholds,
             feelsLikeC: currentFeelsLikeC,
@@ -96,15 +113,6 @@ enum WalkAdvisor {
             darkNow: darkNow,
             hasDog: hasDog
         )
-        let soon = Int(now.timeIntervalSince1970) + dangerAheadSeconds
-        if check.level < .danger, slots.contains(where: { slot in
-            // An hour without a time (a forecast cached before they were kept) isn't counted as soon.
-            (slot.epochSeconds ?? .max) <= soon
-                && TodayDetails.windForce(speed: slot.windSpeed, units: slot.units) >= WalkConditions.hurricaneForce
-        }) {
-            let hurricane = WalkFactor(reason: .wind(force: WalkConditions.hurricaneForce), level: .danger)
-            check = WalkCheck(check.factors.filter { if case .wind = $0.reason { false } else { true } } + [hurricane])
-        }
         let firstGood = slots.dropFirst().first { isWalkable($0, thresholds) }
         let rating = rating(check, hasBetterTime: firstGood != nil)
         let bestSlot = rating == .great ? nil : firstGood
@@ -114,8 +122,32 @@ enum WalkAdvisor {
             pavementNow: first.pavementTemperature,
             bestTimeIsTomorrow: bestSlot.map { isOnALaterDay($0, than: now, in: timeZone) } ?? false,
             outlook: rating == .great ? outlook(slots, check: check, sunsetEpoch: sunsetEpoch, now: now, thresholds) : nil,
-            now: check
+            now: check,
+            warning: warning(slots, check: check, now: now, thresholds)
         )
+    }
+
+    /// Hurricane force wind, or else likely thunderstorms, in an hour after the one under way and
+    /// within `dangerAheadSeconds`, when now doesn't already have it.
+    private static func warning(
+        _ slots: [HourlySlot],
+        check: WalkCheck,
+        now: Date,
+        _ thresholds: PetWeatherThresholds
+    ) -> WalkWarning? {
+        // Hurricane force now already says to stay inside; nothing later adds to that.
+        guard check.level < .danger else { return nil }
+        let soon = Int(now.timeIntervalSince1970) + dangerAheadSeconds
+        // An hour without a time (a forecast cached before they were kept) isn't counted as soon.
+        let ahead = slots.dropFirst().filter { ($0.epochSeconds ?? .max) <= soon }
+        if let slot = ahead.first(where: WalkConditions.isHurricaneForce) {
+            return .hurricane(from: slot.timeLabel)
+        }
+        let stormsNow = check.factors.contains { if case .storms = $0.reason { true } else { false } }
+        if !stormsNow, let slot = ahead.first(where: { WalkConditions.hasLikelyStorms($0, thresholds) }) {
+            return .storms(from: slot.timeLabel)
+        }
+        return nil
     }
 
     /// The advice for `weather` (the reading on screen, or the forecast hour standing in for an old
@@ -227,8 +259,8 @@ enum WalkAdvisor {
 
 extension WalkAdvice {
     /// Whether the walk card shows: with a dog, when Remote Config allows the card; a danger warning
-    /// shows for everyone. Same as Android's `walkCardShown`.
+    /// (hurricane force wind now or ahead) shows for everyone. Same as Android's `walkCardShown`.
     func showsCard(hasDog: Bool, cardEnabled: Bool) -> Bool {
-        rating == .danger || (hasDog && cardEnabled)
+        isDanger || (hasDog && cardEnabled)
     }
 }

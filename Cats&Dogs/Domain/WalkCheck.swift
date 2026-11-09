@@ -222,6 +222,18 @@ enum WalkConditions {
         }
     }
 
+    /// Hurricane force sustained wind in the hour's forecast (not its gusts, which aren't forecast
+    /// hourly): what the walk card's and the briefing's hurricane warnings look ahead for.
+    static func isHurricaneForce(_ slot: HourlySlot) -> Bool {
+        TodayDetails.windForce(speed: slot.windSpeed, units: slot.units) >= hurricaneForce
+    }
+
+    /// Likely thunderstorms in the hour's forecast (a thunder icon at a chance from
+    /// `WalkAdvisor.likelyRainChance`): what the storm warnings look ahead for.
+    static func hasLikelyStorms(_ slot: HourlySlot, _ thresholds: PetWeatherThresholds) -> Bool {
+        precipitation(slot, conditionNow: nil, thresholds)?.0 == .storms(likely: true)
+    }
+
     /// Rain, snow or storms now (`conditionNow`), or a chance of them at or above the walk limit,
     /// whichever is worse: drizzle now under an hour of likely thunderstorms is storms. Storms that
     /// are happening or likely keep pets inside; the rest is a wait for a dry spell.
