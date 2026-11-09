@@ -2067,16 +2067,6 @@
         }
       }
     },
-    "Manage locations" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage locations"
-          }
-        }
-      }
-    },
     "Meet" : {
       "localizations" : {
         "en" : {
