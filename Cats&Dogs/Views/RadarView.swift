@@ -78,17 +78,6 @@ private struct RadarMapView: View {
         ZStack {
             RadarCanvas(tileInfo: tileInfo, baseMap: radar.baseMap, coverage: radar.coverage, overlay: radar.currentOverlay)
 
-            // Outside RainViewer's coverage an empty map would read as "no rain".
-            if radar.noRadarHere {
-                OverlayChip {
-                    Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage"))
-            }
-
             VStack(spacing: 0) {
                 HStack(alignment: .top) {
                     if let label = radar.currentFrameLabel(timeZone: timeZone) {
@@ -100,6 +89,18 @@ private struct RadarMapView: View {
                     }
                     Spacer()
                     RadarLegend()
+                }
+                // Outside RainViewer's coverage an empty map would read as "no rain". Centred under
+                // the time and legend, so it doesn't cover the city's name on the map.
+                if radar.noRadarHere {
+                    OverlayChip {
+                        Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage"))
+                    .padding(.top, 8)
                 }
                 Spacer()
                 bottomBar
