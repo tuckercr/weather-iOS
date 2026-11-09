@@ -2584,6 +2584,17 @@
         }
       }
     },
+    "No radar here" : {
+      "comment" : "Radar card: the city is outside RainViewer's radar coverage",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No radar here"
+          }
+        }
+      }
+    },
     "No stars for Misty tonight" : {
       "comment" : "Misty's line about the view at night, on the Misty's View tile",
       "localizations" : {

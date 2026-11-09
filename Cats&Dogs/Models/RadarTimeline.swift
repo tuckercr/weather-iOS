@@ -25,4 +25,10 @@ struct RadarTimeline: Equatable, Sendable {
     nonisolated func tileURL(for frame: RadarFrame, z: Int, x: Int, y: Int) -> String {
         "\(host)\(frame.path)/\(Self.tileSize)/\(z)/\(x)/\(y)/\(Self.colorScheme)/1_1.png"
     }
+
+    /// RainViewer's coverage layer for a tile: transparent where it has radar, opaque black where it
+    /// doesn't (much of Africa, central Asia and the oceans), whose radar tiles are just empty.
+    nonisolated func coverageURL(z: Int, x: Int, y: Int) -> String {
+        "\(host)/v2/coverage/0/\(Self.tileSize)/\(z)/\(x)/\(y)/0/0_0.png"
+    }
 }

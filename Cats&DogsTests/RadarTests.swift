@@ -321,6 +321,131 @@ final class RadarTests: XCTestCase {
         viewModel.retry()
         await waitUntil { viewModel.timeline.successValue != nil }
     }
+
+    // MARK: - Coverage
+
+    func testBuildsARainViewerCoverageURLFromHostAndTileCoordinates() {
+        let timeline = RadarTimeline(host: "https://tilecache.rainviewer.com", frames: sampleTimeline.frames)
+
+        XCTAssertEqual(
+            timeline.coverageURL(z: 7, x: 63, y: 42),
+            "https://tilecache.rainviewer.com/v2/coverage/0/256/7/63/42/0/0_0.png"
+        )
+    }
+
+    func testOnlyAFullyTransparentCoveragePixelHasRadar() {
+        XCTAssertTrue(RadarCoverage.isCovered(alpha: 0))
+        XCTAssertFalse(RadarCoverage.isCovered(alpha: 1))
+        XCTAssertFalse(RadarCoverage.isCovered(alpha: 255))
+    }
+
+    func testTheCityPixelIsWhereTheCardCentresInTheMiddleTile() {
+        let tile = RadarTile(tileX: 63, tileY: 42, subFractionX: 0.25, subFractionY: 0.5)
+
+        XCTAssertEqual(RadarCoverage.cityPixel(for: tile).x, 320)
+        XCTAssertEqual(RadarCoverage.cityPixel(for: tile).y, 384)
+        let corner = RadarTile(tileX: 0, tileY: 0, subFractionX: 0.999999, subFractionY: 0.999999)
+        XCTAssertEqual(RadarCoverage.cityPixel(for: corner).x, 511)
+    }
+
+    func testReadsTheCoverageAtTheCitysPixelCountedFromTheTop() {
+        // Black (no radar) over the top half and the left half; transparent in the bottom right.
+        let coverage = stitchedCoverage(black: [
+            CGRect(x: 0, y: 0, width: 768, height: 384),
+            CGRect(x: 0, y: 0, width: 384, height: 768),
+        ])
+
+        XCTAssertFalse(RadarCoverage.isCovered(coverage, at: tile(x: 0.8, y: 0.2)))
+        XCTAssertFalse(RadarCoverage.isCovered(coverage, at: tile(x: 0.2, y: 0.8)))
+        XCTAssertTrue(RadarCoverage.isCovered(coverage, at: tile(x: 0.8, y: 0.8)))
+        XCTAssertTrue(RadarCoverage.isCovered(stitchedCoverage(black: []), at: tile(x: 0.5, y: 0.5)))
+    }
+
+    func testACityOutsideTheCoverageSaysNoRadarHere() async {
+        let black = stitchedCoverage(black: [CGRect(x: 0, y: 0, width: 768, height: 768)])
+        let viewModel = RadarViewModel(
+            fetchTimeline: { RadarTimeline(host: "https://example.com", frames: [RadarFrame(timeEpochSeconds: 1, path: "/a", isForecast: false)]) },
+            loadCoverage: { _, _ in black }
+        )
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+
+        await viewModel.loadCoverage(for: tile(x: 0.5, y: 0.5))
+
+        XCTAssertNotNil(viewModel.coverage)
+        XCTAssertTrue(viewModel.noRadarHere)
+    }
+
+    func testACityInsideTheCoverageHasNoLabelAndANewCityStartsAgain() async {
+        let clear = stitchedCoverage(black: [])
+        let black = stitchedCoverage(black: [CGRect(x: 0, y: 0, width: 768, height: 768)])
+        let nairobi = RadarTile.from(latitude: -1.29, longitude: 36.82, zoom: RadarTiles.zoom)
+        let calls = Counter()
+        let viewModel = RadarViewModel(
+            fetchTimeline: { RadarTimeline(host: "https://example.com", frames: [RadarFrame(timeEpochSeconds: 1, path: "/a", isForecast: false)]) },
+            loadCoverage: { tile, _ in
+                await calls.increment()
+                return tile == nairobi ? black : clear
+            }
+        )
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+
+        let london = RadarTile.from(latitude: 51.5, longitude: -0.1, zoom: RadarTiles.zoom)
+        await viewModel.loadCoverage(for: london)
+        XCTAssertNotNil(viewModel.coverage)
+        XCTAssertFalse(viewModel.noRadarHere)
+        // Once per city: the same city again doesn't fetch it again.
+        await viewModel.loadCoverage(for: london)
+        let afterLondon = await calls.value
+        XCTAssertEqual(afterLondon, 1)
+
+        await viewModel.loadCoverage(for: nairobi)
+        XCTAssertTrue(viewModel.noRadarHere)
+    }
+
+    func testCoverageThatFailsToLoadLeavesTheCardAsBefore() async {
+        let black = stitchedCoverage(black: [CGRect(x: 0, y: 0, width: 768, height: 768)])
+        let gate = OverlayGate()
+        let viewModel = RadarViewModel(
+            fetchTimeline: { RadarTimeline(host: "https://example.com", frames: [RadarFrame(timeEpochSeconds: 1, path: "/a", isForecast: false)]) },
+            loadCoverage: { _, _ in await gate.isOpen ? black : nil }
+        )
+        // Before the timeline (and its tile host) arrives there's nothing to load.
+        await viewModel.loadCoverage(for: tile(x: 0.5, y: 0.5))
+        XCTAssertNil(viewModel.coverage)
+
+        viewModel.load()
+        await waitUntil { viewModel.timeline.successValue != nil }
+        await viewModel.loadCoverage(for: tile(x: 0.5, y: 0.5))
+        XCTAssertTrue(viewModel.noRadarHere)
+
+        // Somewhere else, with the coverage failing: no dimming and no label, not the old city's.
+        await gate.close()
+        await viewModel.loadCoverage(for: RadarTile.from(latitude: 0, longitude: -179.9, zoom: RadarTiles.zoom))
+        XCTAssertNil(viewModel.coverage)
+        XCTAssertFalse(viewModel.noRadarHere)
+    }
+
+    private func tile(x: Double, y: Double) -> RadarTile {
+        RadarTile(tileX: 63, tileY: 42, subFractionX: x, subFractionY: y)
+    }
+
+    /// A stitched 3 by 3 coverage image, transparent but for opaque black `black` rects, given in
+    /// pixels from the top-left corner like the image itself.
+    private func stitchedCoverage(black: [CGRect]) -> CGImage {
+        let size = 3 * RadarTiles.pixelSize
+        let context = CGContext(
+            data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
+        context.setFillColor(CGColor(red: 0, green: 0, blue: 0, alpha: 1))
+        for rect in black {
+            // CGContext counts from the bottom.
+            context.fill(CGRect(x: rect.minX, y: CGFloat(size) - rect.maxY, width: rect.width, height: rect.height))
+        }
+        return context.makeImage()!
+    }
 }
 
 private actor Counter {

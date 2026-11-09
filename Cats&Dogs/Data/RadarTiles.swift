@@ -38,7 +38,7 @@ struct RadarTile: Hashable, Sendable {
 }
 
 /// Loads the radar card's images: the OpenStreetMap tiles around a location and each radar frame's
-/// tiles over them, stitched into one image per 3 by 3 block. The data layer for `RadarViewModel`.
+/// tiles over them, and RainViewer's coverage layer, stitched into one image per 3 by 3 block. The data layer for `RadarViewModel`.
 enum RadarTileLoader {
     /// The OpenStreetMap tiles around `tile`.
     nonisolated static func baseMap(for tile: RadarTile) async -> CGImage? {
@@ -51,6 +51,13 @@ enum RadarTileLoader {
     nonisolated static func overlay(for frame: RadarFrame, in timeline: RadarTimeline, tile: RadarTile) async -> CGImage? {
         await stitchTiles(tileX: tile.tileX, tileY: tile.tileY) { x, y in
             timeline.tileURL(for: frame, z: RadarTiles.zoom, x: x, y: y)
+        }
+    }
+
+    /// RainViewer's coverage tiles around `tile`: opaque black where there's no radar.
+    nonisolated static func coverage(in timeline: RadarTimeline, tile: RadarTile) async -> CGImage? {
+        await stitchTiles(tileX: tile.tileX, tileY: tile.tileY) { x, y in
+            timeline.coverageURL(z: RadarTiles.zoom, x: x, y: y)
         }
     }
 

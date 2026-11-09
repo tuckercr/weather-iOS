@@ -76,7 +76,18 @@ private struct RadarMapView: View {
 
     var body: some View {
         ZStack {
-            RadarCanvas(tileInfo: tileInfo, baseMap: radar.baseMap, overlay: radar.currentOverlay)
+            RadarCanvas(tileInfo: tileInfo, baseMap: radar.baseMap, coverage: radar.coverage, overlay: radar.currentOverlay)
+
+            // Outside RainViewer's coverage an empty map would read as "no rain".
+            if radar.noRadarHere {
+                OverlayChip {
+                    Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("No radar here", comment: "Radar card: the city is outside RainViewer's radar coverage"))
+            }
 
             VStack(spacing: 0) {
                 HStack(alignment: .top) {
@@ -117,6 +128,11 @@ private struct RadarMapView: View {
         // the current frame, so autoplay never cancels a load.
         .task(id: OverlayKey(tile: tileInfo, timeline: radar.timeline.successValue)) {
             await radar.startPlayback(on: tileInfo)
+        }
+        // RainViewer's coverage layer, once per location (and tile host), beside the frames so it
+        // never holds them up.
+        .task(id: radar.timeline.successValue.map { RadarViewModel.CoverageKey(tile: tileInfo, host: $0.host) }) {
+            await radar.loadCoverage(for: tileInfo)
         }
         .task(id: PlaybackKey(playing: radar.playing, frameCount: radar.frames.count)) {
             await radar.play()
@@ -185,6 +201,8 @@ private struct PlaybackKey: Equatable {
 private struct RadarCanvas: View {
     let tileInfo: RadarTile
     let baseMap: CGImage?
+    /// Opaque black where RainViewer has no radar, drawn faintly so those areas look dimmed.
+    let coverage: CGImage?
     let overlay: CGImage?
 
     var body: some View {
@@ -202,6 +220,10 @@ private struct RadarCanvas: View {
             )
             if let baseMap {
                 context.draw(Image(decorative: baseMap, scale: 1), in: rect)
+            }
+            if let coverage {
+                context.opacity = RadarCoverage.dimming
+                context.draw(Image(decorative: coverage, scale: 1), in: rect)
             }
             if let overlay {
                 context.opacity = 0.8
