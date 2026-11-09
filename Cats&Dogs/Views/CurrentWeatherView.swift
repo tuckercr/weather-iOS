@@ -407,7 +407,7 @@ private struct CurrentWeatherContent: View {
     }
 }
 
-private struct HourlyStrip: View {
+struct HourlyStrip: View {
     let items: [HourlyStripItem]
     let timeZone: TimeZone
     @Environment(\.seasonalTheme) private var seasonalTheme
@@ -415,17 +415,10 @@ private struct HourlyStrip: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 4) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                ForEach(items) { item in
                     switch item {
                     case let .hour(slot): hour(slot)
-                    case let .sun(event):
-                        SunMarker(
-                            event: event,
-                            timeZone: timeZone,
-                            besideRain: HourlyStripItem.besideRainChance(items, at: index) {
-                                WeatherFormatting.rainChance($0.precipitationChance) != nil
-                            }
-                        )
+                    case let .sun(event): SunMarker(event: event, timeZone: timeZone)
                     }
                 }
             }
@@ -441,24 +434,71 @@ private struct HourlyStrip: View {
             Text(slot.timeLabel)
                 .font(.caption)
                 .foregroundStyle(Color.secondaryText)
-            WeatherIconView(iconCode: slot.iconCode, size: 32, description: slot.description, date: slot.date)
+                .accessibilitySortPriority(3)
+            HourIconSpace {
+                if WeatherFormatting.rainChance(slot.precipitationChance) != nil {
+                    VStack(spacing: HourIconMetrics.chanceSpacing) {
+                        icon(slot, size: HourIconMetrics.iconBesideChance)
+                        // Read last, after the temperature, as before it moved up beside the icon.
+                        PrecipChance(percent: slot.precipitationChance)
+                    }
+                } else {
+                    icon(slot, size: HourIconMetrics.iconSize)
+                }
+            }
             Text("\(Int(slot.temperature.rounded()))°")
                 .fontWeight(.semibold)
-            PrecipChance(percent: slot.precipitationChance)
+                .accessibilitySortPriority(1)
         }
         .padding(.horizontal, 8)
         .accessibilityElement(children: .combine)
     }
+
+    private func icon(_ slot: HourlySlot, size: CGFloat) -> some View {
+        WeatherIconView(iconCode: slot.iconCode, size: size, description: slot.description, date: slot.date)
+            .accessibilitySortPriority(2)
+    }
+}
+
+/// An hour's icon on its own, and the smaller one with a rain chance under it.
+enum HourIconMetrics {
+    static let iconSize: CGFloat = 32
+    static let iconBesideChance: CGFloat = 24
+    static let chanceSpacing: CGFloat = 2
+}
+
+/// The icon's space in an hour of the strip, the same height in every hour, so the card never
+/// changes height with the rain and never ends in a gap. An hour with a rain chance shows a smaller
+/// icon with the chance under it, inside the space; an hour without one, the full-size icon in the
+/// middle. The sunrise and sunset markers use it for the sun too, so their lines meet the
+/// temperatures. Same sizes as Android's `HourIconSpace`.
+struct HourIconSpace<Content: View>: View {
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ZStack {
+            // An unseen smaller icon and chance, a point wide, give the space its height at any text
+            // size, whether or not any hour has rain.
+            VStack(spacing: HourIconMetrics.chanceSpacing) {
+                Color.clear.frame(width: HourIconMetrics.iconBesideChance, height: HourIconMetrics.iconBesideChance)
+                PrecipChance(percent: 50)
+            }
+            .fixedSize()
+            .frame(width: 1)
+            .hidden()
+            .accessibilityHidden(true)
+            content
+        }
+        .frame(minHeight: HourIconMetrics.iconSize)
+    }
 }
 
 /// A sunrise or sunset between two hours of the strip: half a column, with the time ("6:50"), the
-/// sun on the horizon and a thin line beside the temperatures, running on beside the rain chances
-/// when an hour either side shows one (`besideRain`). It's never taller than the hours beside it, so
-/// the strip doesn't grow for it.
+/// sun on the horizon in the hours' icon space and a thin line beside the temperatures. It's never
+/// taller than the hours beside it, so the strip doesn't grow for it.
 private struct SunMarker: View {
     let event: SunEvent
     let timeZone: TimeZone
-    let besideRain: Bool
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -467,25 +507,20 @@ private struct SunMarker: View {
                 .font(.caption.weight(.medium))
                 // The walk card's amber, the dark shade on the light card and the pale one on the dark.
                 .foregroundStyle(Color(hex: colorScheme == .dark ? 0xFAC775 : 0x633806))
-            Image(event.kind == .sunrise ? "wx_sunrise" : "wx_sunset")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 28, height: 28)
-                .padding(.vertical, 2)
-            // An unseen temperature, and rain chance when there is one beside it, laid out as in an
-            // hour cell, give the line their height whatever the text size; at their own width inside
-            // the line's, they don't widen it.
-            VStack(spacing: 6) {
-                Text(verbatim: "0°")
-                    .fontWeight(.semibold)
-                if besideRain {
-                    PrecipChance(percent: 50)
-                }
+            HourIconSpace {
+                Image(event.kind == .sunrise ? "wx_sunrise" : "wx_sunset")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
             }
-            .fixedSize()
-            .hidden()
-            .frame(width: 1.5)
-            .overlay(Capsule().fill(Color.secondaryText.opacity(0.4)))
+            // An unseen temperature gives the line its height whatever the text size; at its own
+            // width inside the line's, it doesn't widen it.
+            Text(verbatim: "0°")
+                .fontWeight(.semibold)
+                .fixedSize()
+                .hidden()
+                .frame(width: 1.5)
+                .overlay(Capsule().fill(Color.secondaryText.opacity(0.4)))
         }
         .padding(.horizontal, 2)
         .accessibilityElement(children: .ignore)

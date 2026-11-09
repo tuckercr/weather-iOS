@@ -108,7 +108,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      from Open-Meteo's 15-minute forecast (0.1 mm in 15 minutes counts; it stops after 30 dry
      minutes). Rules in `Utilities/NextRain.swift`. While the Rain outlook card shows, the line
      becomes its headline instead.
-   - **Hourly**: the next 24 hours, with rain chance. Cities without coordinates fall back to
+   - **Hourly**: the next 24 hours, with the rain chance under a smaller icon in the icon's own
+     space. Every hour is the same height, so the card never changes height with the rain and
+     never ends in a gap. Cities without coordinates fall back to
      OpenWeatherMap, which is 3-hourly, so the strip spans three days for them.
      Each sunrise and sunset still to come sits between the hours it falls between, as a slim
      marker: the time ("6:50", the hours either side give AM or PM), a sun on the horizon with an
