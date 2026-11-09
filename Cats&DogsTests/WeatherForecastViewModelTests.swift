@@ -16,6 +16,10 @@ final class WeatherForecastViewModelTests: XCTestCase {
     private var replans = 0
     private var foregroundRefreshWindow: TimeInterval = 0
     private var clock = Date(timeIntervalSince1970: 1_700_000_000)
+    /// What Remote Config says, and how many times the screen was built (it reads this each time).
+    private var screenConfig = WeatherScreenConfig()
+    private var screenBuilds = 0
+    private var notifications: NotificationCenter!
 
     override func setUp() async throws {
         preferences = IsolatedPreferences()
@@ -26,6 +30,9 @@ final class WeatherForecastViewModelTests: XCTestCase {
         replans = 0
         foregroundRefreshWindow = 0
         clock = Date(timeIntervalSince1970: 1_700_000_000)
+        screenConfig = WeatherScreenConfig()
+        screenBuilds = 0
+        notifications = NotificationCenter()
         viewModel = WeatherForecastViewModel(
             repository: LocationWeatherRepository(weatherRepository: api.repository, preferences: preferences.store),
             cities: CityRepository(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in }),
@@ -34,8 +41,12 @@ final class WeatherForecastViewModelTests: XCTestCase {
             onError: { [unowned self] in loggedErrors.append($0) },
             onSettingsOpened: { [unowned self] in settingsOpenedCount += 1 },
             foregroundRefreshMinInterval: { [unowned self] in foregroundRefreshWindow },
-            config: { WeatherScreenConfig() },
-            now: { [unowned self] in clock }
+            config: { [unowned self] in
+                screenBuilds += 1
+                return screenConfig
+            },
+            now: { [unowned self] in clock },
+            notificationCenter: notifications
         )
     }
 
@@ -54,20 +65,96 @@ final class WeatherForecastViewModelTests: XCTestCase {
     }
 
     func testTheScreenLoadsThenShowsTheReadingAtTheClock() async {
-        guard case .loading = viewModel.screen(hasDog: true) else { return XCTFail("expected loading") }
+        guard case .loading = viewModel.screen else { return XCTFail("expected loading") }
 
         viewModel.refreshCurrent(location: pinned)
         await waitUntil { self.viewModel.currentWeather.successValue != nil }
-        guard case let .weather(state) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        guard case let .weather(state) = viewModel.screen else { return XCTFail("expected weather") }
         XCTAssertEqual(state.now, viewModel.now)
         XCTAssertEqual(state.weather.cityName, "Austin, Texas, US")
         XCTAssertNil(state.stale)
     }
 
+    func testReadingTheScreenDoesNotBuildItAgain() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        await settle()
+        let builds = screenBuilds
+        for _ in 0 ..< 5 { _ = viewModel.screen }
+        XCTAssertEqual(screenBuilds, builds)
+    }
+
+    func testTheScreenFollowsTheClock() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        clock = clock.addingTimeInterval(3_600)
+        viewModel.tick()
+        guard case let .weather(state) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertEqual(state.now, clock)
+    }
+
+    func testTheScreenFollowsTheDisplaySettings() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(withDog) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertTrue(withDog.hasDog)
+
+        viewModel.displaySettingsChanged(hasDog: false, distanceInMiles: false)
+        guard case let .weather(noDog) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertFalse(noDog.hasDog)
+
+        let builds = screenBuilds
+        viewModel.displaySettingsChanged(hasDog: false, distanceInMiles: true)
+        XCTAssertEqual(screenBuilds, builds + 1)
+        // The same settings again build nothing.
+        viewModel.displaySettingsChanged(hasDog: false, distanceInMiles: true)
+        XCTAssertEqual(screenBuilds, builds + 1)
+    }
+
+    func testTheScreenFollowsTheForecastAndAFailedRefresh() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(before) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertNil(before.walkAdvice)
+        XCTAssertNil(before.stale)
+
+        viewModel.refreshForecast(location: pinned)
+        await waitUntil { self.viewModel.forecast.successValue != nil }
+        clock = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
+        viewModel.tick()
+        guard case let .weather(withForecast) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertNotNil(withForecast.walkAdvice)
+
+        api.onCurrent = { _ in throw self.offline }
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.staleErrorKey != nil }
+        guard case let .weather(stale) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertNotNil(stale.stale)
+    }
+
+    func testARemoteConfigActivationRebuildsTheScreen() async {
+        viewModel.refreshCurrent(location: pinned)
+        await waitUntil { self.viewModel.currentWeather.successValue != nil }
+        guard case let .weather(before) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertTrue(before.showsRadar)
+
+        // New values alone change nothing on screen until they're activated.
+        screenConfig.radarEnabled = false
+        guard case let .weather(unchanged) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertTrue(unchanged.showsRadar)
+
+        notifications.post(name: RemoteConfigRepository.didActivate, object: nil)
+        await waitUntil {
+            if case let .weather(state) = self.viewModel.screen { !state.showsRadar } else { false }
+        }
+        guard case let .weather(after) = viewModel.screen else { return XCTFail("expected weather") }
+        XCTAssertFalse(after.showsRadar)
+    }
+
     func testWalkAdviceComesFromTheLoadedForecastAndIsNilUntilThen() async {
         viewModel.refreshCurrent(location: pinned)
         await waitUntil { self.viewModel.currentWeather.successValue != nil }
-        guard case let .weather(before) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        guard case let .weather(before) = viewModel.screen else { return XCTFail("expected weather") }
         XCTAssertNil(before.walkAdvice)
         XCTAssertFalse(before.showsWalkCard)
 
@@ -75,7 +162,7 @@ final class WeatherForecastViewModelTests: XCTestCase {
         await waitUntil { self.viewModel.forecast.successValue != nil }
         clock = viewModel.forecast.successValue?.first?.hourlySlots.first?.date ?? clock
         viewModel.tick()
-        guard case let .weather(after) = viewModel.screen(hasDog: true) else { return XCTFail("expected weather") }
+        guard case let .weather(after) = viewModel.screen else { return XCTFail("expected weather") }
         XCTAssertNotNil(after.walkAdvice)
     }
 
