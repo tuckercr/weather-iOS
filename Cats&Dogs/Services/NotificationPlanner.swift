@@ -154,9 +154,7 @@ enum NotificationPlanner {
                     date: date,
                     title: String(localized: "Time for a walk", comment: "Walk reminder notification title"),
                     body: String(localized: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName). Sunny's waiting by the door.", comment: "Walk reminder notification: temperature, the sky or weather (lower case), and the city. Sunny is the dog.")
-                        // The air from the walk on, not from 8:30: smoke that cleared by then doesn't count.
-                        + (badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
-                            .map { " " + String(localized: "\($0), so a short one.", comment: "Walk reminder notification, after the walk. The argument is the bad air, as in Smoky air today.") } ?? "")
+                        + walkNudgeTail(walkStart: start, from: date, slots: slots, thresholds: thresholds, calendar: calendar)
                 ))
             }
         }
@@ -288,6 +286,54 @@ enum NotificationPlanner {
             return String(localized: "High \(high)°, low \(low)°, \(chance)% chance of rain.", comment: "Morning briefing notification: the day's high and low temperatures and the chance of rain")
         }
         return String(localized: "High \(high)°, low \(low)°.", comment: "Morning briefing notification: the day's high and low temperatures")
+    }
+
+    /// The walk nudge's last sentence, if any: hurricane force wind or likely storms soon after the
+    /// walk hour (`walkNudgeWarning`), or else bad air from the nudge on (from `date`, not from 8:30:
+    /// smoke that cleared by then doesn't count). One sentence at most, in that order.
+    private static func walkNudgeTail(
+        walkStart: Date,
+        from date: Date,
+        slots: [HourlySlot],
+        thresholds: PetWeatherThresholds,
+        calendar: Calendar
+    ) -> String {
+        switch walkNudgeWarning(after: walkStart, slots: slots, thresholds: thresholds, calendar: calendar) {
+        case .hurricane(let time):
+            return " " + String(localized: "Hurricane force winds from \(time), so be back by then.", comment: "Walk reminder notification, after the walk: hurricane force wind soon after. The argument is a time of day.")
+        case .storms(let time):
+            return " " + String(localized: "Storms from \(time), so be back by then.", comment: "Walk reminder notification, after the walk: likely thunderstorms soon after. The argument is a time of day.")
+        case nil:
+            return badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)
+                .map { " " + String(localized: "\($0), so a short one.", comment: "Walk reminder notification, after the walk. The argument is the bad air, as in Smoky air today.") } ?? ""
+        }
+    }
+
+    /// How soon after the walk hour starts a later hour's hurricane or storms are worth a warning.
+    static let walkWarningAhead: TimeInterval = 3 * 60 * 60
+
+    /// Hurricane force wind, or else likely thunderstorms, in the first hour after the walk hour
+    /// (starting at `walkStart`) that starts within `walkWarningAhead` of it, on the same day. Hours
+    /// without a time don't count. Same rule as Android's.
+    static func walkNudgeWarning(
+        after walkStart: Date,
+        slots: [HourlySlot],
+        thresholds: PetWeatherThresholds,
+        calendar: Calendar
+    ) -> WalkWarning? {
+        let soon = slots.filter { slot in
+            guard let start = slot.date else { return false }
+            return start > walkStart
+                && start.timeIntervalSince(walkStart) <= walkWarningAhead
+                && calendar.isDate(start, inSameDayAs: walkStart)
+        }
+        if let slot = soon.first(where: WalkConditions.isHurricaneForce) {
+            return .hurricane(from: slot.timeLabel)
+        }
+        if let slot = soon.first(where: { WalkConditions.hasLikelyStorms($0, thresholds) }) {
+            return .storms(from: slot.timeLabel)
+        }
+        return nil
     }
 
     /// The first walkable hour from the one under way at `date` to the end of that day.

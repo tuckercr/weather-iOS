@@ -1870,6 +1870,17 @@
         }
       }
     },
+    "Hurricane force winds from %@, so be back by then." : {
+      "comment" : "Walk reminder notification, after the walk: hurricane force wind soon after. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds from %@, so be back by then."
+          }
+        }
+      }
+    },
     "Hurricane force winds from %@. Get everyone inside before then." : {
       "comment" : "Morning briefing notification: hurricane force wind later today. The argument is a time of day.",
       "localizations" : {
@@ -3466,6 +3477,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Storm force winds. Keep pets inside."
+          }
+        }
+      }
+    },
+    "Storms from %@, so be back by then." : {
+      "comment" : "Walk reminder notification, after the walk: likely thunderstorms soon after. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storms from %@, so be back by then."
           }
         }
       }
