@@ -18,15 +18,17 @@ final class NotificationPlannerTests: XCTestCase {
         day: Int = 0,
         rain: Int = 0,
         temp: Double = 15,
-        air: AirQuality.Pollutant? = nil
+        air: AirQuality.Pollutant? = nil,
+        wind: Double = 2,
+        storms: Bool = false
     ) -> HourlySlot {
         var slot = HourlySlot(
             timeLabel: hourOfDay < 12 ? "\(hourOfDay) AM" : hourOfDay == 12 ? "12 PM" : "\(hourOfDay - 12) PM",
-            iconCode: rain > 50 ? "10d" : "01d",
-            description: rain > 50 ? "Light rain" : "Clear sky",
+            iconCode: storms ? "11d" : rain > 50 ? "10d" : "01d",
+            description: storms ? "Thunderstorm" : rain > 50 ? "Light rain" : "Clear sky",
             temperature: temp,
             feelsLike: temp,
-            windSpeed: 2,
+            windSpeed: wind,
             windDeg: 0,
             humidity: 50,
             pressure: 1013,
@@ -232,6 +234,56 @@ final class NotificationPlannerTests: XCTestCase {
             body(dry.map { slot($0, air: .coarseParticles) }),
             "High 18°, low 10°. Dusty air today, so potty breaks only."
         )
+    }
+
+    private func briefingBody(_ slots: [HourlySlot], hasDog: Bool) -> String? {
+        plan([day(slots)], settings: NotificationSettings(hasDog: hasDog)).first { $0.identifier == "briefing_0" }?.body
+    }
+
+    func testHurricaneForceWindAt830TakesTheWalksPlaceForEveryone() {
+        // 35 m/s is Beaufort 12.
+        let slots = dry.map { slot($0, wind: $0 == 8 ? 35 : 2) }
+        for hasDog in [true, false] {
+            XCTAssertEqual(
+                briefingBody(slots, hasDog: hasDog),
+                "High 18°, low 10°. Hurricane force winds. Stay inside, away from the windows."
+            )
+        }
+    }
+
+    func testHurricaneForceWindLaterTodayTakesTheWalksPlaceForEveryone() {
+        // Storms earlier, smoke all day and a walk at 8: the hurricane is all it says.
+        let slots = dry.map { slot($0, rain: $0 == 11 ? 80 : 0, air: .fineParticles, wind: $0 >= 14 ? 35 : 2, storms: $0 == 11) }
+        for hasDog in [true, false] {
+            XCTAssertEqual(
+                briefingBody(slots, hasDog: hasDog),
+                "High 18°, low 10°. Hurricane force winds from 2 PM. Get everyone inside before then."
+            )
+        }
+        // Tomorrow's isn't today's news.
+        XCTAssertEqual(
+            briefingBody(dry.map { slot($0) } + [slot(14, day: 1, wind: 35)], hasDog: false),
+            "High 18°, low 10°."
+        )
+    }
+
+    func testLikelyStormsLaterTodayComeBeforeTheWalk() {
+        let slots = dry.map { slot($0, rain: $0 >= 16 ? 70 : 0, storms: $0 >= 16) }
+        XCTAssertEqual(
+            plan([day(slots, rainChance: 70)], settings: NotificationSettings(hasDog: true)).first { $0.identifier == "briefing_0" }?.body,
+            "High 18°, low 10°, 70% chance of rain. Storms from 4 PM. Sunny says now's a great time for a walk."
+        )
+        XCTAssertEqual(briefingBody(slots, hasDog: false), "High 18°, low 10°. Storms from 4 PM.")
+        // Maybe storms aren't worth a line.
+        XCTAssertEqual(briefingBody(dry.map { slot($0, rain: $0 >= 16 ? 40 : 0, storms: $0 >= 16) }, hasDog: false), "High 18°, low 10°.")
+    }
+
+    func testStormsInTheHourAt830AreLeftToTheTitle() {
+        let slots = dry.map { slot($0, rain: $0 == 8 ? 80 : 0, storms: $0 == 8) }
+        let briefing = plan([day(slots)], settings: NotificationSettings(hasDog: true)).first { $0.identifier == "briefing_0" }
+        XCTAssertEqual(briefing?.title, "15° and thunderstorm in London")
+        XCTAssertEqual(briefing?.body, "High 18°, low 10°. Sunny's picked 9 AM for a walk.")
+        XCTAssertEqual(briefingBody(slots, hasDog: false), "High 18°, low 10°.")
     }
 
     func testBadAirAtNightOrOnAnotherDayIsNotMentioned() {

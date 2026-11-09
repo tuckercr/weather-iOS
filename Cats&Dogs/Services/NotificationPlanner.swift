@@ -218,6 +218,8 @@ enum NotificationPlanner {
 
     /// "52° and partly cloudy in Knoxville" / "High 70°, low 45°, 60% chance of rain. Sunny's picked
     /// 1 PM for a walk." from the forecast hour under way at the briefing; nil beyond the forecast.
+    /// Hurricane force wind that day takes the walk sentence's place (and is added without a dog),
+    /// and likely storms in a later hour that day come before it, for everyone.
     static func briefingContent(
         at date: Date,
         weather: CurrentWeather,
@@ -233,6 +235,18 @@ enum NotificationPlanner {
         let title = String(localized: "\(Int(slot.temperature.rounded()))° and \(conditionPhrase(slot)) in \(weather.cityName)", comment: "Morning briefing title: temperature, the sky or weather (lower case), and the city")
         // As on the hero: the day's high and low, taking in the hour's temperature.
         var body = highLowLine(TodayDetails.highLow(temperature: slot.temperature, today: day), rainChance: day.precipitationChance)
+        // The hour under way's weather is in the title, so storms are only news later in the day.
+        let today = restOfDay(from: date, slots, calendar: calendar)
+        let later = today.filter { ($0.date ?? date) > date }
+        if today.contains(where: { ($0.date ?? date) <= date && WalkConditions.isHurricaneForce($0) }) {
+            return (title, body + " " + String(localized: "Hurricane force winds. Stay inside, away from the windows.", comment: "Morning briefing notification: hurricane force wind now"))
+        }
+        if let hurricane = later.first(where: WalkConditions.isHurricaneForce) {
+            return (title, body + " " + String(localized: "Hurricane force winds from \(hurricane.timeLabel). Get everyone inside before then.", comment: "Morning briefing notification: hurricane force wind later today. The argument is a time of day."))
+        }
+        if let storms = later.first(where: { WalkConditions.hasLikelyStorms($0, thresholds) }) {
+            body += " " + WalkCardContent.stormsFrom(storms.timeLabel)
+        }
         if hasDog {
             // Bad-air hours are left out of the walk silently, so the briefing says why.
             let air = badAirPhrase(after: date, slots: slots, thresholds: thresholds, calendar: calendar)

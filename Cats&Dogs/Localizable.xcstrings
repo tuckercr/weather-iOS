@@ -1437,6 +1437,17 @@
         }
       }
     },
+    "Get everyone inside before then." : {
+      "comment" : "Walk card caption under a warning of hurricane force wind later today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get everyone inside before then."
+          }
+        }
+      }
+    },
     "Get started" : {
       "localizations" : {
         "en" : {
@@ -1848,6 +1859,28 @@
         }
       }
     },
+    "Hurricane force winds from %@" : {
+      "comment" : "Walk card headline: hurricane force wind on its way. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds from %@"
+          }
+        }
+      }
+    },
+    "Hurricane force winds from %@. Get everyone inside before then." : {
+      "comment" : "Morning briefing notification: hurricane force wind later today. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds from %@. Get everyone inside before then."
+          }
+        }
+      }
+    },
     "Hurricane force winds! Everyone inside, away from the windows." : {
       "comment" : "Hero caption in the pets' voice when the wind, air or pavement rules out a walk. Sunny is the dog, Misty the cat.",
       "localizations" : {
@@ -1855,6 +1888,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hurricane force winds! Everyone inside, away from the windows."
+          }
+        }
+      }
+    },
+    "Hurricane force winds. Stay inside, away from the windows." : {
+      "comment" : "Morning briefing notification: hurricane force wind now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hurricane force winds. Stay inside, away from the windows."
           }
         }
       }
@@ -2865,12 +2909,13 @@
         }
       }
     },
-    "Privacy policy" : {
+    "Privacy Policy" : {
+      "comment" : "Settings, About: link to the privacy policy on the website",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Privacy policy"
+            "value" : "Privacy Policy"
           }
         }
       }
@@ -3392,6 +3437,17 @@
         }
       }
     },
+    "Storms from %@." : {
+      "comment" : "Walk card caption and morning briefing: likely thunderstorms later. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Storms from %@."
+          }
+        }
+      }
+    },
     "Stormy out there. Sofa cuddles today." : {
       "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
       "localizations" : {
@@ -3583,6 +3639,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap to see today's weather."
+          }
+        }
+      }
+    },
+    "Terms of Use" : {
+      "comment" : "Settings, About: link to the terms of use on the website",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terms of Use"
           }
         }
       }

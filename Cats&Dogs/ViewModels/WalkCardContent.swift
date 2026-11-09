@@ -2,12 +2,13 @@ import Foundation
 
 /// What the walk card says: the title, the sentence that carries the advice, and a short caption
 /// with `WalkCheck`'s reason when it's more than a wait (the pavement, heat or cold, the air by its
-/// pollutant, a gale or storms), or the outlook after a walk now. Built with the screen state;
+/// pollutant, a gale or storms), or the outlook after a walk now, and a warning about hurricane
+/// force wind or storms on their way. Built with the screen state;
 /// `WalkCard` draws it. Same wording as Android's `walkDetail` and `walkCaption`.
 struct WalkCardContent: Equatable {
     /// Picks the paw's tint.
     let rating: WalkRating
-    /// Hurricane force wind: a warning, shown even without a dog.
+    /// Hurricane force wind now or on its way: a warning, shown even without a dog.
     let isDanger: Bool
     let title: String
     let headline: String
@@ -15,7 +16,7 @@ struct WalkCardContent: Equatable {
 
     init(advice: WalkAdvice) {
         rating = advice.rating
-        isDanger = advice.rating == .danger
+        isDanger = advice.isDanger
         title = isDanger ? String(localized: "Danger", comment: "Walk card title") : String(localized: "Best Walk Time", comment: "Walk card title")
         headline = Self.headline(advice)
         caption = Self.caption(advice)
@@ -24,6 +25,9 @@ struct WalkCardContent: Equatable {
     /// The sentence that carries the advice.
     static func headline(_ advice: WalkAdvice) -> String {
         if advice.rating == .danger { return String(localized: "Hurricane force winds", comment: "Walk card headline. The argument is a time of day.") }
+        if case let .hurricane(time) = advice.warning {
+            return String(localized: "Hurricane force winds from \(time)", comment: "Walk card headline: hurricane force wind on its way. The argument is a time of day.")
+        }
         if advice.rating == .great { return String(localized: "Now is a great time", comment: "Walk card headline. The argument is a time of day.") }
         if let best = advice.bestTimeLabel {
             return advice.bestTimeIsTomorrow ? String(localized: "Tomorrow around \(best)", comment: "Walk card headline. The argument is a time of day.") : String(localized: "Around \(best)", comment: "Walk card headline. The argument is a time of day.")
@@ -32,8 +36,28 @@ struct WalkCardContent: Equatable {
     }
 
     /// The outlook after a walk now; otherwise the reason now isn't the time, when it's worth more
-    /// than a wait (or it's the pavement, which says how hot it is now).
+    /// than a wait (or it's the pavement, which says how hot it is now). Hurricane force wind on its
+    /// way says to get inside instead, and storms on their way are added after, unless the outlook
+    /// already says storms are coming.
     static func caption(_ advice: WalkAdvice) -> String? {
+        if advice.rating != .danger, case .hurricane = advice.warning {
+            return String(localized: "Get everyone inside before then.", comment: "Walk card caption under a warning of hurricane force wind later today")
+        }
+        let caption = nowCaption(advice)
+        guard case let .storms(time) = advice.warning else { return caption }
+        if case .until(_, .storms) = advice.outlook { return caption }
+        if case .until(_, .maybeStorms) = advice.outlook { return caption }
+        let storms = stormsFrom(time)
+        return caption.map { "\($0) \(storms)" } ?? storms
+    }
+
+    /// "Storms from 4 PM.", for the walk card and the morning briefing.
+    nonisolated static func stormsFrom(_ time: String) -> String {
+        String(localized: "Storms from \(time).", comment: "Walk card caption and morning briefing: likely thunderstorms later. The argument is a time of day.")
+    }
+
+    /// The caption about now: the outlook after a walk now, or why now isn't the time.
+    private static func nowCaption(_ advice: WalkAdvice) -> String? {
         if advice.rating == .great { return advice.outlook.map(outlookLine) }
         guard let reason = advice.now.reason else { return nil }
         let level = advice.now.level

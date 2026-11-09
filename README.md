@@ -84,7 +84,13 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      winds. Potty breaks only.") or thunderstorms. Hours with unhealthy air (US AQI above 150, or
      Europe's "Poor" and worse; the band is `walk_bad_air_band` in Remote Config) are never
      suggested. At hurricane force the card becomes a "Danger" warning ("Hurricane force winds. Stay
-     inside, away from the windows."), shown even without a dog. It can be turned off in Settings.
+     inside, away from the windows."), shown even without a dog. Hurricane force wind forecast in
+     the next 6 hours (sustained, from the hourly forecast) is a warning about later, not a verdict
+     on now: the card becomes the same red "Danger" warning, "Hurricane force winds from 6 PM. Get
+     everyone inside before then.", while the rating, the hero and its caption still describe the
+     hour under way. Likely thunderstorms (60% and up) in the next 6 hours add "Storms from 4 PM."
+     to the caption ("Too hot for paws. Storms from 4 PM."), unless it's storming now or the
+     outlook already says "Good until 4 PM, then storms." It can be turned off in Settings.
    - **One walk verdict**: `WalkConditions.check` (`WalkCheck.swift`) judges an hour once, and the
      hero's caption, the walk card, the Air Quality tile's note and the notifications all read it,
      so they can't disagree. The screen gets it from `WeatherForecastViewModel.walkAdvice`. Each factor has a small rule and a level, and the worst one wins:
@@ -96,7 +102,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      | Wait | Rain or snow, a near gale (Beaufort 7), pavement getting hot, feels-like outside the comfort range, dark or outside the walking hours |
      | Potty breaks only | Pavement too hot, too hot or too cold for pets, bad air (`walk_bad_air_band`), a gale (Beaufort 8) |
      | Stay in | Dangerously hot pavement, the worst air band, thunderstorms, storm force wind (Beaufort 10) |
-     | Danger | Hurricane force wind (Beaufort 12) or gusts, or hurricane force wind forecast in the next 6 hours |
+     | Danger | Hurricane force wind (Beaufort 12) or gusts |
 
      The reason carries its detail (the pollutant, the wind's force, the pavement's band) for each
      screen to word. At the same level storms come first, then rain and snow, wind, the pavement,
@@ -256,7 +262,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Privacy**: *Share usage statistics* turns analytics on or off. It starts on, except in the EU,
      EEA, UK and Switzerland, where it starts off until the user turns it on.
    - **About**: OpenWeather and Open-Meteo attribution, the
-     [privacy policy](https://sunnyandmisty.com/privacy), and the version at the bottom ("Version 1.0.1" for build 2,
+     [privacy policy](https://sunnyandmisty.com/privacy), the [terms of use](https://sunnyandmisty.com/terms),
+     and the version at the bottom ("Version 1.0.1" for build 2,
      with "· Debug build" in debug builds).
 8. **Update prompts**, from Remote Config: below `ios_min_supported_version` the app shows only
    "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
@@ -295,6 +302,10 @@ in Settings:
 
 - **Morning briefing** at 8:30 AM (on): "52° and partly cloudy in Knoxville / High 70°, low 45°, 60%
   chance of rain. Sunny's picked 1 PM for a walk." (the walk sentence only with a dog at home).
+  Likely storms later that day add "Storms from 4 PM." before the walk sentence. Hurricane force
+  wind that day replaces the walk sentence, and is added without a dog: "Hurricane force winds.
+  Stay inside, away from the windows." for the hour under way at 8:30, otherwise "Hurricane force
+  winds from 2 PM. Get everyone inside before then."
 - **Walk time** (only with a dog): at the first good walk hour today and tomorrow. When that hour has
   already started at 8:30 the briefing says "now's a great time" instead, unless the briefing is off.
 - **Rain alerts** (off): up to an hour before rain or snow starts, from the 15-minute forecast,
@@ -473,7 +484,7 @@ Shared with Android (the same cases on both platforms):
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
-- `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
+- `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
 - `CityRepositoryTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
@@ -653,7 +664,8 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
 - `ITSAppUsesNonExemptEncryption` is false in `Info.plist`, so uploads skip the export-compliance
   question.
 - The app icons have no alpha channel, which App Store Connect requires.
-- The privacy policy is at [sunnyandmisty.com/privacy](https://sunnyandmisty.com/privacy), linked from Settings.
+- The privacy policy is at [sunnyandmisty.com/privacy](https://sunnyandmisty.com/privacy) and the terms of use at
+  [sunnyandmisty.com/terms](https://sunnyandmisty.com/terms), both linked from Settings › About.
 - **TestFlight**: create the app record in App Store Connect (bundle ID `com.fangjet.weather`, SKU
   and name from `listing.md`), archive `main` in Xcode (Product › Archive, signing with FangJet LLC,
   team `3V3NR8HP58`), and upload from the Organizer. Bump the build number (`CURRENT_PROJECT_VERSION`)

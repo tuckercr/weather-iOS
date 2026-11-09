@@ -265,19 +265,115 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(check(slot(wind: 19), gustForceNow: 10).level, .pottyOnly)
     }
 
-    func testHurricaneForceWindInTheNextFewHoursIsADangerNow() {
-        let start = 1_762_516_800
-        let now = Date(timeIntervalSince1970: TimeInterval(start))
-        func advice(hurricaneIn hours: Int) -> WalkAdvice? {
-            WalkAdvisor.advice(
-                currentFeelsLikeC: 18,
-                upcoming: [slot(epoch: start), slot("4 PM", wind: 35, epoch: start + hours * 3600)],
-                now: now
-            )
-        }
-        XCTAssertEqual(advice(hurricaneIn: 3)?.rating, .danger)
-        XCTAssertEqual(advice(hurricaneIn: 3)?.now.reason, .wind(force: 12))
-        XCTAssertNotEqual(advice(hurricaneIn: 9)?.rating, .danger)
+    // MARK: - Warnings about later
+
+    private let start = 1_762_516_800
+
+    /// Now (a clear 3 PM unless told otherwise), then `later` hours each an hour apart.
+    private func advice(
+        now: HourlySlot? = nil,
+        later: [HourlySlot],
+        feelsLikeC: Double = 18,
+        conditionNow: String? = nil,
+        hasDog: Bool = true
+    ) -> WalkAdvice? {
+        WalkAdvisor.advice(
+            currentFeelsLikeC: feelsLikeC,
+            upcoming: [now ?? slot(epoch: start)] + later,
+            now: Date(timeIntervalSince1970: TimeInterval(start)),
+            conditionNow: conditionNow,
+            hasDog: hasDog
+        )
+    }
+
+    private func hour(_ hours: Int, _ label: String, wind: Double = 1, rain: Int = 0, icon: String = "01d") -> HourlySlot {
+        slot(label, rain: rain, icon: icon, wind: wind, epoch: start + hours * 3600)
+    }
+
+    func testHurricaneForceWindAheadIsAWarningAndLeavesNowAlone() {
+        let ahead = advice(later: [hour(1, "4 PM"), hour(3, "6 PM", wind: 35), hour(4, "7 PM", wind: 35)])
+        XCTAssertEqual(ahead?.warning, .hurricane(from: "6 PM"))
+        XCTAssertEqual(ahead?.rating, .great)
+        XCTAssertEqual(ahead?.now.level, .great)
+        XCTAssertFalse(ahead?.now.factors.contains { $0.level == .danger } ?? true)
+        XCTAssertEqual(ahead?.isDanger, true)
+        // Further out than 6 hours, or an hour without a time, isn't soon.
+        XCTAssertNil(advice(later: [hour(9, "12 AM", wind: 35)])?.warning)
+        XCTAssertNil(advice(later: [slot("4 PM", wind: 35)])?.warning)
+    }
+
+    func testHurricaneForceWindNowGivesNoWarning() {
+        let now = advice(now: slot(wind: 35, epoch: start), later: [hour(2, "5 PM", wind: 35)])
+        XCTAssertEqual(now?.rating, .danger)
+        XCTAssertNil(now?.warning)
+        XCTAssertEqual(now?.isDanger, true)
+        // Nor storms ahead: hurricane force now already says to stay inside.
+        let stormsLater = advice(now: slot(wind: 35, epoch: start), later: [hour(1, "4 PM", rain: 80, icon: "11d")])
+        XCTAssertEqual(stormsLater?.rating, .danger)
+        XCTAssertNil(stormsLater?.warning)
+    }
+
+    func testLikelyStormsAheadAreAWarningUnlessItIsStormingNow() {
+        let storms = hour(1, "4 PM", rain: 80, icon: "11d")
+        XCTAssertEqual(advice(later: [storms])?.warning, .storms(from: "4 PM"))
+        XCTAssertEqual(advice(later: [storms])?.isDanger, false)
+        XCTAssertNil(advice(later: [storms], conditionNow: "Thunderstorm")?.warning)
+        XCTAssertNil(advice(now: slot(rain: 80, icon: "11d", epoch: start), later: [storms])?.warning)
+        // Maybe storms (a chance under 60%) aren't worth the warning.
+        XCTAssertNil(advice(later: [hour(1, "4 PM", rain: 40, icon: "11d")])?.warning)
+    }
+
+    func testHurricaneForceWindWinsOverStorms() {
+        let later = [hour(1, "4 PM", rain: 80, icon: "11d"), hour(3, "6 PM", wind: 35)]
+        XCTAssertEqual(advice(later: later)?.warning, .hurricane(from: "6 PM"))
+    }
+
+    func testTheCardForHurricaneForceWindNowAndAhead() {
+        let now = WalkCardContent(advice: advice(now: slot(wind: 35, epoch: start), later: [hour(1, "4 PM")])!)
+        XCTAssertEqual(now.title, "Danger")
+        XCTAssertEqual(now.headline, "Hurricane force winds")
+        XCTAssertEqual(now.caption, "Stay inside, away from the windows.")
+        XCTAssertTrue(now.isDanger)
+
+        let ahead = advice(later: [hour(1, "4 PM"), hour(3, "6 PM", wind: 35)], hasDog: false)!
+        let card = WalkCardContent(advice: ahead)
+        XCTAssertEqual(card.title, "Danger")
+        XCTAssertEqual(card.headline, "Hurricane force winds from 6 PM")
+        XCTAssertEqual(card.caption, "Get everyone inside before then.")
+        XCTAssertTrue(card.isDanger)
+        XCTAssertTrue(ahead.showsCard(hasDog: false, cardEnabled: false))
+    }
+
+    func testTheCardAddsStormsAheadToItsCaption() {
+        let great = advice(later: [hour(1, "4 PM", rain: 80, icon: "11d")])
+        XCTAssertEqual(great?.rating, .great)
+        // The outlook already says storms are coming: left as it is.
+        XCTAssertEqual(great.map(WalkCardContent.init)?.caption, "Good until 4 PM, then storms.")
+        // Too hot now, the best time later: the reason, then the storms.
+        let hot = advice(later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80, icon: "11d")], feelsLikeC: 31)!
+        let hotCard = WalkCardContent(advice: hot)
+        XCTAssertEqual(hotCard.headline, "Around 4 PM")
+        XCTAssertEqual(hotCard.caption, "Too hot for paws. Storms from 5 PM.")
+        XCTAssertEqual(hotCard.title, "Best Walk Time")
+        XCTAssertFalse(hotCard.isDanger)
+        XCTAssertFalse(hot.showsCard(hasDog: false, cardEnabled: true))
+        // No caption of its own: just the storms.
+        let wait = advice(now: slot(wind: 15, epoch: start), later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80, icon: "11d")])!
+        XCTAssertEqual(WalkCardContent(advice: wait).caption, "Storms from 5 PM.")
+        // A walk now whose outlook is something else: the outlook, then the storms.
+        let rainFirst = WalkAdvice(
+            rating: .great, bestTimeLabel: nil,
+            outlook: .until(time: "4 PM", change: .rain), warning: .storms(from: "5 PM")
+        )
+        XCTAssertEqual(WalkCardContent(advice: rainFirst).caption, "Good until 4 PM, then rain. Storms from 5 PM.")
+        let maybe = WalkAdvice(
+            rating: .great, bestTimeLabel: nil,
+            outlook: .until(time: "4 PM", change: .maybeStorms), warning: .storms(from: "5 PM")
+        )
+        XCTAssertEqual(WalkCardContent(advice: maybe).caption, "Good until 4 PM, then maybe storms.")
+        let plain = WalkAdvice(rating: .great, bestTimeLabel: nil, warning: .storms(from: "5 PM"))
+        XCTAssertEqual(WalkCardContent(advice: plain).caption, "Storms from 5 PM.")
+        XCTAssertEqual(WalkCardContent(advice: plain).headline, "Now is a great time")
     }
 
     func testDrizzleNowUnderAnHourOfLikelyThunderstormsIsStorms() {

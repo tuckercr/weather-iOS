@@ -120,8 +120,11 @@ struct SettingsView: SettingsScreen {
                 Button("Location data based on GeoNames") {
                     openURL(URL(string: "https://www.geonames.org")!)
                 }
-                Button("Privacy policy") {
+                Button("Privacy Policy") {
                     openURL(URL(string: "https://sunnyandmisty.com/privacy")!)
+                }
+                Button("Terms of Use") {
+                    openURL(URL(string: "https://sunnyandmisty.com/terms")!)
                 }
             } header: {
                 sectionHeader("About")
