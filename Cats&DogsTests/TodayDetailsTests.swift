@@ -43,6 +43,33 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.skyCondition(conditionMain: "Rain", cloudPercent: 100, iconCode: "10d"), .overcast)
     }
 
+    func testMistysDayLinesGoByHowFarSheCanSee() {
+        XCTAssertEqual(TodayDetails.VisibilityBand.excellent.mistyLine, "Misty can see the whole street")
+        XCTAssertEqual(TodayDetails.VisibilityBand.good.mistyLine, "Misty can see down the block")
+        XCTAssertEqual(TodayDetails.VisibilityBand.moderate.mistyLine, "The end of the street looks fuzzy")
+        XCTAssertEqual(TodayDetails.VisibilityBand.poor.mistyLine, "Misty can't see past the garden")
+    }
+
+    func testMistysNightLines() {
+        func line(_ band: TodayDetails.VisibilityBand, _ sky: TodayDetails.SkyCondition) -> String {
+            TodayDetails.mistyNightLine(band: band, sky: sky)
+        }
+        // 1. Poor visibility keeps its line, whatever the sky.
+        XCTAssertEqual(line(.poor, .fog), "Misty can't see past the garden")
+        XCTAssertEqual(line(.poor, .clear), "Misty can't see past the garden")
+        // 2. A moderate band, or a murky sky.
+        XCTAssertEqual(line(.moderate, .clear), "The streetlights look fuzzy")
+        for sky: TodayDetails.SkyCondition in [.mist, .haze, .fog, .smoke, .dust] {
+            XCTAssertEqual(line(.good, sky), "The streetlights look fuzzy", "\(sky)")
+        }
+        XCTAssertEqual(line(.excellent, .haze), "The streetlights look fuzzy")
+        // 3 to 5. The cloud cover.
+        XCTAssertEqual(line(.excellent, .clear), "Misty can see the stars")
+        XCTAssertEqual(line(.good, .partlyCloudy), "Misty can spot a few stars")
+        XCTAssertEqual(line(.excellent, .mostlyCloudy), "No stars for Misty tonight")
+        XCTAssertEqual(line(.good, .overcast), "No stars for Misty tonight")
+    }
+
     func testWithoutACloudCoverTheIconDecides() {
         XCTAssertEqual(TodayDetails.skyCondition(conditionMain: "Clear", cloudPercent: nil, iconCode: "01n"), .clear)
         XCTAssertEqual(TodayDetails.skyCondition(conditionMain: "Clouds", cloudPercent: nil, iconCode: "02d"), .partlyCloudy)

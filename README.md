@@ -178,6 +178,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      notifications name it ("Smoky air", "Dusty air", "High ozone"). It comes with the forecast, in the same request
      the walk planner uses, so it's cached and shows offline. `air_quality_enabled` in Remote Config
      turns it off.
+   - **Misty's View**: the sky and how far you can see ("Clear · Good visibility, 6 mi"), with
+     Misty's line about the view by its band ("Misty can see down the block"). After dark in the
+     city the line is about the night instead: poor visibility keeps "Misty can't see past the
+     garden", moderate visibility or mist, haze, fog, smoke or dust is "The streetlights look
+     fuzzy", and otherwise the cloud cover decides ("Misty can see the stars", "Misty can spot a
+     few stars", "No stars for Misty tonight"). Rules in `TodayDetails.mistyNightLine`.
    - The small tiles sit in pairs; when there's an odd one out (Air quality, with Paw check showing)
      it takes the full width.
    - **Radar**: RainViewer's recent radar frames animated over an OpenStreetMap base map, with the

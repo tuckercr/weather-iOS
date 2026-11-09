@@ -52,6 +52,23 @@ final class TodayTilesStateTests: XCTestCase {
         XCTAssertEqual(tiles(showingForecast: true).sky?.headline, "Clear")
     }
 
+    func testMistysViewHasNightLinesAfterSunsetAndDayLinesBeforeIt() {
+        // Sunset is at 5 PM; 10% cloud is a clear sky, with excellent visibility.
+        XCTAssertEqual(tiles(at: noon).sky?.mistyLine, "Misty can see the whole street")
+        XCTAssertEqual(tiles(at: noon + 5 * 3600 - 60).sky?.mistyLine, "Misty can see the whole street")
+        XCTAssertEqual(tiles(at: noon + 5 * 3600).sky?.mistyLine, "Misty can see the stars")
+        XCTAssertEqual(tiles(at: noon + 11 * 3600).sky?.mistyLine, "Misty can see the stars")
+        // Before sunrise is dark too.
+        XCTAssertEqual(tiles(at: noon - 6 * 3600).sky?.mistyLine, "Misty can see the stars")
+        XCTAssertEqual(tiles(at: noon + 6 * 3600, cloudPercent: 50).sky?.mistyLine, "Misty can spot a few stars")
+        XCTAssertEqual(tiles(at: noon + 6 * 3600, visibility: 800).sky?.mistyLine, "Misty can't see past the garden")
+        // The headline doesn't change at night.
+        XCTAssertEqual(tiles(at: noon + 6 * 3600).sky?.headline, tiles(at: noon).sky?.headline)
+        // Without sun times it's never dark, and a forecast hour has no visibility, so no line.
+        XCTAssertEqual(tiles(sunTimes: false, at: noon + 6 * 3600).sky?.mistyLine, "Misty can see the whole street")
+        XCTAssertNil(tiles(showingForecast: true, at: noon + 6 * 3600).sky?.mistyLine)
+    }
+
     // MARK: - Helpers
 
     private func tiles(
@@ -61,9 +78,32 @@ final class TodayTilesStateTests: XCTestCase {
         hasDog: Bool = true,
         sunTimes: Bool = true,
         showingForecast: Bool = false,
-        switches: TodayTileSwitches = TodayTileSwitches()
+        switches: TodayTileSwitches = TodayTileSwitches(),
+        at time: Int? = nil,
+        cloudPercent: Int = 10,
+        visibility: Int = 10_000
     ) -> TodayTilesState {
-        var weather = sampleWeather()
+        let sample = sampleWeather()
+        var weather = CurrentWeather(
+            cityName: sample.cityName,
+            conditionMain: sample.conditionMain,
+            description: sample.description,
+            iconCode: sample.iconCode,
+            temperature: sample.temperature,
+            feelsLike: sample.feelsLike,
+            tempMin: sample.tempMin,
+            tempMax: sample.tempMax,
+            humidityPercent: sample.humidityPercent,
+            pressureHpa: sample.pressureHpa,
+            windSpeed: sample.windSpeed,
+            windDeg: sample.windDeg,
+            visibilityMeters: visibility,
+            cloudPercent: cloudPercent,
+            units: sample.units,
+            sunriseEpoch: nil,
+            sunsetEpoch: nil,
+            timezoneOffsetSeconds: sample.timezoneOffsetSeconds
+        )
         weather.sunriseEpoch = sunTimes ? noon - 5 * 3600 : nil
         weather.sunsetEpoch = sunTimes ? noon + 5 * 3600 : nil
         return TodayTilesState(
@@ -75,7 +115,7 @@ final class TodayTilesStateTests: XCTestCase {
             uvPeak: nil,
             airQuality: air,
             hasDog: hasDog,
-            now: Date(timeIntervalSince1970: TimeInterval(noon)),
+            now: Date(timeIntervalSince1970: TimeInterval(time ?? noon)),
             thresholds: .standard,
             distanceInMiles: false,
             switches: switches
