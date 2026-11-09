@@ -324,6 +324,69 @@ final class NotificationPlannerTests: XCTestCase {
         XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Smoky air today, so a short one.")
     }
 
+    func testHurricaneForceWindSoonAfterTheWalkIsInTheNudge() {
+        // Rain until 11:00, hurricane force wind from 13:00: the walk at 11:00 is told to be back.
+        let walks = plan(
+            [day(dry.map { slot($0, rain: $0 < 11 ? 90 : 0, wind: $0 >= 13 ? 35 : 2) })],
+            settings: NotificationSettings(walkTime: true, hasDog: true)
+        ).filter { $0.kind == .walkTime }
+
+        XCTAssertEqual(walks.map(\.date), [at(11)])
+        XCTAssertEqual(walks.first?.title, "Time for a walk")
+        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Hurricane force winds from 1 PM, so be back by then.")
+    }
+
+    func testStormsSoonAfterTheWalkReplaceTheBadAirSentence() {
+        // Rain until 11:00, likely storms at 13:00 and smoke from 14:00: one sentence, the storms.
+        let walks = plan(
+            [day(dry.map { slot($0, rain: $0 < 11 ? 90 : $0 == 13 ? 70 : 0, air: $0 >= 14 ? .fineParticles : nil, storms: $0 == 13) })],
+            settings: NotificationSettings(walkTime: true, hasDog: true)
+        ).filter { $0.kind == .walkTime }
+
+        XCTAssertEqual(walks.map(\.date), [at(11)])
+        XCTAssertEqual(walks.first?.body, "15° and clear in London. Sunny's waiting by the door. Storms from 1 PM, so be back by then.")
+    }
+
+    private func walkWarning(after walkHour: Int, _ slots: [HourlySlot]) -> WalkWarning? {
+        NotificationPlanner.walkNudgeWarning(after: at(Double(walkHour)), slots: slots, thresholds: .standard, calendar: calendar)
+    }
+
+    func testTheWalkNudgeWarnsOfHurricaneForceWindWithinThreeHours() {
+        XCTAssertEqual(walkWarning(after: 11, dry.map { slot($0, wind: $0 >= 13 ? 35 : 2) }), .hurricane(from: "1 PM"))
+        // Three hours after the walk hour starts still counts.
+        XCTAssertEqual(walkWarning(after: 11, dry.map { slot($0, wind: $0 >= 14 ? 35 : 2) }), .hurricane(from: "2 PM"))
+    }
+
+    func testTheWalkNudgeWarnsOfLikelyStormsWithinThreeHours() {
+        XCTAssertEqual(walkWarning(after: 11, dry.map { slot($0, rain: $0 == 13 ? 70 : 0, storms: $0 == 13) }), .storms(from: "1 PM"))
+        // Maybe storms aren't worth it.
+        XCTAssertNil(walkWarning(after: 11, dry.map { slot($0, rain: $0 == 13 ? 40 : 0, storms: $0 == 13) }))
+    }
+
+    func testHurricaneForceWindWinsOverEarlierStorms() {
+        let slots = dry.map { slot($0, rain: $0 == 12 ? 70 : 0, wind: $0 >= 14 ? 35 : 2, storms: $0 == 12) }
+        XCTAssertEqual(walkWarning(after: 11, slots), .hurricane(from: "2 PM"))
+    }
+
+    func testNothingMoreThanThreeHoursAfterTheWalk() {
+        XCTAssertNil(walkWarning(after: 11, dry.map { slot($0, rain: $0 >= 15 ? 70 : 0, wind: $0 >= 15 ? 35 : 2, storms: $0 >= 15) }))
+    }
+
+    func testNothingOnTheNextDay() {
+        // A walk at 22:00, a hurricane from midnight.
+        let slots = (6 ... 23).map { slot($0) } + (0 ... 3).map { slot($0, day: 1, wind: 35) }
+        XCTAssertNil(walkWarning(after: 22, slots))
+        // The same day's last hour still counts.
+        let lateHurricane = (6 ... 23).map { slot($0, wind: $0 == 23 ? 35 : 2) } + (0 ... 3).map { slot($0, day: 1) }
+        XCTAssertEqual(walkWarning(after: 22, lateHurricane), .hurricane(from: "11 PM"))
+    }
+
+    func testHoursWithoutATimeDontCount() {
+        var untimed = slot(12, wind: 35)
+        untimed.epochSeconds = nil
+        XCTAssertNil(walkWarning(after: 11, [slot(11), untimed, slot(13)]))
+    }
+
     func testSmokeThatClearsBeforeTheWalkIsNotMentioned() {
         // Smoke until 11:00, as Android words it at the walk time: the hours from then on are clean.
         let walks = plan(

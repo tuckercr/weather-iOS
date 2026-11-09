@@ -314,6 +314,11 @@ in Settings:
   winds from 2 PM. Get everyone inside before then."
 - **Walk time** (only with a dog): at the first good walk hour today and tomorrow. When that hour has
   already started at 8:30 the briefing says "now's a great time" instead, unless the briefing is off.
+  "Time for a walk / 52° and partly cloudy in Knoxville. Sunny's waiting by the door." Bad air from
+  then on adds "Smoky air today, so a short one." Hurricane force wind, or else likely storms, in an
+  hour starting up to 3 hours after the walk hour (the same day) adds "Hurricane force winds from
+  2 PM, so be back by then." or "Storms from 2 PM, so be back by then." in its place: one extra
+  sentence at most.
 - **Rain alerts** (off): up to an hour before rain or snow starts, from the 15-minute forecast,
   between 7 AM and 9 PM city time, once per shower. Switched off for everyone in the first release
   (`rain_notifications_enabled`), since they depend on a background refresh landing in the two
