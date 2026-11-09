@@ -133,7 +133,9 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    - **Rain outlook**: under the hourly strip (on landscape phones and iPad too), a bar chart of the
      chance of rain for each of the next 10 hours from the hour in progress, shown only when one of
      them reaches 20%. The hourly icon is Open-Meteo's best single model and the chance its ensemble,
-     so the two can disagree (a cloud at 70%); the chart makes the outlook plain. The headline is the
+     so the two can disagree (a cloud at 70%); the chart makes the outlook plain. Every chance in the
+     card, and every rule below that weighs one, is the chance as the strip shows it (to the nearest
+     10%, 0% under 10%), so a 55% hour is a 60% bar and a 15% hour meets the 20%. The headline is the
      next-rain line when there is one, otherwise "Rain likely around 5 PM" (50% or more) or "A
      chance of rain around 5 PM" ("now" when the first hour is the highest). Then "Drying out after
      9 PM." after the last hour at 20% or more, or "The chance stays up past 12 AM." when that is
@@ -512,7 +514,7 @@ Shared with Android (the same cases on both platforms):
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event
 - `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK
 - `PetWeatherThresholdsTests`: walk and pet threshold ranges and pair checks
-- `RainOutlookTests`: when the card shows, the headline and detail wording, metric and imperial amounts, the bars' labels
+- `RainOutlookTests`: when the card shows, the headline and detail wording, metric and imperial amounts, the bars' labels, the chance read as the strip shows it
 
 iOS only:
 
@@ -575,7 +577,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `week_forecast_enabled` | true | Hides the rest of the week's day rows for everyone |
 | `rain_outlook_enabled` | true | Hides the Rain outlook card for everyone; the next-rain line then shows on its own as before |
 | `rain_outlook_hours` | 10 (whole number 6–12, otherwise the default) | Hours in the Rain outlook chart, from the hour in progress |
-| `rain_outlook_min_chance` | 20 (whole number 1–100, otherwise the default) | The Rain outlook card only shows when an hour in the chart reaches this chance of rain; the last such hour is the one "Drying out after" names |
+| `rain_outlook_min_chance` | 20 (whole number 1–100, otherwise the default) | The Rain outlook card only shows when an hour in the chart reaches this chance of rain, as the hourly strip shows it; the last such hour is the one "Drying out after" names |
 | `daily_weather_notifications_enabled` | true | The morning briefing; off removes the queued ones and hides its switch in Settings |
 | `walk_time_notifications_enabled` | true | The Walk time nudge; off removes the queued ones and hides its switch in Settings |
 | `rain_notifications_enabled` | false | Rain alerts; off removes the queued one and hides its switch in Settings (keeping the user's choice). Off for the first release |

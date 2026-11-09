@@ -33,7 +33,7 @@ final class RainOutlookTests: XCTestCase {
     // MARK: - When it shows
 
     func testHiddenWhenNoHourReachesTheMinimumChance() {
-        XCTAssertNil(outlook(slots([10, 19, 5, 0, 0, 0, 0, 0, 0, 0])))
+        XCTAssertNil(outlook(slots([10, 14, 5, 0, 0, 0, 0, 0, 0, 0])))
         XCTAssertNotNil(outlook(slots([10, 20, 5, 0, 0, 0, 0, 0, 0, 0])))
         XCTAssertNil(outlook(slots([10, 20, 5]), minChance: 21))
     }
@@ -76,13 +76,44 @@ final class RainOutlookTests: XCTestCase {
 
     func testAChanceOfRainBelowFifty() {
         XCTAssertEqual(outlook(slots([40, 30, 20]))?.headline, "A chance of rain now")
-        XCTAssertEqual(outlook(slots([30, 49, 20]))?.headline, "A chance of rain around 4 PM")
+        XCTAssertEqual(outlook(slots([30, 44, 20]))?.headline, "A chance of rain around 4 PM")
     }
 
     func testTheNextRainLineBecomesTheHeadline() {
         let shown = outlook(slots([20, 40, 70]), nextRainLine: "Rain starting around 3:15 PM")
 
         XCTAssertEqual(shown?.headline, "Rain starting around 3:15 PM")
+    }
+
+    // MARK: - The chance as the hourly strip shows it
+
+    func testTheMinimumChanceWeighsTheChanceAsShown() {
+        // 25% shows as 30%, so it reaches a 30% minimum; 24% shows as 20% and doesn't.
+        XCTAssertNotNil(outlook(slots([25, 0, 0]), minChance: 30))
+        XCTAssertNil(outlook(slots([24, 0, 0]), minChance: 30))
+        XCTAssertEqual(outlook(slots([60, 25, 24]), minChance: 30)?.detail, "Drying out after 4 PM.")
+    }
+
+    func testRainIsLikelyAtTheChanceAsShown() {
+        // 45% shows as 50%; 44% shows as 40%.
+        XCTAssertEqual(outlook(slots([20, 45, 30]))?.headline, "Rain likely around 4 PM")
+        XCTAssertEqual(outlook(slots([20, 44, 30]))?.headline, "A chance of rain around 4 PM")
+    }
+
+    func testThePeakIsTheFirstHourAtTheHighestChanceAsShown() {
+        // 65% and 70% both show as 70%, so the earlier hour is the peak.
+        XCTAssertEqual(outlook(slots([20, 65, 70]))?.headline, "Rain likely around 4 PM")
+    }
+
+    func testABarShowsTheChanceAsTheHourlyStripDoes() {
+        let bars = outlook(slots([55, 5, 100, 94], mm: [2.46, nil, nil, nil]))?.bars
+
+        XCTAssertEqual(bars?.map(\.chance), [60, 0, 100, 90])
+        XCTAssertEqual(bars?.first?.label, "3 PM · 60% · 2.5 mm")
+        XCTAssertEqual(bars?.first?.accessibilityLabel, "3 PM, 60% chance of rain, about 2.5 mm")
+        XCTAssertEqual(bars?[1].label, "4 PM · 0%")
+        // The amount is the forecast's, unrounded.
+        XCTAssertEqual(bars?.first?.amountMm, 2.46)
     }
 
     // MARK: - Detail
