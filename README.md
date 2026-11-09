@@ -75,6 +75,20 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      sofa."), hot pavement, or a gale and worse. The moon shows
      its real phase, lit from the other side in the southern hemisphere. Tap the card for today's
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
+     **Seasonal themes** dress the hero on their day, by the city's own date: Halloween (31 October:
+     bats, Misty's witch hat, Sunny's bandana, a jack-o'-lantern) and Thanksgiving (the fourth
+     Thursday of November: autumn leaves in the sky and a pie beside the pets). A theme sets the
+     hero's day and night colours and caption, the cards' background and the tiles' label colour.
+     Its night look (night colours, the pets out of costume, the pumpkin lit, the leaves dimmer, no
+     steam off the pie) goes by the clock, as the hero's day or night does, whatever the weather,
+     so a rainy Halloween evening is still night; the pets' weather props still follow the mood.
+     The night caption only shows in the evening (dark, from noon on in the city): before sunrise
+     on the day it's dark, but the caption is the day's. A costume only replaces what it covers
+     (Misty's hat, anything on her head; Sunny's bandana, his scarf), so Sunny keeps his sunglasses
+     beside a witch, and in the rain the hat is shorter, under the umbrella. The list is
+     `SeasonalThemes.json`, which Remote Config's `seasonal_themes` can replace; a decoration this
+     version can't draw is skipped, keeping the rest of the theme. Debug builds can force a theme on any date with the launch argument
+     `-seasonalTheme thanksgiving` (or `halloween`).
    - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
      around 7 AM" when it falls on the city's next day), or "Not a good day for walkies" when nothing
      in the next 24 hours qualifies. A good hour is under 30% rain chance (the chance as the hourly
@@ -524,6 +538,7 @@ Shared with Android (the same cases on both platforms):
 - `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK
 - `PetWeatherThresholdsTests`: walk and pet threshold ranges and pair checks
 - `RainOutlookTests`: when the card shows, the headline and detail wording, metric and imperial amounts, the bars' labels, the chance read as the strip shows it
+- `SeasonalThemeTests`: the built-in themes and their dates (Halloween, Thanksgiving as the fourth Thursday), the city's own date, reading Remote Config's list (unknown themes and decorations skipped, bad JSON rejected), and which costumes and props the pets wear for a theme, the weather and the dark
 
 iOS only:
 
@@ -614,7 +629,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `ios_app_store_url` | "" | The App Store link behind the Update buttons; empty hides them until the App Store record exists |
 | `tile_feels_like_enabled`, `tile_wind_enabled`, `tile_humidity_enabled`, `tile_paw_check_enabled`, `tile_daylight_enabled`, `tile_sky_enabled` | true | One switch per Today tile (`tile_sky_enabled` is Misty's View, the sky and visibility tile); false hides that tile for everyone |
 | `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
-| `seasonal_themes_enabled` | true | Seasonal themes (Halloween and so on); false switches them all off |
+| `seasonal_themes_enabled` | true | Seasonal themes (Halloween, Thanksgiving); false switches them all off |
 | `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
 | `temperature_units_shown` | false | On adds the unit to temperatures that stand on their own: "89 °F" rather than "89°", "About 81 °F" on the Paw check tile. Units and the Settings choice are unchanged; the high and low, the hourly strip and notifications have no unit either way |
 
