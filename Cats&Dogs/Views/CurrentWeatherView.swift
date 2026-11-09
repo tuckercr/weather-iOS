@@ -411,6 +411,7 @@ struct HourlyStrip: View {
     let items: [HourlyStripItem]
     let timeZone: TimeZone
     @Environment(\.seasonalTheme) private var seasonalTheme
+    @State private var fade = ScrollEdgeFade.none
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
@@ -424,9 +425,47 @@ struct HourlyStrip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
+            // The visible part of the strip in the content's own coordinates: its left edge is how
+            // far the strip has scrolled. Only a change of fade reaches the view, not every scroll.
+            .onGeometryChange(for: ScrollEdgeFade.self) { proxy in
+                let visible = proxy.bounds(of: .scrollView) ?? .zero
+                return ScrollEdgeFade.forScroll(
+                    offset: visible.minX,
+                    contentWidth: proxy.size.width,
+                    viewportWidth: visible.width
+                )
+            } action: { newFade in
+                withAnimation(.easeInOut(duration: 0.2)) { fade = newFade }
+            }
         }
+        // A hint that the strip scrolls: its edges fade where there is more past them. A mask, not
+        // an overlay, so it suits every card colour; decorative, so VoiceOver reads the same.
+        .mask { edgeFadeMask }
         .background(Color.card(seasonalTheme))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    /// Opaque in the middle; each edge fades to clear over `ScrollEdgeFade.width` while that side
+    /// fades, and is opaque otherwise.
+    private var edgeFadeMask: some View {
+        HStack(spacing: 0) {
+            edgeFade(fading: fade.leading, towards: .leading)
+            Color.black
+            edgeFade(fading: fade.trailing, towards: .trailing)
+        }
+    }
+
+    private func edgeFade(fading: Bool, towards edge: UnitPoint) -> some View {
+        ZStack {
+            LinearGradient(
+                colors: [.clear, .black],
+                startPoint: edge,
+                endPoint: edge == .leading ? .trailing : .leading
+            )
+            // Covers the gradient when this side doesn't fade; its opacity animates.
+            Color.black.opacity(fading ? 0 : 1)
+        }
+        .frame(width: ScrollEdgeFade.width)
     }
 
     private func hour(_ slot: HourlySlot) -> some View {

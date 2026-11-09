@@ -124,6 +124,10 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      space. Every hour is the same height, so the card never changes height with the rain and
      never ends in a gap. Cities without coordinates fall back to
      OpenWeatherMap, which is 3-hourly, so the strip spans three days for them.
+     As a hint that it scrolls, the strip's edges fade where there is more past them: the right
+     edge while there are later hours, the left once it has been scrolled from the start. At either
+     end that side is crisp, and when every hour fits (iPad) neither edge fades. Rules in
+     `Utilities/ScrollEdgeFade.swift`.
      Each sunrise and sunset still to come sits between the hours it falls between, as a slim
      marker: the time ("6:50", the hours either side give AM or PM), a sun on the horizon with an
      arrow up or down, and a thin line. The times are Open-Meteo's daily sunrise and sunset, so the
@@ -506,6 +510,7 @@ Shared with Android (the same cases on both platforms):
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy captions and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
+- `ScrollEdgeFadeTests`: which edges of the hourly strip fade at the start, partway, at the end, bouncing past either end and when every hour fits
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
 - `CityRepositoryTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
