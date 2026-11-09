@@ -554,8 +554,9 @@ back to its default, and if a pair ends up inverted (minimum not below maximum),
 their defaults.
 
 A missing or unreadable value always falls back to the default, so a console mistake can't break the
-app. New values are fetched at most hourly; most apply on the next read, the analytics SDK switch on
-the next launch.
+app. New values are fetched at most hourly; most apply on the next read (the weather screen works
+its state out again as soon as new values are activated), the analytics SDK switch on the next
+launch.
 
 ### Analytics
 

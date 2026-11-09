@@ -9,15 +9,38 @@ import Observation
 @MainActor
 @Observable
 final class WeatherForecastViewModel {
-    private(set) var currentWeather: LoadingState<CurrentWeather> = .idle
-    private(set) var forecast: LoadingState<[DayForecast]> = .idle
+    /// What the screen shows for the active city at the screen's clock: the reading (or the
+    /// forecast hour standing in for an old one), the hero, the walk verdict, the tiles and the
+    /// sections the settings switch on. Worked out again only when something it's made from
+    /// changes (each of those properties rebuilds it, as does a Remote Config activation), not on
+    /// every redraw. Same as Android's `WeatherForecastViewModel.screen`.
+    private(set) var screen: WeatherScreen = .loading
+
+    private(set) var currentWeather: LoadingState<CurrentWeather> = .idle {
+        didSet { rebuildScreen() }
+    }
+    private(set) var forecast: LoadingState<[DayForecast]> = .idle {
+        didSet { rebuildScreen() }
+    }
     private(set) var isRefreshing = false
     /// Set when a refresh fails while weather is already on screen, so the screen can say the data
     /// is old and why; nil once a refresh succeeds or the user moves to another city.
-    private(set) var staleErrorKey: String?
+    private(set) var staleErrorKey: String? {
+        didSet { rebuildScreen() }
+    }
     /// The screen's clock: what "now" is for everything shown. It moves on with `tick()` (on
     /// refreshes, returning to the app and a regular timer), so past hours drop off together.
-    private(set) var now: Date
+    private(set) var now: Date {
+        didSet { rebuildScreen() }
+    }
+    /// The user's settings the screen goes by, passed on by the view with `displaySettingsChanged`:
+    /// "I have a dog" (the walk card and Paw Check), and visibility in miles.
+    private(set) var hasDog = true {
+        didSet { rebuildScreen() }
+    }
+    private(set) var distanceInMiles = false {
+        didSet { rebuildScreen() }
+    }
 
     /// The quiet refresh while the app stays open, so a screen left on overnight keeps up.
     static let autoRefreshInterval: Duration = .seconds(30 * 60)
@@ -50,6 +73,8 @@ final class WeatherForecastViewModel {
     private var locationWasGranted: Bool?
     /// A position is being read, so another check doesn't start one too.
     private var locating = false
+    /// Off until the end of init, so the properties set there don't each build the screen.
+    @ObservationIgnored private var buildsScreen = false
 
     init(
         repository: LocationWeatherRepository? = nil,
@@ -63,7 +88,8 @@ final class WeatherForecastViewModel {
         onSettingsOpened: (@MainActor () -> Void)? = nil,
         foregroundRefreshMinInterval: (() -> TimeInterval)? = nil,
         config: (() -> WeatherScreenConfig)? = nil,
-        now: (() -> Date)? = nil
+        now: (() -> Date)? = nil,
+        notificationCenter: NotificationCenter? = nil
     ) {
         // Optional closures filled in here rather than closure default values: Swift 6.1 (CI's
         // Xcode 16.4) crashes emitting the module for isolated closure defaults.
@@ -85,6 +111,17 @@ final class WeatherForecastViewModel {
         let clock = now ?? { Date() }
         self.clock = clock
         self.now = clock()
+        buildsScreen = true
+        rebuildScreen()
+        // Values fetched while the app is open apply at once, not from the next restart. The
+        // observer holds the view model weakly, and the app's one lives as long as the app.
+        (notificationCenter ?? .default).addObserver(
+            forName: RemoteConfigRepository.didActivate,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.remoteConfigActivated() }
+        }
     }
 
     /// Moves the screen's clock on to the time now.
@@ -137,6 +174,17 @@ final class WeatherForecastViewModel {
     /// The units changed (the cache is in the old ones): a real refetch.
     func unitsChanged() {
         refreshActiveCity()
+    }
+
+    /// The settings the screen goes by, from the view: on first showing and whenever they change.
+    func displaySettingsChanged(hasDog: Bool, distanceInMiles: Bool) {
+        if self.hasDog != hasDog { self.hasDog = hasDog }
+        if self.distanceInMiles != distanceInMiles { self.distanceInMiles = distanceInMiles }
+    }
+
+    /// New Remote Config values are active: switches, thresholds and themes apply straight away.
+    func remoteConfigActivated() {
+        rebuildScreen()
     }
 
     /// The retry buttons.
@@ -252,13 +300,12 @@ final class WeatherForecastViewModel {
 
     // MARK: - Fetching
 
-    /// What the screen shows for the active city at the screen's clock: the reading (or the
-    /// forecast hour standing in for an old one), the hero, the walk verdict, the tiles and the
-    /// sections the settings switch on.
-    func screen(hasDog: Bool, distanceInMiles: Bool = false) -> WeatherScreen {
+    /// Works `screen` out again from its inputs, reading Remote Config afresh.
+    private func rebuildScreen() {
+        guard buildsScreen else { return }
         var config = config()
         config.distanceInMiles = distanceInMiles
-        return WeatherScreen.make(
+        screen = WeatherScreen.make(
             current: currentWeather,
             forecast: forecast,
             staleErrorKey: staleErrorKey,

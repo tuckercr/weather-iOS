@@ -67,7 +67,12 @@ struct CurrentWeatherView: View {
             viewModel.myLocationMoved()
         }
         .onChange(of: unitOverride) { _, _ in
+            passDisplaySettings()
             viewModel.unitsChanged()
+        }
+        // The settings the screen state is worked out with, from the start and as they change.
+        .onChange(of: showWalkCard, initial: true) { _, _ in
+            passDisplaySettings()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { viewModel.becameActive() }
@@ -174,13 +179,17 @@ struct CurrentWeatherView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private func passDisplaySettings() {
+        viewModel.displaySettingsChanged(
+            hasDog: showWalkCard,
+            distanceInMiles: WeatherFormatting.usesMiles(override: unitOverride)
+        )
+    }
+
     private var weatherContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                switch viewModel.screen(
-                    hasDog: showWalkCard,
-                    distanceInMiles: WeatherFormatting.usesMiles(override: unitOverride)
-                ) {
+                switch viewModel.screen {
                 case .loading:
                     HStack {
                         Spacer()

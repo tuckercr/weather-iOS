@@ -105,6 +105,9 @@ final class RemoteConfigRepository {
     /// Where the Update button goes. Empty hides the button, until the App Store record exists.
     nonisolated static let keyIosAppStoreURL = "ios_app_store_url"
 
+    /// Posted on the main queue when newly fetched values have been activated.
+    nonisolated static let didActivate = Notification.Name("RemoteConfigRepository.didActivate")
+
     private let remoteConfig: RemoteConfig?
 
     private init() {
@@ -168,8 +171,14 @@ final class RemoteConfigRepository {
             Self.keyPetColdThresholdC: NSNumber(value: PetWeatherThresholds.standard.petColdC),
             Self.keyWalkBadAirBand: NSNumber(value: PetWeatherThresholds.standard.badAirBand),
         ])
-        // Activated values apply from the next read; this launch keeps what was last activated.
-        remoteConfig.fetchAndActivate()
+        // Activated values apply from the next read. Screens that keep what they worked out (the
+        // weather screen) listen for `didActivate` to work it out again.
+        remoteConfig.fetchAndActivate { status, _ in
+            guard status != .error else { return }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: RemoteConfigRepository.didActivate, object: nil)
+            }
+        }
         self.remoteConfig = remoteConfig
     }
 
