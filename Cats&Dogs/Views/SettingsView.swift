@@ -24,7 +24,7 @@ struct SettingsView: SettingsScreen {
             }
 
             Section {
-                Button("Manage locations", action: onOpenLocations)
+                Button("Manage Locations", action: onOpenLocations)
             } header: {
                 sectionHeader("My Locations")
             }

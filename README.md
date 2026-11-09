@@ -226,7 +226,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 7. **Settings** (gear), top to bottom:
    - **My Pets**: *I have a dog* turns on the walk card, the Paw Check tile, the briefing's walk
      sentence and the Walk time notification ("Walk times, pavement checks and walk reminders").
-   - **My Locations**: *Manage locations* to reorder and delete locations (swipe, or Edit), with *Add
+   - **My Locations**: *Manage Locations* to reorder and delete locations (swipe, or Edit), with *Add
      location* under the list. A bell marks the location notifications are for: My Location,
      otherwise the top location. The city tabs on the main screen choose which city it shows.
    - **Notifications**: a row showing how many are on ("2 on", or "Off"), which opens its own screen:
