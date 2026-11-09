@@ -407,6 +407,34 @@ Cats&Dogs/
   explicitly, since iOS 27 doesn't apply the asset catalog's global accent colour.
 - Layouts scale with Dynamic Type, up to the accessibility sizes.
 
+## Text and translations
+
+The app is English only for now, but every piece of user-facing text is ready to translate.
+Android's equivalent is `res/values/strings.xml`.
+
+- `Cats&Dogs/Localizable.xcstrings` (a String Catalog) holds the app's text: the captions, tiles,
+  walk card, notifications and error messages, and the views' text. The English values match the
+  keys. Text in views is a `LocalizedStringKey` (`Text("Settings")`, or a helper parameter typed
+  `LocalizedStringKey`). Text built anywhere else is `String(localized: "High \(high)°, low \(low)°.", comment: "…")`,
+  a whole sentence per case rather than fragments glued together, with a comment for translators.
+  Counts use the catalog's plural variations: the notification stack summaries ("%u more
+  briefings", looked up by `UNNotificationCategory`) and "Gets dark in about %lld hours."
+- `Cats&Dogs/InfoPlist.xcstrings` holds the app's name under the icon and the location permission
+  prompts.
+- Adding text: write it as above. Building in Xcode adds new keys to the catalog. A command-line
+  build doesn't, so either open the project in Xcode once or run
+  `xcrun xcstringstool sync "Cats&Dogs/Localizable.xcstrings" --stringsdata <DerivedData>/Build/Intermediates.noindex/Cats\&Dogs.build/Debug-iphonesimulator/Cats\&Dogs.build/Objects-normal/arm64/*.stringsdata`.
+  Keep the catalog at `"version" : "1.0"`, which CI's Xcode 16.4 reads.
+- Adding a language: in Xcode, select either catalog and add the language with the + button (this
+  adds it to the project's known regions too), then fill in each string, or export with Product ›
+  Export Localizations and import the translated `.xcloc`. The plural keys get a form for each of
+  the language's plural categories.
+- Not translated yet: weather descriptions from OpenWeather (the fallback source, requested in
+  English), place names from the geocoders (requested in English), seasonal theme captions from
+  Remote Config, and dates and times, which use fixed English patterns ("EEE, MMM d", "h:mm a")
+  with the device's locale for the day and month names. `TodayDetails.keepUnitsTogether` only
+  knows the English unit abbreviations.
+
 ## Platform differences
 
 The iOS and Android apps have the same features. Where the platforms differ:
