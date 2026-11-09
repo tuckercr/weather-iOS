@@ -3,12 +3,14 @@ import Foundation
 /// The Rain outlook card under the hourly strip: the chance of rain hour by hour from the hour in
 /// progress, with a headline, when it dries out and how much falls. The hourly icon is the best
 /// model's call and the chance is the ensemble's, so they can disagree; the chart shows the chance.
-/// Same rules as Android's `RainOutlook`.
+/// Every chance is read as the hourly strip shows it (`WeatherFormatting.shownRainChance`: to the
+/// nearest 10%, 0 under 10%), so a bar never says 55% under an hour the strip shows as 60%, and
+/// `minChance` and `likelyChance` weigh the same number. Same rules as Android's `RainOutlook`.
 struct RainOutlook: Equatable {
     struct Bar: Equatable {
         /// As in the hourly strip: "3 PM".
         let hour: String
-        /// Chance of rain, 0...100.
+        /// Chance of rain as the hourly strip shows it: 0, or 10...100 in steps of 10.
         let chance: Int
         /// The hour's rain and snow in mm of water; nil when the source doesn't say.
         let amountMm: Double?
@@ -71,7 +73,7 @@ struct RainOutlook: Equatable {
     ) -> RainOutlook? {
         let window = Array(slots.prefix(max(hours, 0)))
         guard enabled, !window.isEmpty else { return nil }
-        let chances = window.map { min(max($0.precipitationChance, 0), 100) }
+        let chances = window.map { WeatherFormatting.shownRainChance(min(max($0.precipitationChance, 0), 100)) }
         guard let lastWet = chances.lastIndex(where: { $0 >= minChance }),
               let highest = chances.max(),
               let peak = chances.firstIndex(of: highest) else { return nil }
