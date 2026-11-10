@@ -2,8 +2,8 @@ import SwiftUI
 
 /// A weather condition icon, bundled with the app and drawn in the pet scene's style. Every shape
 /// has the pets' navy outline, so the white clouds hold up on the light cards, and the fills carry
-/// them on the dark ones. Night icons show the moon's phase at `date` (now when nil), lit from the
-/// left in the southern hemisphere.
+/// them on the dark ones. Night icons show the moon's phase at `date` (when nil, the screen's clock,
+/// or the device's outside the weather screen), lit from the left in the southern hemisphere.
 struct WeatherIconView: View {
     let iconCode: String
     let size: CGFloat
@@ -11,6 +11,7 @@ struct WeatherIconView: View {
     var description: String? = nil
     var date: Date? = nil
     @Environment(\.southernHemisphere) private var southernHemisphere
+    @Environment(\.screenNow) private var screenNow
 
     var body: some View {
         if let description {
@@ -22,7 +23,7 @@ struct WeatherIconView: View {
     }
 
     private var image: some View {
-        Image(Self.assetName(for: iconCode, phase: MoonPhase(at: date ?? Date()), southernHemisphere: southernHemisphere))
+        Image(Self.assetName(for: iconCode, phase: MoonPhase(at: date ?? screenNow ?? Date()), southernHemisphere: southernHemisphere))
             .resizable()
             .scaledToFit()
             .frame(width: size, height: size)

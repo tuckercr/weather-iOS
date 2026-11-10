@@ -5,7 +5,8 @@ import SwiftUI
 /// colours as the Android `PetScene`.
 struct PetScene: View {
     let mood: PetMood
-    var moonPhase = MoonPhase(at: Date())
+    /// Nil: the phase at the screen's clock, or the device's outside the weather screen.
+    var moonPhase: MoonPhase?
     /// The offline error: the Wi-Fi router lies on its side next to Misty.
     var knockedOverRouter = false
     /// Today's seasonal theme's extras (costumes, a jack-o'-lantern, bats); none on an ordinary day.
@@ -14,6 +15,7 @@ struct PetScene: View {
     /// off, the pumpkin lit) whatever the weather. Nil goes by the mood.
     var dark: Bool?
     @Environment(\.southernHemisphere) private var southernHemisphere
+    @Environment(\.screenNow) private var screenNow
 
     // The scene is authored on a 260 x 150 grid and scaled to fit.
     private static let sceneWidth: CGFloat = 260
@@ -25,7 +27,7 @@ struct PetScene: View {
                 in: context,
                 scale: size.width / Self.sceneWidth,
                 mood: mood,
-                moonPhase: moonPhase,
+                moonPhase: moonPhase ?? MoonPhase(at: screenNow ?? Date()),
                 southernHemisphere: southernHemisphere,
                 knockedOverRouter: knockedOverRouter,
                 decorations: decorations,
