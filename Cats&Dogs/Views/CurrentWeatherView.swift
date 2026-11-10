@@ -105,9 +105,12 @@ struct CurrentWeatherView: View {
         .sheet(item: $selectedDay) { day in
             DayDetailSheet(day: day)
                 .environment(\.southernHemisphere, isSouthernHemisphere)
+                .environment(\.screenNow, viewModel.now)
         }
-        // The moon (hero scene and night icons) is lit from the other side down south.
+        // The moon (hero scene and night icons) is lit from the other side down south, and its
+        // phase goes by the screen's clock.
         .environment(\.southernHemisphere, isSouthernHemisphere)
+        .environment(\.screenNow, viewModel.now)
     }
 
     private var isSouthernHemisphere: Bool {
@@ -361,7 +364,7 @@ private struct CurrentWeatherContent: View {
         } label: {
             VStack(spacing: 4) {
                 // Kept smaller than the card so the scene doesn't dominate, especially on wide screens.
-                PetScene(mood: state.mood, moonPhase: MoonPhase(at: state.now), decorations: state.seasonalTheme?.decorations ?? [], dark: state.darkNow)
+                PetScene(mood: state.mood, decorations: state.seasonalTheme?.decorations ?? [], dark: state.darkNow)
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
                 // Medium weight on the small lines so they hold up on the brighter hero colours.
