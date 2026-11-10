@@ -150,7 +150,7 @@ struct CurrentWeatherView: View {
                     .accessibilityAddTraits(index == viewModel.activeIndex ? .isSelected : [])
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.vertical, 2)
         }
         .background(Color.brandSurface)
@@ -223,7 +223,7 @@ struct CurrentWeatherView: View {
                     )
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 12)
             .padding(.bottom, 24)
         }
         .refreshable {

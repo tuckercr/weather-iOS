@@ -61,7 +61,7 @@ struct RootView: View {
                         .safeAreaInset(edge: .top) {
                             if updatePrompt.prompt == .recommended {
                                 UpdateBanner(storeURL: updatePrompt.storeURL, onDismiss: updatePrompt.dismissBanner)
-                                    .padding(.horizontal, 16)
+                                    .padding(.horizontal, 12)
                                     .padding(.bottom, 8)
                             }
                         }
