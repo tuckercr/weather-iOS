@@ -40,16 +40,21 @@ final class LocationWeatherRepository {
 
     /// Whether `location`'s cached reading and forecast were both fetched under
     /// `backgroundRefreshSkipAge` ago, so the background refresh can use them as they are. A
-    /// missing fetch time counts as old. Foreground refreshes don't ask.
+    /// missing fetch time counts as old, and so does a cache in other units than the user's (they
+    /// switched since). Foreground refreshes don't ask. Same rule as Android's `freshCache`.
     func hasFreshData(for location: SavedLocation) -> Bool {
         let now = now()
         let times = [
             preferences.cachedWeatherFetchedAt(for: location.cacheKey),
             preferences.cachedForecastFetchedAt(for: location.cacheKey),
         ]
-        return times.allSatisfy { time in
+        let recent = times.allSatisfy { time in
             time.map { (0 ..< Self.backgroundRefreshSkipAge).contains(now.timeIntervalSince($0)) } ?? false
         }
+        guard recent,
+              let weather = preferences.cachedWeather(for: location.cacheKey),
+              let forecast = preferences.cachedForecast(for: location.cacheKey) else { return false }
+        return weather.units == units && forecast.allSatisfy { $0.units == units }
     }
 
     /// Fetches `location`'s current reading and caches it. A fetch the screen has since moved on

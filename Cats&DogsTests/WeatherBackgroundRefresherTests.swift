@@ -51,6 +51,8 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
     func testCitiesFetchedInTheLastHalfHourAreLeftAsTheyAreButNotificationsAreStillReplanned() async {
         preferences.setSavedLocations([london, nameOnly])
         preferences.setActiveLocationIndex(1)
+        // The cached sample is metric, so the user's units must be too for it to count as fresh.
+        preferences.setUnitOverride(.metric)
         for location in [london, nameOnly] {
             preferences.setCachedWeather(sampleWeather(), for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
             preferences.setCachedForecast([], for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))

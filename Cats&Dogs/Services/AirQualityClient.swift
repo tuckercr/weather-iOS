@@ -15,13 +15,15 @@ struct AirQualityClient: AirQualityAPI {
         self.session = session
     }
 
-    /// The next two days hour by hour, enough for the walk planner's day ahead, with every index
+    /// The next three days hour by hour, enough for the walk planner's day ahead, with every index
     /// the tile needs for the hour in progress, on `scale` (both scales when it's nil).
     func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse {
         try await get(latitude: latitude, longitude: longitude, [
             URLQueryItem(name: "hourly", value: Self.hourlyFields(for: scale)),
             URLQueryItem(name: "timeformat", value: "unixtime"),
-            URLQueryItem(name: "forecast_days", value: "2"),
+            // Three days, so hours fetched late in the evening still reach 24 hours ahead for the
+            // 3-hour reuse. Days don't change the call count. Same as Android.
+            URLQueryItem(name: "forecast_days", value: "3"),
         ])
     }
 

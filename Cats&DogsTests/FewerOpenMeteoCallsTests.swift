@@ -167,6 +167,8 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
         )
         let skipAge = LocationWeatherRepository.backgroundRefreshSkipAge
         XCTAssertEqual(skipAge, 30 * 60)
+        // The sample reading is metric; pin the user's units so the device's don't matter.
+        preferences.setUnitOverride(.metric)
 
         XCTAssertFalse(repository.hasFreshData(for: london), "nothing cached")
 
@@ -182,6 +184,21 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
         preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
         preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge - 60))
         XCTAssertFalse(repository.hasFreshData(for: london), "the forecast is over 30 minutes old")
+    }
+
+    func testACacheInOtherUnitsThanTheUsersIsNeverFresh() {
+        let repository = LocationWeatherRepository(
+            weatherRepository: weatherRepository(air: StubAirQualityAPI(), zone: nil),
+            preferences: preferences,
+            now: { [start] in start }
+        )
+        preferences.setUnitOverride(.metric)
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
+        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start)
+        XCTAssertTrue(repository.hasFreshData(for: london))
+
+        preferences.setUnitOverride(.imperial)
+        XCTAssertFalse(repository.hasFreshData(for: london), "switched to imperial since the metric fetch")
     }
 
     func testRefreshesRecordWhenTheReadingAndForecastWereFetched() async {
