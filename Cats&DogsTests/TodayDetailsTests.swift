@@ -354,6 +354,12 @@ final class TodayDetailsTests: XCTestCase {
         XCTAssertEqual(TodayDetails.uvLine(peak: uvSlot(4, at: 13 * 3600), now: after, hasDog: true).text, "Easing off now")
     }
 
+    func testTheUVTileSaysThereIsNoMoreUVWhenTheRestOfTheDayHasNone() {
+        let morning = Date(timeIntervalSince1970: 10 * 3600)
+        XCTAssertEqual(TodayDetails.uvLine(peak: uvSlot(0.3, at: 13 * 3600), now: morning, hasDog: true).text, "No more UV today")
+        XCTAssertEqual(TodayDetails.uvLine(peak: uvSlot(0, at: 9 * 3600), now: morning, hasDog: false).text, "No more UV today")
+    }
+
     func testEveryTileShowsByDefaultExceptUV() {
         let switches = TodayTileSwitches()
         XCTAssertTrue(switches.feelsLike && switches.wind && switches.humidity && switches.pawCheck && switches.daylight && switches.sky)
