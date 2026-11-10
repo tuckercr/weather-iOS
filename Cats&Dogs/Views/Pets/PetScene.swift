@@ -53,7 +53,7 @@ extension PetScene {
     ) {
         let dark = dark ?? (mood == .night)
         let painter = Painter(context: context, scale: scale)
-        painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere)
+        painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere, dark: dark)
         if decorations.contains(.autumnLeaves) { painter.autumnLeaves(dim: dark) }
         if decorations.contains(.bats) { painter.bats(night: dark) }
         painter.oval(Palette.ground, cx: 130, cy: 140, rx: 110, ry: 8)
@@ -121,6 +121,7 @@ private enum Palette {
     static let dogEar = Color(hex: 0xBA7517)
     static let outline = Color(hex: 0x10324A)
     static let umbrella = Color(hex: 0x185FA5)
+    static let rainNight = Color(hex: 0xA9CFF2)
     static let sun = Color(hex: 0xEF9F27)
     static let sunHot = Color(hex: 0xD85A30)
     static let scarf = Color(hex: 0xD85A30)
@@ -209,7 +210,7 @@ private struct Painter {
         oval(phase.isGibbous ? Palette.moon : Palette.moonUnlit, cx: cx, cy: cy, rx: rx, ry: r)
     }
 
-    func sky(_ mood: PetMood, moonPhase: MoonPhase, southernHemisphere: Bool) {
+    func sky(_ mood: PetMood, moonPhase: MoonPhase, southernHemisphere: Bool, dark: Bool) {
         switch mood {
         case .fair, .sunny:
             circle(Palette.sun, cx: 220, cy: 32, r: 18)
@@ -220,8 +221,9 @@ private struct Painter {
         case .cloudy:
             cloud(Palette.cloud, cx: 210, cy: 30)
         case .rain:
+            // The umbrella's blue on the light rain sky; pale on a theme's dark night hero.
             for (x, y) in [(30, 14), (60, 36), (200, 58), (232, 20), (45, 70), (245, 44)] as [(CGFloat, CGFloat)] {
-                rect(Palette.umbrella, x: x, y: y, width: 3, height: 11)
+                rect(dark ? Palette.rainNight : Palette.umbrella, x: x, y: y, width: 3, height: 11)
             }
         case .storm:
             cloud(Palette.stormCloud, cx: 200, cy: 28)
