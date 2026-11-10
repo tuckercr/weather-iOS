@@ -187,21 +187,28 @@ func openMeteoCurrentResponse(
     )
 }
 
-/// Air quality fake: no hourly readings unless `hourlyIndices` (US AQI by hour) are set; throws `error` if set.
+/// Air quality fake: no hourly readings unless `hourlyIndices` (the index by hour, on both scales)
+/// are set; throws `error` if set. Records the scale of each request.
 final class StubAirQualityAPI: AirQualityAPI, @unchecked Sendable {
     var hourlyIndices: [Int: Int] = [:]
     var error: Error?
+    var timezone: String?
+    private(set) var requestedScales: [AirQuality.Scale?] = []
 
-    init(hourlyIndices: [Int: Int] = [:], error: Error? = nil) {
+    init(hourlyIndices: [Int: Int] = [:], error: Error? = nil, timezone: String? = "America/New_York") {
         self.hourlyIndices = hourlyIndices
         self.error = error
+        self.timezone = timezone
     }
 
-    func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse {
+    func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse {
+        requestedScales.append(scale)
         if let error { throw error }
         return AirQualityHourlyResponse(
-            timezone: "America/New_York",
-            hours: hourlyIndices.keys.sorted().map { ($0, AirQualityReadings([.usAqi: hourlyIndices[$0]!])) }
+            timezone: timezone,
+            hours: hourlyIndices.keys.sorted().map {
+                ($0, AirQualityReadings([.usAqi: hourlyIndices[$0]!, .europeanAqi: hourlyIndices[$0]!]))
+            }
         )
     }
 }

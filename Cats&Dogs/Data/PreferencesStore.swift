@@ -15,6 +15,7 @@ final class PreferencesStore {
     private let weatherCacheKey = "weather_cache"
     private let forecastCacheKey = "forecast_cache"
     private let forecastFetchedAtKey = "forecast_fetched_at"
+    private let airQualityCacheKey = "air_quality_cache"
     private let unitOverrideKey = "unit_override"
     private let shareUsageStatisticsKey = "share_usage_statistics"
     private let showWalkCardKey = "show_walk_card"
@@ -248,10 +249,22 @@ final class PreferencesStore {
         loadCache(Double.self, forKey: forecastFetchedAtKey)[locationKey].map { Date(timeIntervalSince1970: $0) }
     }
 
+    /// The air quality hours last fetched for the location, with when and on which scale.
+    func cachedAirQuality(for locationKey: String) -> AirQualityHours? {
+        loadCache(AirQualityHours.self, forKey: airQualityCacheKey)[locationKey]
+    }
+
+    func setCachedAirQuality(_ airQuality: AirQualityHours, for locationKey: String) {
+        var cache = loadCache(AirQualityHours.self, forKey: airQualityCacheKey)
+        cache[locationKey] = airQuality
+        saveCache(cache, forKey: airQualityCacheKey)
+    }
+
     func clearCache() {
         defaults.removeObject(forKey: weatherCacheKey)
         defaults.removeObject(forKey: forecastCacheKey)
         defaults.removeObject(forKey: forecastFetchedAtKey)
+        defaults.removeObject(forKey: airQualityCacheKey)
     }
 
     /// Drops cache entries for cities that are no longer saved, so removed cities (and every spot
@@ -261,6 +274,7 @@ final class PreferencesStore {
         prune(CurrentWeather.self, forKey: weatherCacheKey, keeping: keys)
         prune([DayForecast].self, forKey: forecastCacheKey, keeping: keys)
         prune(Double.self, forKey: forecastFetchedAtKey, keeping: keys)
+        prune(AirQualityHours.self, forKey: airQualityCacheKey, keeping: keys)
     }
 
     private func prune<Value: Codable>(_ type: Value.Type, forKey key: String, keeping keys: Set<String>) {

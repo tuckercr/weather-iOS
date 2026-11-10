@@ -1,5 +1,13 @@
 import Foundation
 
+/// A forecast, with the air quality hours put on its slots: fetched with it, or reused from the
+/// cache (`AirQualityHours`). Nil air quality when it's switched off, failed or the forecast isn't
+/// Open-Meteo's.
+struct ForecastFetch: Sendable {
+    let days: [DayForecast]
+    let airQuality: AirQualityHours?
+}
+
 struct WeatherRepository {
     private let client: any OpenWeatherAPI
     private let openMeteo: any OpenMeteoAPI
@@ -45,11 +53,22 @@ struct WeatherRepository {
 
     /// `location`'s forecast: by coordinates when it has them, otherwise by name.
     func fetchForecast(for location: SavedLocation, units: WeatherUnits) async -> Result<[DayForecast], Error> {
-        await fetchForecast(
+        await fetchForecast(for: location, units: units, cachedAirQuality: nil).map(\.days)
+    }
+
+    /// `location`'s forecast, with `cachedAirQuality` reused when it's still good for it
+    /// (`AirQualityHours.canBeReused`), otherwise air quality fetched afresh.
+    func fetchForecast(
+        for location: SavedLocation,
+        units: WeatherUnits,
+        cachedAirQuality: AirQualityHours?
+    ) async -> Result<ForecastFetch, Error> {
+        await fetchForecastWithAirQuality(
             units: units,
             cityQuery: Self.cityQuery(for: location),
             latitude: location.latitude,
-            longitude: location.longitude
+            longitude: location.longitude,
+            cachedAirQuality: cachedAirQuality
         )
     }
 
@@ -102,21 +121,43 @@ struct WeatherRepository {
         latitude: Double? = nil,
         longitude: Double? = nil
     ) async -> Result<[DayForecast], Error> {
+        await fetchForecastWithAirQuality(
+            units: units,
+            cityQuery: cityQuery,
+            latitude: latitude,
+            longitude: longitude,
+            cachedAirQuality: nil
+        ).map(\.days)
+    }
+
+    private func fetchForecastWithAirQuality(
+        units: WeatherUnits,
+        cityQuery: String?,
+        latitude: Double?,
+        longitude: Double?,
+        cachedAirQuality: AirQualityHours?
+    ) async -> Result<ForecastFetch, Error> {
         // Prefer Open-Meteo (true hourly, UV, pavement heat) whenever there are coordinates, unless
         // Remote Config has switched it off; then OpenWeatherMap's 3-hourly forecast by coordinates.
         if let latitude, let longitude {
             guard useOpenMeteo() else {
                 return await performForecastFetch(units: units, cityQuery: nil, latitude: latitude, longitude: longitude)
+                    .map { ForecastFetch(days: $0, airQuality: nil) }
             }
             do {
-                // Air quality comes alongside, for the tile and the walk planner; without it the
-                // forecast still stands.
-                async let air = useAirQuality()
-                    ? try? airQuality.hourly(latitude: latitude, longitude: longitude).byHour
-                    : nil
                 let response = try await openMeteo.forecast(latitude: latitude, longitude: longitude, units: units)
                 let days = OpenMeteoForecast.dayForecasts(from: response, units: units, now: now())
-                return .success(Self.withAirQuality(days, byHour: await air ?? [:]))
+                // Air quality after the forecast, whose time zone picks the scale to ask for; for
+                // the tile and the walk planner. Without it the forecast still stands.
+                let air = useAirQuality()
+                    ? await airQualityHours(
+                        latitude: latitude,
+                        longitude: longitude,
+                        timeZone: response.timezone,
+                        cached: cachedAirQuality
+                    )
+                    : nil
+                return .success(ForecastFetch(days: Self.withAirQuality(days, byHour: air?.byHour ?? [:]), airQuality: air))
             } catch {
                 return .failure(error)
             }
@@ -132,7 +173,25 @@ struct WeatherRepository {
             cityQuery: query,
             latitude: nil,
             longitude: nil
-        )
+        ).map { ForecastFetch(days: $0, airQuality: nil) }
+    }
+
+    /// `cached` when it's still good for the city's scale, otherwise fetched on that scale only (both
+    /// scales when the time zone isn't known, and then the response's time zone picks). Nil when the
+    /// fetch fails. Same as Android's forecast refresh.
+    private func airQualityHours(
+        latitude: Double,
+        longitude: Double,
+        timeZone: String?,
+        cached: AirQualityHours?
+    ) async -> AirQualityHours? {
+        let scale = timeZone.map(AirQuality.Scale.forTimeZone)
+        if let scale, let cached, cached.canBeReused(on: scale, now: now()) { return cached }
+        guard let response = try? await airQuality.hourly(latitude: latitude, longitude: longitude, scale: scale) else {
+            return nil
+        }
+        let used = scale ?? .forTimeZone(response.timezone)
+        return AirQualityHours(fetchedAt: now(), scale: used, byHour: response.byHour(on: used))
     }
 
     /// Nil when Open-Meteo fails or sends no reading. The place is named only after a reading

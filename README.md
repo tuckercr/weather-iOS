@@ -200,8 +200,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      particles are dust ("coarse particles") when PM2.5 is under a third of PM10 by mass, since a
      dust storm can push PM2.5's index off the scale while PM10 gets none. The walk card, hero and
      notifications name it ("Smoky air", "Dusty air", "High ozone"). It comes with the forecast, in the same request
-     the walk planner uses, so it's cached and shows offline. `air_quality_enabled` in Remote Config
-     turns it off.
+     the walk planner uses, so it's cached and shows offline. It's asked for after the forecast,
+     whose time zone picks the scale, so only that scale's indices (and the PM2.5 and PM10 masses)
+     are requested; both scales when the time zone isn't known. Air quality changes slowly, so a
+     city's hours are kept with when they were fetched and reused by any refresh (pull to refresh
+     too) for up to 3 hours, while they're on the same scale and reach at least 24 hours ahead.
+     `air_quality_enabled` in Remote Config turns it off.
    - **Misty's View**: the sky and how far you can see ("Clear · Good visibility, 6 mi"), with
      Misty's line about the view by its band ("Misty can see down the block"). After dark in the
      city the line is about the night instead: poor visibility keeps "Misty can't see past the
@@ -314,7 +318,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 | Town and city search | [Open-Meteo's geocoding](https://open-meteo.com/en/docs/geocoding-api) (prefix search, with populations; data from GeoNames), sorted and filtered on the phone (`Utilities/CitySearch.swift`). OpenWeather's geocoding when it fails, `open_meteo_enabled` is off or `city_search_provider` is `openweather`. |
 | Forecast for cities with coordinates | [Open-Meteo](https://open-meteo.com): true hourly data, UV index, and solar radiation for the pavement estimate. Free, no key. |
 | Forecast for name-only cities | OpenWeatherMap's 3-hourly `/forecast`, as a fallback |
-| Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly US and European indices per pollutant, fetched alongside the Open-Meteo forecast. Free, no key. |
+| Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly indices per pollutant on the city's scale (US or European), fetched after the Open-Meteo forecast and reused for up to 3 hours. Free, no key. |
 | Radar | [RainViewer](https://www.rainviewer.com/api.html) frames (free, no key) at zoom 7, the highest it serves |
 | Base map | OpenStreetMap tiles |
 
@@ -519,6 +523,7 @@ Shared with Android (the same cases on both platforms):
 - `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
 - `CitySearchTests`: what was typed (names, text after a comma, ZIP codes, postcodes), filtering, merging and county labels, and SEARCH.md's worked examples (Paris, Nas, Springfield, Portland, Birmingham, Sydney, London) against live Open-Meteo rows in `LiveSearchFixtures`; the provider, the 100 rows asked for with a comma, and falling back to OpenWeather (Android's will follow with its search)
 - `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
+- `FewerOpenMeteoCallsTests`: air quality's fields per scale (both when the time zone isn't known), reuse within 3 hours on the same scale while it covers the next 24 hours
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"

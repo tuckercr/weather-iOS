@@ -178,7 +178,11 @@ struct AirQualityHourlyResponse: Decodable, Sendable {
 
     /// Each hour's air quality on the city's scale, by the hour's start in Unix seconds.
     var byHour: [Int: AirQuality] {
-        let scale = AirQuality.Scale.forTimeZone(timezone)
+        byHour(on: .forTimeZone(timezone))
+    }
+
+    /// Each hour's air quality on `scale`, by the hour's start in Unix seconds.
+    func byHour(on scale: AirQuality.Scale) -> [Int: AirQuality] {
         var result: [Int: AirQuality] = [:]
         for (time, readings) in hours {
             if let air = AirQuality.from(readings, scale: scale) { result[time] = air }
@@ -206,6 +210,23 @@ struct AirQualityReadings: Equatable, Sendable {
         case europeanAqiSulphurDioxide = "european_aqi_sulphur_dioxide"
         case pm25 = "pm2_5"
         case pm10
+    }
+
+    /// What to ask Open-Meteo for: `scale`'s index and its pollutants' sub-indices, with the
+    /// particle masses that tell dust from smoke (9 fields for the US, 8 for Europe). Both scales
+    /// (15) when the city's time zone, and so its scale, isn't known. Open-Meteo counts more than
+    /// 10 fields as more than one call. The same lists as on Android.
+    static func fields(for scale: AirQuality.Scale?) -> [Field] {
+        switch scale {
+        case .us:
+            [.usAqi, .usAqiPm25, .usAqiPm10, .usAqiOzone, .usAqiNitrogenDioxide, .usAqiSulphurDioxide,
+             .usAqiCarbonMonoxide, .pm25, .pm10]
+        case .european:
+            [.europeanAqi, .europeanAqiPm25, .europeanAqiPm10, .europeanAqiOzone, .europeanAqiNitrogenDioxide,
+             .europeanAqiSulphurDioxide, .pm25, .pm10]
+        case nil:
+            Field.allCases
+        }
     }
 
     private let values: [Field: Int]
@@ -236,4 +257,30 @@ struct AirQualityReadings: Equatable, Sendable {
     /// Particle masses in µg/m³, rounded.
     var pm25: Int? { values[.pm25] }
     var pm10: Int? { values[.pm10] }
+}
+
+/// A city's air quality hours as last fetched, kept with the city's cached weather so a refresh
+/// within `maxAge` (the background one too, which may run in a fresh process) can reuse them
+/// instead of asking again: air quality changes slowly, and each response holds two days of hours.
+/// The same rules as on Android.
+struct AirQualityHours: Codable, Equatable, Sendable {
+    /// How long fetched air quality is reused for.
+    static let maxAge: TimeInterval = 3 * 60 * 60
+    /// How far ahead from now the hours must reach to be reused.
+    static let coverage: TimeInterval = 24 * 60 * 60
+
+    let fetchedAt: Date
+    let scale: AirQuality.Scale
+    /// Each hour's air quality, by the hour's start in Unix seconds.
+    let byHour: [Int: AirQuality]
+
+    /// Fetched under `maxAge` ago, on `scale`, and reaching from the hour in progress to at least
+    /// `coverage` from `now`.
+    func canBeReused(on scale: AirQuality.Scale, now: Date) -> Bool {
+        guard scale == self.scale,
+              (0 ..< Self.maxAge).contains(now.timeIntervalSince(fetchedAt)),
+              let first = byHour.keys.min(), let last = byHour.keys.max() else { return false }
+        let nowSeconds = now.timeIntervalSince1970
+        return TimeInterval(first) <= nowSeconds && TimeInterval(last + 3600) >= nowSeconds + Self.coverage
+    }
 }

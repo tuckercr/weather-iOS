@@ -8,10 +8,12 @@ import Foundation
 final class LocationWeatherRepository {
     private let weatherRepository: WeatherRepository
     private let preferences: PreferencesStore
+    private let now: () -> Date
 
-    init(weatherRepository: WeatherRepository? = nil, preferences: PreferencesStore? = nil) {
+    init(weatherRepository: WeatherRepository? = nil, preferences: PreferencesStore? = nil, now: (() -> Date)? = nil) {
         self.weatherRepository = weatherRepository ?? WeatherRepository()
         self.preferences = preferences ?? .shared
+        self.now = now ?? { Date() }
     }
 
     /// The user's units: Settings' choice, or the device's.
@@ -49,13 +51,21 @@ final class LocationWeatherRepository {
         preferences.setLastCity(cityName)
     }
 
-    /// Fetches `location`'s forecast and caches it, with when it was fetched.
+    /// Fetches `location`'s forecast and caches it, with when it was fetched. Air quality fetched
+    /// in the last 3 hours is reused (`AirQualityHours`), whatever the reason for the refresh; new
+    /// air quality is cached whatever the units, which it doesn't depend on.
     func refreshForecast(for location: SavedLocation) async -> Result<[DayForecast], Error> {
         let units = units
-        let result = await weatherRepository.fetchForecast(for: location, units: units)
-        if case .success(let days) = result, self.units == units {
-            preferences.setCachedForecast(days, for: location.cacheKey)
+        let cachedAir = preferences.cachedAirQuality(for: location.cacheKey)
+        let result = await weatherRepository.fetchForecast(for: location, units: units, cachedAirQuality: cachedAir)
+        if case .success(let fetch) = result {
+            if let air = fetch.airQuality, air != cachedAir {
+                preferences.setCachedAirQuality(air, for: location.cacheKey)
+            }
+            if self.units == units {
+                preferences.setCachedForecast(fetch.days, for: location.cacheKey, fetchedAt: now())
+            }
         }
-        return result
+        return result.map(\.days)
     }
 }
