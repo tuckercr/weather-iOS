@@ -2584,6 +2584,17 @@
         }
       }
     },
+    "No more UV today" : {
+      "comment" : "UV Index tile line when the rest of today has no UV.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more UV today"
+          }
+        }
+      }
+    },
     "No radar here" : {
       "comment" : "Radar card: the city is outside RainViewer's radar coverage",
       "localizations" : {

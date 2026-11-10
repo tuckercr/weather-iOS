@@ -16,7 +16,7 @@ struct TodayTileSwitches: Equatable {
 enum TodayDetails {
     /// The UV tile's line: today's peak while it's still ahead ("Peak 8 at 1 PM"); from the peak hour
     /// on, shade for pale-nosed dogs on a high day (6 and up) with a dog, otherwise "At today's peak"
-    /// or "Easing off now".
+    /// or "Easing off now". "No more UV today" when the highest UV left today rounds to 0.
     /// `isPetLine` is set for the dog's line, which takes the pets' colour.
     static func uvLine(
         peak: HourlySlot?,
@@ -25,6 +25,7 @@ enum TodayDetails {
     ) -> (text: String, isPetLine: Bool) {
         guard let peak, let peakUV = peak.uvIndex else { return ("", false) }
         let rounded = Int(peakUV.rounded())
+        if rounded == 0 { return (String(localized: "No more UV today", comment: "UV Index tile line when the rest of today has no UV."), false) }
         guard let start = peak.date else { return (String(localized: "Peak \(rounded) today", comment: "UV Index tile line. The number is the UV index."), false) }
         if start > now { return (String(localized: "Peak \(rounded) at \(peak.timeLabel)", comment: "UV Index tile line. The number is the UV index."), false) }
         if hasDog, rounded >= 6 { return (String(localized: "Shade for pale noses", comment: "UV Index tile line. The number is the UV index."), true) }
