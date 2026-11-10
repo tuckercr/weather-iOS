@@ -15,6 +15,7 @@ final class PreferencesStore {
     private let weatherCacheKey = "weather_cache"
     private let forecastCacheKey = "forecast_cache"
     private let forecastFetchedAtKey = "forecast_fetched_at"
+    private let weatherFetchedAtKey = "weather_fetched_at"
     private let airQualityCacheKey = "air_quality_cache"
     private let unitOverrideKey = "unit_override"
     private let shareUsageStatisticsKey = "share_usage_statistics"
@@ -225,10 +226,18 @@ final class PreferencesStore {
         loadCache(CurrentWeather.self, forKey: weatherCacheKey)[locationKey]
     }
 
-    func setCachedWeather(_ weather: CurrentWeather, for locationKey: String) {
+    func setCachedWeather(_ weather: CurrentWeather, for locationKey: String, fetchedAt: Date = Date()) {
         var cache = loadCache(CurrentWeather.self, forKey: weatherCacheKey)
         cache[locationKey] = weather
         saveCache(cache, forKey: weatherCacheKey)
+        var times = loadCache(Double.self, forKey: weatherFetchedAtKey)
+        times[locationKey] = fetchedAt.timeIntervalSince1970
+        saveCache(times, forKey: weatherFetchedAtKey)
+    }
+
+    /// When the cached reading was fetched; nil for one cached before this was kept.
+    func cachedWeatherFetchedAt(for locationKey: String) -> Date? {
+        loadCache(Double.self, forKey: weatherFetchedAtKey)[locationKey].map { Date(timeIntervalSince1970: $0) }
     }
 
     func cachedForecast(for locationKey: String) -> [DayForecast]? {
@@ -262,6 +271,7 @@ final class PreferencesStore {
 
     func clearCache() {
         defaults.removeObject(forKey: weatherCacheKey)
+        defaults.removeObject(forKey: weatherFetchedAtKey)
         defaults.removeObject(forKey: forecastCacheKey)
         defaults.removeObject(forKey: forecastFetchedAtKey)
         defaults.removeObject(forKey: airQualityCacheKey)
@@ -274,6 +284,7 @@ final class PreferencesStore {
         prune(CurrentWeather.self, forKey: weatherCacheKey, keeping: keys)
         prune([DayForecast].self, forKey: forecastCacheKey, keeping: keys)
         prune(Double.self, forKey: forecastFetchedAtKey, keeping: keys)
+        prune(Double.self, forKey: weatherFetchedAtKey, keeping: keys)
         prune(AirQualityHours.self, forKey: airQualityCacheKey, keeping: keys)
     }
 

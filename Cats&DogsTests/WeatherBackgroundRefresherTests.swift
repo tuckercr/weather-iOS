@@ -48,6 +48,36 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         XCTAssertEqual(scheduled, 1)
     }
 
+    func testCitiesFetchedInTheLastHalfHourAreLeftAsTheyAreButNotificationsAreStillReplanned() async {
+        preferences.setSavedLocations([london, nameOnly])
+        preferences.setActiveLocationIndex(1)
+        for location in [london, nameOnly] {
+            preferences.setCachedWeather(sampleWeather(), for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
+            preferences.setCachedForecast([], for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
+        }
+        let api = FakeOpenWeatherAPI()
+        var scheduled = 0
+
+        let result = await makeRefresher(api: api, onSchedule: { scheduled += 1 }).performRefresh()
+
+        XCTAssertEqual(result, .success)
+        XCTAssertEqual(api.currentWeatherCallCount, 0)
+        XCTAssertEqual(preferences.cachedWeather(for: london.cacheKey)?.temperature, 15.4, "the cache as it was")
+        XCTAssertEqual(scheduled, 1)
+    }
+
+    func testACityWhoseForecastIsOlderThanHalfAnHourIsFetched() async {
+        preferences.setSavedLocations([london])
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
+        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -40 * 60))
+        let api = FakeOpenWeatherAPI()
+
+        await makeRefresher(api: api).performRefresh()
+
+        XCTAssertEqual(api.currentWeatherCallCount, 1)
+        XCTAssertEqual(preferences.cachedWeather(for: london.cacheKey)?.temperature, 72.5)
+    }
+
     func testRefreshStillCachesWhenNotificationsAreNotAuthorized() async {
         preferences.setSavedLocations([london])
         var scheduled = 0
@@ -100,6 +130,8 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
     func testFailedFetchKeepsExistingCacheAndRetriesSooner() async {
         preferences.setSavedLocations([london])
         _ = await makeRefresher().performRefresh()
+        // An hour old, so it's fetched again.
+        preferences.setCachedWeather(preferences.cachedWeather(for: london.cacheKey)!, for: london.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -3600))
         var scheduled = 0
         var requestedDelays: [TimeInterval] = []
         let refresher = makeRefresher(

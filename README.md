@@ -362,11 +362,12 @@ and the periodic refresh for rain). iOS cannot run code at a fixed time of day, 
 `WeatherBackgroundRefresher` refreshes that cache in a `BGAppRefreshTask`. Each time iOS grants
 background time it:
 
-1. fetches current weather and the forecast for that notification city,
+1. fetches current weather and the forecast for that notification city, unless both were fetched
+   in the last 30 minutes (then the cache is used as it is),
 2. writes them to the per-city cache, so the app opens with fresh data,
 3. replans the queued notifications from it,
-4. does the same fetch and cache for the city tab last viewed, when that's another city, so the app
-   opens on fresh data there too, and
+4. does the same fetch and cache for the city tab last viewed, when that's another city (with the
+   same 30-minute rule), so the app opens on fresh data there too, and
 5. requests the next run after `weather_refresh_interval_minutes` (default 60, as on Android), or 15
    minutes after a failed fetch of the notification city.
 
@@ -522,8 +523,8 @@ Shared with Android (the same cases on both platforms):
 - `PlaceNamesTests`: My Location's name kept until it moves 1 km, failed lookups tried again
 - `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
 - `CitySearchTests`: what was typed (names, text after a comma, ZIP codes, postcodes), filtering, merging and county labels, and SEARCH.md's worked examples (Paris, Nas, Springfield, Portland, Birmingham, Sydney, London) against live Open-Meteo rows in `LiveSearchFixtures`; the provider, the 100 rows asked for with a comma, and falling back to OpenWeather (Android's will follow with its search)
-- `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
-- `FewerOpenMeteoCallsTests`: air quality's fields per scale (both when the time zone isn't known), reuse within 3 hours on the same scale while it covers the next 24 hours
+- `NotificationWorkerLogicTests`: background fetch, skipping data fetched in the last 30 minutes, permission and retry behaviour
+- `FewerOpenMeteoCallsTests`: air quality's fields per scale (both when the time zone isn't known), reuse within 3 hours on the same scale while it covers the next 24 hours, and the background refresh leaving a city alone while its reading and forecast are both under 30 minutes old
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
@@ -547,7 +548,7 @@ Shared with Android (the same cases on both platforms):
 
 iOS only:
 
-- `WeatherBackgroundRefresherTests`: background refresh caching, notification rescheduling and retry timing
+- `WeatherBackgroundRefresherTests`: background refresh caching, skipping fresh cities, notification rescheduling and retry timing
 - `PreferencesStoreTests`: per-city cache round trip, eviction when a city is removed, older cache format
 - `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear", temperatures with and without the unit
 - `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed, foreground-refresh and Rain outlook limits

@@ -1,7 +1,8 @@
 import XCTest
 @testable import Cats_Dogs
 
-/// Air quality on the city's scale only, reused for 3 hours: the same rules as on Android.
+/// Air quality on the city's scale only, reused for 3 hours, and the background refresh leaving
+/// fresh data alone: the same rules as on Android.
 @MainActor
 final class FewerOpenMeteoCallsTests: XCTestCase {
     private let london = SavedLocation(label: "London, GB", latitude: 51.5074, longitude: -0.1278)
@@ -154,6 +155,48 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
 
         preferences.setSavedLocations([])
         XCTAssertNil(preferences.cachedAirQuality(for: london.cacheKey))
+    }
+
+    // MARK: - D. The background refresh skips fresh data
+
+    func testDataIsFreshOnlyWhileTheReadingAndForecastAreBothUnderThirtyMinutesOld() {
+        let repository = LocationWeatherRepository(
+            weatherRepository: weatherRepository(air: StubAirQualityAPI(), zone: nil),
+            preferences: preferences,
+            now: { [start] in start }
+        )
+        let skipAge = LocationWeatherRepository.backgroundRefreshSkipAge
+        XCTAssertEqual(skipAge, 30 * 60)
+
+        XCTAssertFalse(repository.hasFreshData(for: london), "nothing cached")
+
+        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start.addingTimeInterval(-60))
+        XCTAssertFalse(repository.hasFreshData(for: london), "no reading's fetch time")
+
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge + 60))
+        XCTAssertTrue(repository.hasFreshData(for: london))
+
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge))
+        XCTAssertFalse(repository.hasFreshData(for: london), "the reading is 30 minutes old")
+
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
+        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge - 60))
+        XCTAssertFalse(repository.hasFreshData(for: london), "the forecast is over 30 minutes old")
+    }
+
+    func testRefreshesRecordWhenTheReadingAndForecastWereFetched() async {
+        let repository = LocationWeatherRepository(
+            weatherRepository: weatherRepository(air: StubAirQualityAPI(), zone: nil),
+            preferences: preferences,
+            now: { [start] in start }
+        )
+
+        _ = await repository.refreshForecast(for: london)
+        XCTAssertEqual(preferences.cachedForecastFetchedAt(for: london.cacheKey), start)
+        XCTAssertNil(preferences.cachedWeatherFetchedAt(for: london.cacheKey))
+
+        preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
+        XCTAssertEqual(PreferencesStore(defaults: suite.defaults).cachedWeatherFetchedAt(for: london.cacheKey), start)
     }
 
     // MARK: - Helpers

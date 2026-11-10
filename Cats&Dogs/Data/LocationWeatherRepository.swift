@@ -6,6 +6,10 @@ import Foundation
 /// cache. Same as Android's `LocationWeatherRepository`.
 @MainActor
 final class LocationWeatherRepository {
+    /// The background refresh leaves a location alone when its reading and forecast were both
+    /// fetched less than this long ago. Same as Android's background refresh.
+    nonisolated static let backgroundRefreshSkipAge: TimeInterval = 30 * 60
+
     private let weatherRepository: WeatherRepository
     private let preferences: PreferencesStore
     private let now: () -> Date
@@ -34,6 +38,20 @@ final class LocationWeatherRepository {
         preferences.cachedForecastFetchedAt(for: location.cacheKey)
     }
 
+    /// Whether `location`'s cached reading and forecast were both fetched under
+    /// `backgroundRefreshSkipAge` ago, so the background refresh can use them as they are. A
+    /// missing fetch time counts as old. Foreground refreshes don't ask.
+    func hasFreshData(for location: SavedLocation) -> Bool {
+        let now = now()
+        let times = [
+            preferences.cachedWeatherFetchedAt(for: location.cacheKey),
+            preferences.cachedForecastFetchedAt(for: location.cacheKey),
+        ]
+        return times.allSatisfy { time in
+            time.map { (0 ..< Self.backgroundRefreshSkipAge).contains(now.timeIntervalSince($0)) } ?? false
+        }
+    }
+
     /// Fetches `location`'s current reading and caches it. A fetch the screen has since moved on
     /// from is still cached (it's that location's weather), unless the units changed meanwhile.
     func refreshWeather(for location: SavedLocation) async -> Result<CurrentWeather, Error> {
@@ -41,7 +59,7 @@ final class LocationWeatherRepository {
         let result = await weatherRepository.fetchCurrentWeather(for: location, units: units)
         // Not cached if the units changed while it was fetched: the cache stays in the new ones.
         if case .success(let weather) = result, self.units == units {
-            preferences.setCachedWeather(weather, for: location.cacheKey)
+            preferences.setCachedWeather(weather, for: location.cacheKey, fetchedAt: now())
         }
         return result
     }
