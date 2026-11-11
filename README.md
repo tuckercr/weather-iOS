@@ -73,7 +73,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      reason is one the scene can't show it speaks to that instead, in place of a seasonal theme's
      caption too: bad air by its pollutant ("Smoky air today. Quick potty breaks, then back on the
      sofa."), hot pavement, or a gale and worse. The moon shows
-     its real phase, lit from the other side in the southern hemisphere. Tap the card for today's
+     its real phase, lit from the other side in the southern hemisphere. Fog, mist and haze aren't
+     a mood: the scene draws bands of fog behind and in front of the pets, in place of the sun,
+     cloud, moon or frost, on a grey card by day, and the mood under it still dresses the pets and
+     picks the caption. So cold fog keeps the scarves and the cold captions, a foggy night the night
+     sky, and a grey day in fog gets fog captions ("Misty's kind of weather. Sunny's nose knows the
+     way."). Cold on its own shows frost sparkles rather than the snow's falling dots. Tap the card for today's
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
      **Seasonal themes** dress the hero on their day, by the city's own date: Halloween (31 October:
      bats, Misty's witch hat, Sunny's bandana, a jack-o'-lantern) and Thanksgiving (the fourth
@@ -522,7 +527,7 @@ Shared with Android (the same cases on both platforms):
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
-- `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy captions and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
+- `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy and fog captions, cold fog and a foggy night keeping their own, fog never a mood, and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `ScrollEdgeFadeTests`: which edges of the hourly strip fade at the start, partway, at the end, bouncing past either end and when every hour fits
 - `MoonPhaseTests`: the phase from the date, checked against published phases

@@ -192,6 +192,41 @@ final class PetMoodTests: XCTestCase {
         XCTAssertEqual(PetMood.afternoonOnly, ["Nap weather, says Misty."])
     }
 
+    func testFogMistAndHazeAreFoggyAndNothingElseIs() {
+        for main in ["Fog", "Mist", "Haze", "fog"] { XCTAssertTrue(PetMood.isFoggy(conditionMain: main), main) }
+        for main in ["Clouds", "Clear", "Smoke", "Dust", "Rain", "Snow"] { XCTAssertFalse(PetMood.isFoggy(conditionMain: main), main) }
+    }
+
+    func testFogIsNotAMoodSoAColdFoggyMorningIsStillTheColdMood() {
+        // This morning in Knoxville: fog, 36 °F with a feels-like of 0 °C.
+        XCTAssertEqual(PetMood.forConditions(conditionMain: "Fog", iconCode: "50d", feelsLikeC: 0), .cold)
+        XCTAssertEqual(PetMood.forConditions(conditionMain: "Fog", iconCode: "50d", feelsLikeC: 9), .cloudy)
+        XCTAssertEqual(PetMood.forConditions(conditionMain: "Fog", iconCode: "50n", feelsLikeC: 9), .night)
+    }
+
+    func testFogHasItsOwnCaptionsOnAGreyDayWithAndWithoutADog() {
+        XCTAssertEqual(PetMood.cloudy.captions(foggy: true), [
+            "Misty's kind of weather. Sunny's nose knows the way.",
+            "Can't see the end of the garden. Misty says it's still there.",
+            "Foggy out. Sunny's staying close on the lead.",
+        ])
+        XCTAssertEqual(PetMood.cloudy.captions(hasDog: false, foggy: true), [
+            "Misty's kind of weather. She was named for it.",
+            "Can't see the end of the garden. Misty says it's still there.",
+            "Foggy out. Misty is watching it drift past the window.",
+        ])
+        // The first and last with a dog suggest a walk now.
+        let fog = PetMood.cloudy.captions(foggy: true)
+        XCTAssertTrue(PetMood.walkSuggestions.contains(fog[0]))
+        XCTAssertFalse(PetMood.walkSuggestions.contains(fog[1]))
+        XCTAssertTrue(PetMood.walkSuggestions.contains(fog[2]))
+    }
+
+    func testColdFogAndAFoggyNightKeepTheirOwnMoodsCaptions() {
+        XCTAssertEqual(PetMood.cold.captions(foggy: true), PetMood.cold.captions())
+        XCTAssertEqual(PetMood.night.captions(nightPart: .lateNight, foggy: true), PetMood.night.captions(nightPart: .lateNight))
+    }
+
     func testThePartlyCloudyFlagReadsTheSkyAsMistysViewDoes() {
         // A few clouds is partly cloudy; overcast, mostly cloudy and mist are not.
         XCTAssertTrue(PetMood.isPartlyCloudy(weather("Clouds", icon: "02d", clouds: 20), showingForecast: false))

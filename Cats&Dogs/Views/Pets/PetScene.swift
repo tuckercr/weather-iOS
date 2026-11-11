@@ -14,6 +14,8 @@ struct PetScene: View {
     /// Dark in the city by the clock, which puts the theme's extras in their night look (costumes
     /// off, the pumpkin lit) whatever the weather. Nil goes by the mood.
     var dark: Bool?
+    /// Fog, mist or haze, drawn over the mood: see `PetMood.isFoggy`.
+    var foggy = false
     @Environment(\.southernHemisphere) private var southernHemisphere
     @Environment(\.screenNow) private var screenNow
 
@@ -31,7 +33,8 @@ struct PetScene: View {
                 southernHemisphere: southernHemisphere,
                 knockedOverRouter: knockedOverRouter,
                 decorations: decorations,
-                dark: dark ?? (mood == .night)
+                dark: dark ?? (mood == .night),
+                foggy: foggy
             )
         }
         .aspectRatio(Self.sceneWidth / Self.sceneHeight, contentMode: .fit)
@@ -51,11 +54,17 @@ extension PetScene {
         southernHemisphere: Bool,
         knockedOverRouter: Bool = false,
         decorations: Set<SceneDecoration> = [],
-        dark: Bool? = nil
+        dark: Bool? = nil,
+        foggy: Bool = false
     ) {
         let dark = dark ?? (mood == .night)
         let painter = Painter(context: context, scale: scale)
-        painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere, dark: dark)
+        // Fog takes the sky's place: no sun, cloud, moon or frost shows through it.
+        if foggy {
+            painter.fog(Painter.fogBehind, dark: dark)
+        } else {
+            painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere, dark: dark)
+        }
         if decorations.contains(.autumnLeaves) { painter.autumnLeaves(dim: dark) }
         if decorations.contains(.bats) { painter.bats(night: dark) }
         painter.oval(Palette.ground, cx: 130, cy: 140, rx: 110, ry: 8)
@@ -69,6 +78,8 @@ extension PetScene {
         pets.dog(mood)
         pets.dress(PetOutfit.accessories(mood: mood, decorations: decorations, dark: dark), catDrop: mood == .storm ? 14 : 0)
         pets.groundDecorations(decorations, dark: dark)
+        // And some in front, so the pets are half lost in it.
+        if foggy { painter.fog(Painter.fogInFront, dark: dark) }
         if knockedOverRouter {
             // Tipped back on the ground to Misty's right, antennas splayed.
             let pivot = CGPoint(x: 216 * scale, y: 128 * scale)
@@ -179,6 +190,11 @@ private struct Painter {
         context.fill(Path(CGRect(x: x * scale, y: y * scale, width: width * scale, height: height * scale)), with: .color(color))
     }
 
+    func roundedRect(_ color: Color, x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, radius: CGFloat) {
+        let frame = CGRect(x: x * scale, y: y * scale, width: width * scale, height: height * scale)
+        context.fill(Path(roundedRect: frame, cornerRadius: radius * scale), with: .color(color))
+    }
+
     func poly(_ color: Color, _ points: [(CGFloat, CGFloat)]) {
         var path = Path()
         path.addLines(points.map { point($0.0, $0.1) })
@@ -230,10 +246,32 @@ private struct Painter {
         case .storm:
             cloud(Palette.stormCloud, cx: 200, cy: 28)
             poly(Palette.bolt, [(205, 40), (196, 58), (204, 58), (198, 74), (214, 52), (206, 52), (212, 40)])
-        case .snow, .cold:
+        case .snow:
             for (x, y) in [(30, 18), (70, 44), (200, 22), (240, 50), (110, 12), (180, 40)] as [(CGFloat, CGFloat)] {
                 circle(Palette.cloud, cx: x, cy: y, r: 4)
             }
+        case .cold:
+            // Frost sparkles, not falling dots: cold on its own is a dry sky, and the snow's dots
+            // here read as snowfall.
+            for (x, y, r) in [(34, 22, 6), (204, 26, 5), (112, 14, 4), (240, 52, 5)] as [(CGFloat, CGFloat, CGFloat)] {
+                poly(Palette.cloud, [
+                    (x, y - r), (x + r / 4, y - r / 4), (x + r, y), (x + r / 4, y + r / 4),
+                    (x, y + r), (x - r / 4, y + r / 4), (x - r, y), (x - r / 4, y - r / 4),
+                ])
+            }
+        }
+    }
+
+    /// A band of fog: left edge, top and width in scene units, and its height.
+    typealias FogBand = (x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat)
+    static let fogBehind: [FogBand] = [(30, 20, 120, 10), (120, 40, 110, 9), (10, 58, 90, 8)]
+    static let fogInFront: [FogBand] = [(40, 117, 190, 10), (20, 130, 150, 8)]
+
+    /// Soft white bands; fainter on a dark sky, where full white would read as snow on the ground.
+    func fog(_ bands: [FogBand], dark: Bool) {
+        let fog = Palette.cloud.opacity(dark ? 0.3 : 0.55)
+        for band in bands {
+            roundedRect(fog, x: band.x, y: band.y, width: band.width, height: band.height, radius: band.height / 2)
         }
     }
 
@@ -432,8 +470,15 @@ private struct Painter {
             rect(Palette.outline, x: 162, y: 68, width: 12, height: 7)
             rect(Palette.outline, x: 157, y: 70, width: 6, height: 2)
         }
-        if accessories.contains(.dogScarf) { rect(Palette.scarf, x: 136, y: 94, width: 48, height: 9) }
-        if accessories.contains(.catScarf) { rect(Palette.scarfAlt, x: 72, y: 96, width: 46, height: 8) }
+        // Each scarf has an end hanging down, without which it read as a plain bar across the neck.
+        if accessories.contains(.dogScarf) {
+            rect(Palette.scarf, x: 136, y: 94, width: 48, height: 9)
+            roundedRect(Palette.scarf, x: 170, y: 99, width: 8, height: 17, radius: 2)
+        }
+        if accessories.contains(.catScarf) {
+            rect(Palette.scarfAlt, x: 72, y: 96, width: 46, height: 8)
+            roundedRect(Palette.scarfAlt, x: 102, y: 100, width: 7, height: 15, radius: 2)
+        }
         if accessories.contains(.bandana) {
             poly(Palette.bandana, [(142, 97), (178, 97), (160, 111)])
             circle(Palette.pumpkinFace, cx: 153, cy: 101, r: 1.6)
