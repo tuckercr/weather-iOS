@@ -870,6 +870,17 @@
         }
       }
     },
+    "Can't see the end of the garden. Misty says it's still there." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't see the end of the garden. Misty says it's still there."
+          }
+        }
+      }
+    },
     "Chance of precipitation %lld%%" : {
       "localizations" : {
         "en" : {
@@ -1282,6 +1293,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Fog"
+          }
+        }
+      }
+    },
+    "Foggy out. Misty is watching it drift past the window." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foggy out. Misty is watching it drift past the window."
+          }
+        }
+      }
+    },
+    "Foggy out. Sunny's staying close on the lead." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foggy out. Sunny's staying close on the lead."
           }
         }
       }
@@ -2378,6 +2411,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Misty's getting puffy"
+          }
+        }
+      }
+    },
+    "Misty's kind of weather. She was named for it." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's kind of weather. She was named for it."
+          }
+        }
+      }
+    },
+    "Misty's kind of weather. Sunny's nose knows the way." : {
+      "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misty's kind of weather. Sunny's nose knows the way."
           }
         }
       }

@@ -364,7 +364,7 @@ private struct CurrentWeatherContent: View {
         } label: {
             VStack(spacing: 4) {
                 // Kept smaller than the card so the scene doesn't dominate, especially on wide screens.
-                PetScene(mood: state.mood, decorations: state.seasonalTheme?.decorations ?? [], dark: state.darkNow)
+                PetScene(mood: state.mood, decorations: state.seasonalTheme?.decorations ?? [], dark: state.darkNow, foggy: state.foggy)
                     .frame(maxWidth: 280)
                     .padding(.horizontal, 24)
                 // Medium weight on the small lines so they hold up on the brighter hero colours.
@@ -398,7 +398,7 @@ private struct CurrentWeatherContent: View {
             .padding(.top, 8)
             .padding(.bottom, 12)
             .background(
-                state.seasonalTheme?.heroBackground(night: night) ?? state.mood.skyColor,
+                state.seasonalTheme?.heroBackground(night: night) ?? state.mood.heroSkyColor(foggy: state.foggy),
                 in: RoundedRectangle(cornerRadius: 12)
             )
         }

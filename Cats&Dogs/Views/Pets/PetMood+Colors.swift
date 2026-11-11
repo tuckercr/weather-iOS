@@ -18,6 +18,13 @@ extension PetMood {
         }
     }
 
+    /// The hero card's colour: grey in fog by day, since the mood's own sky colour (a cold blue, a
+    /// cloudy blue) says clear air. A foggy night keeps the night sky. Same as Android's
+    /// `heroSkyColor`.
+    func heroSkyColor(foggy: Bool) -> Color {
+        foggy && self != .night ? Color(hex: 0xDDE3E7) : skyColor
+    }
+
     var ink: Color {
         self == .night ? Color(hex: 0xF1EFE8) : Color(hex: 0x0C447C)
     }

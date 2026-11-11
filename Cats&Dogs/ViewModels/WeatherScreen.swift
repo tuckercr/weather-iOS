@@ -133,6 +133,9 @@ struct WeatherScreenState {
     /// Day or night by the clock, so a reading cached before sunset doesn't show the daytime hero.
     let iconCodeNow: String
     let mood: PetMood
+    /// Fog, mist or haze (`PetMood.isFoggy`): the scene draws it over `mood`, which still picks the
+    /// pets' look.
+    let foggy: Bool
     /// Today's seasonal theme by the city's own date, so it ends by itself when its day does.
     let seasonalTheme: SeasonalTheme?
     /// Dark in the city by the clock: the hero's colours and the theme's extras take their night
@@ -187,6 +190,7 @@ struct WeatherScreenState {
         weatherToday = StaleWeather.withSunTimesToday(weather, at: now)
         iconCodeNow = StaleWeather.iconCode(weather, at: now)
         mood = PetMood.forReading(weather, at: now, thresholds: config.thresholds)
+        foggy = PetMood.isFoggy(conditionMain: weather.conditionMain)
         seasonalTheme = SeasonalThemes.theme(on: now, timeZone: timeZone, in: config.seasonalThemes)
         // The hero's own day or night by the clock.
         let darkNow = iconCodeNow.hasSuffix("n")
@@ -231,6 +235,7 @@ struct WeatherScreenState {
             themeCaption: seasonalTheme?.caption(night: eveningNow, on: now, calendar: calendar),
             mood: mood,
             partlyCloudy: PetMood.isPartlyCloudy(weather, showingForecast: showingForecast),
+            foggy: foggy,
             on: now,
             timeZone: timeZone
         )
