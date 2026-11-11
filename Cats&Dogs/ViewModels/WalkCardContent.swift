@@ -71,7 +71,8 @@ struct WalkCardContent: Equatable {
             case .safe, .pavementOK, .freezing, .icy: nil
             }
         case .heat where level >= .pottyOnly: return String(localized: "Too hot for paws.", comment: "Walk card caption: why now isn't the time for a walk")
-        case .cold where level >= .pottyOnly: return String(localized: "Too cold for paws.", comment: "Walk card caption: why now isn't the time for a walk")
+        // The air's feels-like, not the ground: the Paw Check tile can say "Fine underfoot" at the same time.
+        case .cold where level >= .pottyOnly: return String(localized: "Too cold for a long walk.", comment: "Walk card caption: why now isn't the time for a walk")
         case let .air(_, pollutant) where level >= .pottyOnly:
             let air = WalkReason.airName(pollutant) ?? String(localized: "Bad air", comment: "Walk card caption: why now isn't the time for a walk")
             return level >= .stayIn ? String(localized: "\(air). Stay in. Potty breaks only.", comment: "Walk card caption: why now isn't the time for a walk") : String(localized: "\(air). Potty breaks only.", comment: "Walk card caption: why now isn't the time for a walk")

@@ -155,8 +155,9 @@ enum TodayDetails {
     }
 
     /// What the pavement means for paws, from the Remote Config thresholds the walk advice uses.
-    /// `pavementOK` is pavement that's fine while the air itself is too hot or too cold for paws, so
-    /// the tile doesn't call it "Safe for paws" beside a walk card saying the opposite.
+    /// `pavementOK` is pavement that's fine while the air itself is too hot or too cold for the pets,
+    /// so the tile doesn't call it "Safe for paws" beside a walk card saying the opposite. It's still
+    /// green: the walk card's caption ("Too cold for a long walk.") puts the problem in the air.
     enum PavementBand: Equatable {
         case dangerous, tooHot, warm, safe, pavementOK, freezing, icy
 

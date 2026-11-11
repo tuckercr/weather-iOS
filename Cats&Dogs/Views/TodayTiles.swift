@@ -143,12 +143,14 @@ struct TodayTiles: View {
         }
     }
 
-    /// Same shades as the walk card's ratings: dark text on the light theme, pale on the dark. Blue
-    /// for icy and below freezing, as on the paw scale.
+    /// Same shades as the walk card's ratings: dark text on the light theme, pale on the dark. Each
+    /// band takes its paw's colour on the scale above it: blue for icy and below freezing, and green
+    /// for fine underfoot as for safe, since the pavement is fine and it's the air the walk card is
+    /// warning about.
     private func pavementTint(_ band: TodayDetails.PavementBand) -> Color {
         let (light, dark): (UInt32, UInt32) = switch band {
-        case .safe: (0x27500A, 0xC0DD97)
-        case .warm, .pavementOK: (0x633806, 0xFAC775)
+        case .safe, .pavementOK: (0x27500A, 0xC0DD97)
+        case .warm: (0x633806, 0xFAC775)
         case .freezing, .icy: (0x0C447C, 0xB5D4F4)
         case .tooHot, .dangerous: (0x791F1F, 0xF7C1C1)
         }
