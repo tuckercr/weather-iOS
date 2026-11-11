@@ -5,7 +5,9 @@ import Foundation
 ///
 /// iOS cannot run code at a fixed time of day, so one `BGAppRefreshTask` does both jobs whenever
 /// the system grants background time: it refreshes the active city's cache, then replans the queued
-/// notifications (briefings, walk nudges, rain alert) from it.
+/// notifications (briefings, walk nudges, rain alert) from it. A city whose reading and forecast were
+/// both fetched in the last 30 minutes isn't fetched again (`LocationWeatherRepository.hasFreshData`);
+/// that goes for Follow my location's wakes too, which come through `performRefresh`.
 @MainActor
 final class WeatherBackgroundRefresher {
     static let shared = WeatherBackgroundRefresher()
@@ -80,6 +82,7 @@ final class WeatherBackgroundRefresher {
             getSavedLocations: { locations },
             refreshWeather: { [repository] in await repository.refreshWeather(for: $0) },
             refreshForecast: { [repository] in await repository.refreshForecast(for: $0) },
+            hasFreshData: { [repository] in await repository.hasFreshData(for: $0) },
             hasNotificationPermission: { authorized },
             onRefreshed: { refreshed = true }
         )
@@ -92,7 +95,8 @@ final class WeatherBackgroundRefresher {
         // open on an old cache either. After the notifications, which matter more if time runs out,
         // and not part of the result. Same as Android's background refresh.
         let activeIndex = preferences.activeLocationIndex
-        if locations.indices.contains(activeIndex), locations[activeIndex].cacheKey != cacheKey {
+        if locations.indices.contains(activeIndex), locations[activeIndex].cacheKey != cacheKey,
+           !repository.hasFreshData(for: locations[activeIndex]) {
             _ = await repository.refreshWeather(for: locations[activeIndex])
             _ = await repository.refreshForecast(for: locations[activeIndex])
         }

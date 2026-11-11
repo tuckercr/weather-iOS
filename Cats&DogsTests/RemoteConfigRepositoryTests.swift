@@ -3,12 +3,12 @@ import XCTest
 
 @MainActor
 final class RemoteConfigRepositoryTests: XCTestCase {
-    func testRefreshIntervalDefaultsToThirtyMinutes() {
-        XCTAssertEqual(RemoteConfigRepository.refreshInterval(minutes: nil), 30 * 60)
+    func testRefreshIntervalDefaultsToNinetyMinutes() {
+        XCTAssertEqual(RemoteConfigRepository.refreshInterval(minutes: nil), 90 * 60)
     }
 
     func testRefreshIntervalUsesTheRemoteValue() {
-        XCTAssertEqual(RemoteConfigRepository.refreshInterval(minutes: 60), 60 * 60)
+        XCTAssertEqual(RemoteConfigRepository.refreshInterval(minutes: 120), 120 * 60)
     }
 
     func testRefreshIntervalNeverGoesBelowFifteenMinutes() {
@@ -131,7 +131,7 @@ final class RemoteConfigRepositoryTests: XCTestCase {
     @MainActor
     func testWithoutFirebaseTheDefaultsApply() {
         XCTAssertFalse(FirebaseSetup.isConfigured)
-        XCTAssertEqual(RemoteConfigRepository.shared.refreshInterval, 30 * 60)
+        XCTAssertEqual(RemoteConfigRepository.shared.refreshInterval, 90 * 60)
         XCTAssertEqual(RemoteConfigRepository.shared.radarFrameInterval, .milliseconds(850))
         XCTAssertTrue(RemoteConfigRepository.shared.analyticsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.radarEnabled)

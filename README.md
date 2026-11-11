@@ -205,8 +205,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      particles are dust ("coarse particles") when PM2.5 is under a third of PM10 by mass, since a
      dust storm can push PM2.5's index off the scale while PM10 gets none. The walk card, hero and
      notifications name it ("Smoky air", "Dusty air", "High ozone"). It comes with the forecast, in the same request
-     the walk planner uses, so it's cached and shows offline. `air_quality_enabled` in Remote Config
-     turns it off.
+     the walk planner uses, so it's cached and shows offline. It's asked for after the forecast,
+     whose time zone picks the scale, so only that scale's indices (and the PM2.5 and PM10 masses)
+     are requested; both scales when the time zone isn't known. Air quality changes slowly, so a
+     city's hours are kept with when they were fetched and reused by any refresh (pull to refresh
+     too) for up to 3 hours, while they're on the same scale and reach at least 24 hours ahead.
+     `air_quality_enabled` in Remote Config turns it off.
    - **Misty's View**: the sky and how far you can see ("Clear · Good visibility, 6 mi"), with
      Misty's line about the view by its band ("Misty can see down the block"). After dark in the
      city the line is about the night instead: poor visibility keeps "Misty can't see past the
@@ -319,7 +323,7 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
 | Town and city search | [Open-Meteo's geocoding](https://open-meteo.com/en/docs/geocoding-api) (prefix search, with populations; data from GeoNames), sorted and filtered on the phone (`Utilities/CitySearch.swift`). OpenWeather's geocoding when it fails, `open_meteo_enabled` is off or `city_search_provider` is `openweather`. |
 | Forecast for cities with coordinates | [Open-Meteo](https://open-meteo.com): true hourly data, UV index, and solar radiation for the pavement estimate. Free, no key. |
 | Forecast for name-only cities | OpenWeatherMap's 3-hourly `/forecast`, as a fallback |
-| Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly US and European indices per pollutant, fetched alongside the Open-Meteo forecast. Free, no key. |
+| Air quality | [Open-Meteo's air quality API](https://open-meteo.com/en/docs/air-quality-api): hourly indices per pollutant on the city's scale (US or European), fetched after the Open-Meteo forecast and reused for up to 3 hours. Free, no key. |
 | Radar | [RainViewer](https://www.rainviewer.com/api.html) frames (free, no key) at zoom 7, the highest it serves |
 | Base map | OpenStreetMap tiles |
 
@@ -363,12 +367,13 @@ and the periodic refresh for rain). iOS cannot run code at a fixed time of day, 
 `WeatherBackgroundRefresher` refreshes that cache in a `BGAppRefreshTask`. Each time iOS grants
 background time it:
 
-1. fetches current weather and the forecast for that notification city,
+1. fetches current weather and the forecast for that notification city, unless both were fetched
+   in the last 30 minutes (then the cache is used as it is),
 2. writes them to the per-city cache, so the app opens with fresh data,
 3. replans the queued notifications from it,
-4. does the same fetch and cache for the city tab last viewed, when that's another city, so the app
-   opens on fresh data there too, and
-5. requests the next run after `weather_refresh_interval_minutes` (default 30, as on Android), or 15
+4. does the same fetch and cache for the city tab last viewed, when that's another city (with the
+   same 30-minute rule), so the app opens on fresh data there too, and
+5. requests the next run after `weather_refresh_interval_minutes` (default 90, as on Android), or 15
    minutes after a failed fetch of the notification city.
 
 The notifications themselves are on calendar triggers, so they always arrive on time. A week of
@@ -501,7 +506,7 @@ The iOS and Android apps have the same features. Where the platforms differ:
 | | iOS | Android |
 |---|---|---|
 | Briefing, walk time, rain alerts | Planned ahead from the latest cached forecast | Worked out at the time (walk time re-checked when due) |
-| Background weather refresh | `BGAppRefreshTask`, no sooner than the Remote Config interval | WorkManager, every 30 minutes (Remote Config) |
+| Background weather refresh | `BGAppRefreshTask`, no sooner than the Remote Config interval | WorkManager, every 90 minutes (Remote Config) |
 | "Use system setting" for temperature | By region | Android 14+ temperature preference, else region |
 | Crash reporting | Xcode Organizer crash reports | Crashlytics, release builds only |
 | *Share usage statistics* | Settings › Privacy | Settings › About |
@@ -523,7 +528,8 @@ Shared with Android (the same cases on both platforms):
 - `PlaceNamesTests`: My Location's name kept until it moves 1 km, failed lookups tried again
 - `GeocodingRepositoryTests`: suggestion formatting (name, rest of the label, short label) and validation (fake API)
 - `CitySearchTests`: what was typed (names, text after a comma, ZIP codes, postcodes), filtering, merging and county labels, and SEARCH.md's worked examples (Paris, Nas, Springfield, Portland, Birmingham, Sydney, London) against live Open-Meteo rows in `LiveSearchFixtures`; the provider, the 100 rows asked for with a comma, and falling back to OpenWeather (Android's will follow with its search)
-- `NotificationWorkerLogicTests`: background fetch, permission and retry behaviour
+- `NotificationWorkerLogicTests`: background fetch, skipping data fetched in the last 30 minutes, permission and retry behaviour
+- `FewerOpenMeteoCallsTests`: air quality's fields per scale (both when the time zone isn't known), reuse within 3 hours on the same scale while it covers the next 24 hours, and the background refresh leaving a city alone while its reading and forecast are both under 30 minutes old
 - `NotificationPlannerTests`: briefing times and text, walk-time nudges, rain alerts (lead, quiet hours, once per shower), the switches
 - `OpenMeteoForecastTests`: hour filtering, city time zones (including half-hour zones and DST), WMO codes, UV, pavement heat
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
@@ -547,7 +553,7 @@ Shared with Android (the same cases on both platforms):
 
 iOS only:
 
-- `WeatherBackgroundRefresherTests`: background refresh caching, notification rescheduling and retry timing
+- `WeatherBackgroundRefresherTests`: background refresh caching, skipping fresh cities, notification rescheduling and retry timing
 - `PreferencesStoreTests`: per-city cache round trip, eviction when a city is removed, older cache format
 - `WeatherFormattingTests`: sunrise and sunset in the city's time zone, UV categories, calm wind, visibility in miles or km and "Clear", temperatures with and without the unit
 - `RemoteConfigRepositoryTests`: defaults, the refresh-interval floor, radar-speed, foreground-refresh and Rain outlook limits
@@ -596,7 +602,7 @@ Remote Config parameters are defined and deployed from the Android repo
 
 | Key | Default | Used for |
 |---|---|---|
-| `weather_refresh_interval_minutes` | 30 (minimum 15) | Earliest next background refresh |
+| `weather_refresh_interval_minutes` | 90 (minimum 15) | Earliest next background refresh |
 | `radar_frame_interval_ms` | 850 (100–5000, otherwise the default) | Radar animation speed |
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |

@@ -107,12 +107,31 @@ struct WeatherRequest: Equatable {
 /// so Open-Meteo's drop-past-hours filter keeps the fixture hours.
 let fixtureDayStart = 1_704_067_200
 
+/// A value the fakes below change from requests running at once (they aren't on the main actor,
+/// so concurrent refreshes would otherwise append to the same array together and crash).
+final class Locked<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+
+    var current: Value { lock.withLock { value } }
+
+    func change(_ body: (inout Value) -> Void) {
+        lock.withLock { body(&value) }
+    }
+}
+
 /// Open-Meteo fake that returns `response` (or throws `error`) and records the coordinates asked for.
 /// The current reading fails unless `currentResponse` is set, so tests written around OpenWeather's
 /// reading get it as the backup.
 final class StubOpenMeteoAPI: OpenMeteoAPI, @unchecked Sendable {
-    private(set) var requests: [(latitude: Double, longitude: Double, units: WeatherUnits)] = []
-    private(set) var currentRequests: [(latitude: Double, longitude: Double, units: WeatherUnits)] = []
+    private let recordedRequests = Locked<[(latitude: Double, longitude: Double, units: WeatherUnits)]>([])
+    private let recordedCurrentRequests = Locked<[(latitude: Double, longitude: Double, units: WeatherUnits)]>([])
+    var requests: [(latitude: Double, longitude: Double, units: WeatherUnits)] { recordedRequests.current }
+    var currentRequests: [(latitude: Double, longitude: Double, units: WeatherUnits)] { recordedCurrentRequests.current }
     var response: OpenMeteoResponse
     var currentResponse: OpenMeteoCurrentResponse?
     var error: Error?
@@ -124,13 +143,13 @@ final class StubOpenMeteoAPI: OpenMeteoAPI, @unchecked Sendable {
     }
 
     func forecast(latitude: Double, longitude: Double, units: WeatherUnits) async throws -> OpenMeteoResponse {
-        requests.append((latitude, longitude, units))
+        recordedRequests.change { $0.append((latitude, longitude, units)) }
         if let error { throw error }
         return response
     }
 
     func current(latitude: Double, longitude: Double, units: WeatherUnits) async throws -> OpenMeteoCurrentResponse {
-        currentRequests.append((latitude, longitude, units))
+        recordedCurrentRequests.change { $0.append((latitude, longitude, units)) }
         if let error { throw error }
         guard let currentResponse else { throw OpenWeatherClientError.network }
         return currentResponse
@@ -139,7 +158,8 @@ final class StubOpenMeteoAPI: OpenMeteoAPI, @unchecked Sendable {
 
 /// Names places with `name`, recording what it was asked.
 final class StubPlaceNames: PlaceNaming, @unchecked Sendable {
-    private(set) var requests: [(latitude: Double, longitude: Double)] = []
+    private let recordedRequests = Locked<[(latitude: Double, longitude: Double)]>([])
+    var requests: [(latitude: Double, longitude: Double)] { recordedRequests.current }
     var name: String?
 
     init(name: String? = nil) {
@@ -147,7 +167,7 @@ final class StubPlaceNames: PlaceNaming, @unchecked Sendable {
     }
 
     func name(latitude: Double, longitude: Double) async -> String? {
-        requests.append((latitude, longitude))
+        recordedRequests.change { $0.append((latitude, longitude)) }
         return name
     }
 }
@@ -187,21 +207,29 @@ func openMeteoCurrentResponse(
     )
 }
 
-/// Air quality fake: no hourly readings unless `hourlyIndices` (US AQI by hour) are set; throws `error` if set.
+/// Air quality fake: no hourly readings unless `hourlyIndices` (the index by hour, on both scales)
+/// are set; throws `error` if set. Records the scale of each request.
 final class StubAirQualityAPI: AirQualityAPI, @unchecked Sendable {
     var hourlyIndices: [Int: Int] = [:]
     var error: Error?
+    var timezone: String?
+    private let recordedScales = Locked<[AirQuality.Scale?]>([])
+    var requestedScales: [AirQuality.Scale?] { recordedScales.current }
 
-    init(hourlyIndices: [Int: Int] = [:], error: Error? = nil) {
+    init(hourlyIndices: [Int: Int] = [:], error: Error? = nil, timezone: String? = "America/New_York") {
         self.hourlyIndices = hourlyIndices
         self.error = error
+        self.timezone = timezone
     }
 
-    func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse {
+    func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse {
+        recordedScales.change { $0.append(scale) }
         if let error { throw error }
         return AirQualityHourlyResponse(
-            timezone: "America/New_York",
-            hours: hourlyIndices.keys.sorted().map { ($0, AirQualityReadings([.usAqi: hourlyIndices[$0]!])) }
+            timezone: timezone,
+            hours: hourlyIndices.keys.sorted().map {
+                ($0, AirQualityReadings([.usAqi: hourlyIndices[$0]!, .europeanAqi: hourlyIndices[$0]!]))
+            }
         )
     }
 }

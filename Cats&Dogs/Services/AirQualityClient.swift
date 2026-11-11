@@ -1,7 +1,8 @@
 import Foundation
 
 protocol AirQualityAPI: Sendable {
-    func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse
+    /// `scale`'s fields only (`AirQualityReadings.fields(for:)`), or both scales' when it's nil.
+    func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse
 }
 
 /// Open-Meteo's air quality endpoint: free, keyless and worldwide. Errors reuse
@@ -14,14 +15,20 @@ struct AirQualityClient: AirQualityAPI {
         self.session = session
     }
 
-    /// The next two days hour by hour, enough for the walk planner's day ahead, with every index
-    /// the tile needs for the hour in progress.
-    func hourly(latitude: Double, longitude: Double) async throws -> AirQualityHourlyResponse {
+    /// The next three days hour by hour, enough for the walk planner's day ahead, with every index
+    /// the tile needs for the hour in progress, on `scale` (both scales when it's nil).
+    func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse {
         try await get(latitude: latitude, longitude: longitude, [
-            URLQueryItem(name: "hourly", value: AirQualityReadings.Field.allCases.map(\.rawValue).joined(separator: ",")),
+            URLQueryItem(name: "hourly", value: Self.hourlyFields(for: scale)),
             URLQueryItem(name: "timeformat", value: "unixtime"),
-            URLQueryItem(name: "forecast_days", value: "2"),
+            // Three days, so hours fetched late in the evening still reach 24 hours ahead for the
+            // 3-hour reuse. Days don't change the call count. Same as Android.
+            URLQueryItem(name: "forecast_days", value: "3"),
         ])
+    }
+
+    static func hourlyFields(for scale: AirQuality.Scale?) -> String {
+        AirQualityReadings.fields(for: scale).map(\.rawValue).joined(separator: ",")
     }
 
     private func get<Response: Decodable>(
@@ -33,7 +40,7 @@ struct AirQualityClient: AirQualityAPI {
         components.queryItems = [
             URLQueryItem(name: "latitude", value: String(latitude)),
             URLQueryItem(name: "longitude", value: String(longitude)),
-            // The response's time zone picks the scale (European or US).
+            // The response's time zone picks the scale (European or US) when it wasn't known.
             URLQueryItem(name: "timezone", value: "auto"),
         ] + fields
 

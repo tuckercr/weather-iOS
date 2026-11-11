@@ -70,6 +70,23 @@ final class NotificationWorkerLogicTests: XCTestCase {
         XCTAssertEqual(refreshed, 1)
     }
 
+    func testFreshDataIsntFetchedAgainButTheNotificationsAreStillPlannedFromIt() async {
+        var fetches = 0
+        var refreshed = 0
+        let logic = makeLogic(
+            refreshWeather: { _ in fetches += 1; return .success(sampleWeather()) },
+            refreshForecast: { _ in fetches += 1; return .success([]) },
+            hasFreshData: true,
+            onRefreshed: { refreshed += 1 }
+        )
+
+        let result = await logic.doWork()
+
+        XCTAssertEqual(result, .success)
+        XCTAssertEqual(fetches, 0)
+        XCTAssertEqual(refreshed, 1)
+    }
+
     func testDoesNotReplanWhenPermissionDenied() async {
         var refreshed = 0
         let logic = makeLogic(hasNotificationPermission: { false }, onRefreshed: { refreshed += 1 })
@@ -84,6 +101,7 @@ final class NotificationWorkerLogicTests: XCTestCase {
         savedLocations: [SavedLocation]? = nil,
         refreshWeather: ((SavedLocation) async -> Result<CurrentWeather, Error>)? = nil,
         refreshForecast: ((SavedLocation) async -> Result<[DayForecast], Error>)? = nil,
+        hasFreshData: Bool = false,
         hasNotificationPermission: @escaping () -> Bool = { true },
         onRefreshed: @escaping () -> Void = {}
     ) -> NotificationWorkerLogic {
@@ -91,6 +109,7 @@ final class NotificationWorkerLogicTests: XCTestCase {
             getSavedLocations: { savedLocations ?? [self.london] },
             refreshWeather: refreshWeather ?? { _ in .success(sampleWeather()) },
             refreshForecast: refreshForecast ?? { _ in .success([]) },
+            hasFreshData: { _ in hasFreshData },
             hasNotificationPermission: hasNotificationPermission,
             onRefreshed: onRefreshed
         )
