@@ -17,6 +17,7 @@ final class PreferencesStore {
     private let forecastFetchedAtKey = "forecast_fetched_at"
     private let weatherFetchedAtKey = "weather_fetched_at"
     private let airQualityCacheKey = "air_quality_cache"
+    private let fetchedUnitsKey = "fetched_units"
     private let unitOverrideKey = "unit_override"
     private let shareUsageStatisticsKey = "share_usage_statistics"
     private let showWalkCardKey = "show_walk_card"
@@ -233,6 +234,7 @@ final class PreferencesStore {
         var times = loadCache(Double.self, forKey: weatherFetchedAtKey)
         times[locationKey] = fetchedAt.timeIntervalSince1970
         saveCache(times, forKey: weatherFetchedAtKey)
+        setFetchedUnits(for: locationKey) { $0.weather = weather.units }
     }
 
     /// When the cached reading was fetched; nil for one cached before this was kept.
@@ -251,6 +253,22 @@ final class PreferencesStore {
         var times = loadCache(Double.self, forKey: forecastFetchedAtKey)
         times[locationKey] = fetchedAt.timeIntervalSince1970
         saveCache(times, forKey: forecastFetchedAtKey)
+        // Every day of a forecast is in the same units; an empty one has none.
+        setFetchedUnits(for: locationKey) { $0.forecast = forecast.first?.units }
+    }
+
+    /// The units the cached reading and forecast are in, kept apart from them so a freshness check
+    /// doesn't decode every city's cache. Nil for a cache from before this was kept.
+    func cachedFetchedUnits(for locationKey: String) -> FetchedUnits? {
+        loadCache(FetchedUnits.self, forKey: fetchedUnitsKey)[locationKey]
+    }
+
+    private func setFetchedUnits(for locationKey: String, _ change: (inout FetchedUnits) -> Void) {
+        var cache = loadCache(FetchedUnits.self, forKey: fetchedUnitsKey)
+        var entry = cache[locationKey] ?? FetchedUnits()
+        change(&entry)
+        cache[locationKey] = entry
+        saveCache(cache, forKey: fetchedUnitsKey)
     }
 
     /// When the cached forecast was fetched; nil for one cached before this was kept.
@@ -275,6 +293,7 @@ final class PreferencesStore {
         defaults.removeObject(forKey: forecastCacheKey)
         defaults.removeObject(forKey: forecastFetchedAtKey)
         defaults.removeObject(forKey: airQualityCacheKey)
+        defaults.removeObject(forKey: fetchedUnitsKey)
     }
 
     /// Drops cache entries for cities that are no longer saved, so removed cities (and every spot
@@ -286,6 +305,7 @@ final class PreferencesStore {
         prune(Double.self, forKey: forecastFetchedAtKey, keeping: keys)
         prune(Double.self, forKey: weatherFetchedAtKey, keeping: keys)
         prune(AirQualityHours.self, forKey: airQualityCacheKey, keeping: keys)
+        prune(FetchedUnits.self, forKey: fetchedUnitsKey, keeping: keys)
     }
 
     private func prune<Value: Codable>(_ type: Value.Type, forKey key: String, keeping keys: Set<String>) {
@@ -312,4 +332,10 @@ private extension String {
     var nilIfEmpty: String? {
         isEmpty ? nil : self
     }
+}
+
+/// The units a location's cached reading and forecast were saved in (`PreferencesStore.cachedFetchedUnits`).
+struct FetchedUnits: Codable, Equatable {
+    var weather: WeatherUnits?
+    var forecast: WeatherUnits?
 }

@@ -261,7 +261,7 @@ struct AirQualityReadings: Equatable, Sendable {
 
 /// A city's air quality hours as last fetched, kept with the city's cached weather so a refresh
 /// within `maxAge` (the background one too, which may run in a fresh process) can reuse them
-/// instead of asking again: air quality changes slowly, and each response holds two days of hours.
+/// instead of asking again: air quality changes slowly, and each response holds three days of hours.
 /// The same rules as on Android.
 struct AirQualityHours: Codable, Equatable, Sendable {
     /// How long fetched air quality is reused for.

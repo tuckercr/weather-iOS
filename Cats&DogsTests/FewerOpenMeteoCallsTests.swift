@@ -131,6 +131,37 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
         XCTAssertEqual(air.requestedScales.count, 2)
     }
 
+    func testWithACachedScaleAirQualityIsAskedForOnItAlongsideTheForecast() async {
+        let air = StubAirQualityAPI(hourlyIndices: indices(hours: 48))
+        let repository = LocationWeatherRepository(
+            weatherRepository: weatherRepository(air: air, zone: "America/New_York"),
+            preferences: preferences,
+            now: { [start] in start }
+        )
+        let old = airHours(fetchedAt: start.addingTimeInterval(-AirQualityHours.maxAge), scale: .us, hours: 48)
+        preferences.setCachedAirQuality(old, for: london.cacheKey)
+
+        _ = await repository.refreshForecast(for: london)
+
+        XCTAssertEqual(air.requestedScales, [.us])
+        XCTAssertEqual(preferences.cachedAirQuality(for: london.cacheKey)?.fetchedAt, start)
+    }
+
+    func testACachedScaleTheForecastDisagreesWithIsAskedForAgainOnTheCitysScale() async {
+        let air = StubAirQualityAPI(hourlyIndices: indices(hours: 48))
+        let repository = LocationWeatherRepository(
+            weatherRepository: weatherRepository(air: air, zone: "America/New_York"),
+            preferences: preferences,
+            now: { [start] in start }
+        )
+        preferences.setCachedAirQuality(airHours(fetchedAt: start, scale: .european, hours: 48), for: london.cacheKey)
+
+        _ = await repository.refreshForecast(for: london)
+
+        XCTAssertEqual(air.requestedScales.last, .us)
+        XCTAssertEqual(preferences.cachedAirQuality(for: london.cacheKey)?.scale, .us)
+    }
+
     func testAirQualityIsKeptWhenAFetchFails() async {
         let cached = airHours(fetchedAt: start.addingTimeInterval(-4 * 3600), scale: .us, hours: 48)
         preferences.setCachedAirQuality(cached, for: london.cacheKey)
@@ -159,6 +190,14 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
 
     // MARK: - D. The background refresh skips fresh data
 
+    /// A one-day forecast in metric, the sample reading's units.
+    private let metricForecast = [
+        DayForecast(
+            dateLabel: "Mon, Jan 1", conditionMain: "Clear", description: "clear", iconCode: "01d",
+            temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 22, units: .metric, hourlySlots: []
+        ),
+    ]
+
     func testDataIsFreshOnlyWhileTheReadingAndForecastAreBothUnderThirtyMinutesOld() {
         let repository = LocationWeatherRepository(
             weatherRepository: weatherRepository(air: StubAirQualityAPI(), zone: nil),
@@ -172,7 +211,7 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
 
         XCTAssertFalse(repository.hasFreshData(for: london), "nothing cached")
 
-        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start.addingTimeInterval(-60))
+        preferences.setCachedForecast(metricForecast, for: london.cacheKey, fetchedAt: start.addingTimeInterval(-60))
         XCTAssertFalse(repository.hasFreshData(for: london), "no reading's fetch time")
 
         preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge + 60))
@@ -182,7 +221,7 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
         XCTAssertFalse(repository.hasFreshData(for: london), "the reading is 30 minutes old")
 
         preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
-        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge - 60))
+        preferences.setCachedForecast(metricForecast, for: london.cacheKey, fetchedAt: start.addingTimeInterval(-skipAge - 60))
         XCTAssertFalse(repository.hasFreshData(for: london), "the forecast is over 30 minutes old")
     }
 
@@ -194,7 +233,7 @@ final class FewerOpenMeteoCallsTests: XCTestCase {
         )
         preferences.setUnitOverride(.metric)
         preferences.setCachedWeather(sampleWeather(), for: london.cacheKey, fetchedAt: start)
-        preferences.setCachedForecast([], for: london.cacheKey, fetchedAt: start)
+        preferences.setCachedForecast(metricForecast, for: london.cacheKey, fetchedAt: start)
         XCTAssertTrue(repository.hasFreshData(for: london))
 
         preferences.setUnitOverride(.imperial)
