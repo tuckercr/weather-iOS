@@ -51,10 +51,10 @@ final class LocationWeatherRepository {
         let recent = times.allSatisfy { time in
             time.map { (0 ..< Self.backgroundRefreshSkipAge).contains(now.timeIntervalSince($0)) } ?? false
         }
-        guard recent,
-              let weather = preferences.cachedWeather(for: location.cacheKey),
-              let forecast = preferences.cachedForecast(for: location.cacheKey) else { return false }
-        return weather.units == units && forecast.allSatisfy { $0.units == units }
+        // The units as saved with the cache, so this doesn't decode every city's reading and forecast.
+        guard recent, let saved = preferences.cachedFetchedUnits(for: location.cacheKey) else { return false }
+        let units = units
+        return saved.weather == units && saved.forecast == units
     }
 
     /// Fetches `location`'s current reading and caches it. A fetch the screen has since moved on

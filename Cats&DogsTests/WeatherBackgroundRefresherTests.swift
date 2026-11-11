@@ -55,7 +55,11 @@ final class WeatherBackgroundRefresherTests: XCTestCase {
         preferences.setUnitOverride(.metric)
         for location in [london, nameOnly] {
             preferences.setCachedWeather(sampleWeather(), for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
-            preferences.setCachedForecast([], for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
+            let metricDay = DayForecast(
+                dateLabel: "Mon, Jan 1", conditionMain: "Clear", description: "clear", iconCode: "01d",
+                temperature: 18, feelsLike: 18, tempMin: 10, tempMax: 22, units: .metric, hourlySlots: []
+            )
+            preferences.setCachedForecast([metricDay], for: location.cacheKey, fetchedAt: Date(timeIntervalSinceNow: -10 * 60))
         }
         let api = FakeOpenWeatherAPI()
         var scheduled = 0

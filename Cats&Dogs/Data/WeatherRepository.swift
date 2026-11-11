@@ -145,18 +145,26 @@ struct WeatherRepository {
                     .map { ForecastFetch(days: $0, airQuality: nil) }
             }
             do {
+                // Air quality for the tile and the walk planner, on the city's scale only. A city's
+                // scale doesn't change, so the cached hours' scale lets it go alongside the forecast,
+                // whose time zone then confirms it; without a cache it waits for that time zone.
+                // Without air quality the forecast still stands. Same as Android.
+                let airOn = useAirQuality()
+                let guessed = airOn ? cachedAirQuality?.scale : nil
+                async let early: AirQualityHours? = guessed == nil
+                    ? nil
+                    : await airQualityHours(latitude: latitude, longitude: longitude, scale: guessed, cached: cachedAirQuality)
                 let response = try await openMeteo.forecast(latitude: latitude, longitude: longitude, units: units)
                 let days = OpenMeteoForecast.dayForecasts(from: response, units: units, now: now())
-                // Air quality after the forecast, whose time zone picks the scale to ask for; for
-                // the tile and the walk planner. Without it the forecast still stands.
-                let air = useAirQuality()
-                    ? await airQualityHours(
-                        latitude: latitude,
-                        longitude: longitude,
-                        timeZone: response.timezone,
-                        cached: cachedAirQuality
-                    )
-                    : nil
+                let scale = response.timezone.map(AirQuality.Scale.forTimeZone)
+                let air: AirQualityHours?
+                if !airOn {
+                    air = nil
+                } else if let guessed, scale == nil || scale == guessed {
+                    air = await early
+                } else {
+                    air = await airQualityHours(latitude: latitude, longitude: longitude, scale: scale, cached: cachedAirQuality)
+                }
                 return .success(ForecastFetch(days: Self.withAirQuality(days, byHour: air?.byHour ?? [:]), airQuality: air))
             } catch {
                 return .failure(error)
@@ -176,16 +184,15 @@ struct WeatherRepository {
         ).map { ForecastFetch(days: $0, airQuality: nil) }
     }
 
-    /// `cached` when it's still good for the city's scale, otherwise fetched on that scale only (both
-    /// scales when the time zone isn't known, and then the response's time zone picks). Nil when the
-    /// fetch fails. Same as Android's forecast refresh.
+    /// `cached` when it's still good on `scale` (the city's), otherwise fetched on that scale only (both
+    /// scales when it isn't known, and then the response's time zone picks). Nil when the fetch
+    /// fails. Same as Android's forecast refresh.
     private func airQualityHours(
         latitude: Double,
         longitude: Double,
-        timeZone: String?,
+        scale: AirQuality.Scale?,
         cached: AirQualityHours?
     ) async -> AirQualityHours? {
-        let scale = timeZone.map(AirQuality.Scale.forTimeZone)
         if let scale, let cached, cached.canBeReused(on: scale, now: now()) { return cached }
         guard let response = try? await airQuality.hourly(latitude: latitude, longitude: longitude, scale: scale) else {
             return nil

@@ -80,7 +80,8 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 - **Data.** Repositories in `Data/` sit over the API clients in `Services/` (`OpenWeatherAPI`,
   `OpenMeteoAPI`, `GeocodingAPI` protocols, faked in tests). Cities with coordinates get their
   current reading and forecast from Open-Meteo (hourly, UV, pavement heat, the 15-minute
-  precipitation behind `NextRain`, air quality in the same request), with OpenWeather's reading as
+  precipitation behind `NextRain`, and air quality, asked for on the city's own scale
+  and reused for 3 hours), with OpenWeather's reading as
   the backup and My Location named by the phone (`PlaceNames`); name-only cities fall back to
   OpenWeather's reading and 3-hourly forecast. Open-Meteo's WMO codes are mapped to OpenWeather-style condition and icon
   codes, so moods and icons work the same for both. `ForecastAggregator` groups slots into the

@@ -204,10 +204,11 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      also reads the main pollutant ("Mostly ozone"): the one with the highest index, except that
      particles are dust ("coarse particles") when PM2.5 is under a third of PM10 by mass, since a
      dust storm can push PM2.5's index off the scale while PM10 gets none. The walk card, hero and
-     notifications name it ("Smoky air", "Dusty air", "High ozone"). It comes with the forecast, in the same request
-     the walk planner uses, so it's cached and shows offline. It's asked for after the forecast,
-     whose time zone picks the scale, so only that scale's indices (and the PM2.5 and PM10 masses)
-     are requested; both scales when the time zone isn't known. Air quality changes slowly, so a
+     notifications name it ("Smoky air", "Dusty air", "High ozone"). It's cached with the forecast the walk planner
+     uses, so it shows offline. Only the city's scale is asked for (its indices and the PM2.5 and
+     PM10 masses): the cached hours' scale lets the request go alongside the forecast, whose time
+     zone confirms it; with nothing cached it waits for that time zone, and asks for both scales
+     when there's none. Air quality changes slowly, so a
      city's hours are kept with when they were fetched and reused by any refresh (pull to refresh
      too) for up to 3 hours, while they're on the same scale and reach at least 24 hours ahead.
      `air_quality_enabled` in Remote Config turns it off.
