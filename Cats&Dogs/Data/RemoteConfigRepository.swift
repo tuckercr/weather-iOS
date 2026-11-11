@@ -9,7 +9,7 @@ final class RemoteConfigRepository {
     static let shared = RemoteConfigRepository()
 
     nonisolated static let keyRefreshInterval = "weather_refresh_interval_minutes"
-    nonisolated static let defaultRefreshIntervalMinutes = 60
+    nonisolated static let defaultRefreshIntervalMinutes = 90
     /// Matches Android's WorkManager floor. iOS treats the interval as a minimum anyway.
     nonisolated static let minRefreshIntervalMinutes = 15
 

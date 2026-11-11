@@ -368,7 +368,7 @@ background time it:
 3. replans the queued notifications from it,
 4. does the same fetch and cache for the city tab last viewed, when that's another city (with the
    same 30-minute rule), so the app opens on fresh data there too, and
-5. requests the next run after `weather_refresh_interval_minutes` (default 60, as on Android), or 15
+5. requests the next run after `weather_refresh_interval_minutes` (default 90, as on Android), or 15
    minutes after a failed fetch of the notification city.
 
 The notifications themselves are on calendar triggers, so they always arrive on time. A week of
@@ -501,7 +501,7 @@ The iOS and Android apps have the same features. Where the platforms differ:
 | | iOS | Android |
 |---|---|---|
 | Briefing, walk time, rain alerts | Planned ahead from the latest cached forecast | Worked out at the time (walk time re-checked when due) |
-| Background weather refresh | `BGAppRefreshTask`, no sooner than the Remote Config interval | WorkManager, every 60 minutes (Remote Config) |
+| Background weather refresh | `BGAppRefreshTask`, no sooner than the Remote Config interval | WorkManager, every 90 minutes (Remote Config) |
 | "Use system setting" for temperature | By region | Android 14+ temperature preference, else region |
 | Crash reporting | Xcode Organizer crash reports | Crashlytics, release builds only |
 | *Share usage statistics* | Settings › Privacy | Settings › About |
@@ -597,7 +597,7 @@ Remote Config parameters are defined and deployed from the Android repo
 
 | Key | Default | Used for |
 |---|---|---|
-| `weather_refresh_interval_minutes` | 60 (minimum 15) | Earliest next background refresh |
+| `weather_refresh_interval_minutes` | 90 (minimum 15) | Earliest next background refresh |
 | `radar_frame_interval_ms` | 850 (100–5000, otherwise the default) | Radar animation speed |
 | `analytics_enabled` | true | Kill switch for every analytics event, and SDK collection |
 | `radar_enabled` | true | Hides the radar card if RainViewer or the OpenStreetMap tiles become unavailable |
