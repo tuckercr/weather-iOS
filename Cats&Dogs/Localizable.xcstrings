@@ -4023,13 +4023,13 @@
         }
       }
     },
-    "Too cold for paws." : {
+    "Too cold for a long walk." : {
       "comment" : "Walk card caption: why now isn't the time for a walk",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Too cold for paws."
+            "value" : "Too cold for a long walk."
           }
         }
       }
