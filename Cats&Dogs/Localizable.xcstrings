@@ -88,6 +88,17 @@
         }
       }
     },
+    "%@ to %@" : {
+      "comment" : "Walk card: a spell of good walking hours, such as \"11 AM to 1 PM\" or \"5 to 8 PM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ to %2$@"
+          }
+        }
+      }
+    },
     "%@ today" : {
       "comment" : "Bad air in notifications, followed by more of the sentence. The argument is the bad air, as in Smoky air.",
       "localizations" : {
@@ -773,6 +784,17 @@
         }
       }
     },
+    "Best Walk Times" : {
+      "comment" : "Walk card title when it gives a second time",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Best Walk Times"
+          }
+        }
+      }
+    },
     "Bit of sun, bit of cloud. Good sniffing weather." : {
       "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat. It suggests a walk now.",
       "localizations" : {
@@ -870,6 +892,17 @@
         }
       }
     },
+    "Calmer by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calmer by then."
+          }
+        }
+      }
+    },
     "Can't see the end of the garden. Misty says it's still there." : {
       "comment" : "Hero caption in the pets' voice. Sunny is the dog, Misty the cat.",
       "localizations" : {
@@ -908,6 +941,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Chilly"
+          }
+        }
+      }
+    },
+    "Cleaner air by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleaner air by then."
           }
         }
       }
@@ -992,6 +1036,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continue"
+          }
+        }
+      }
+    },
+    "Cooler by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cooler by then."
+          }
+        }
+      }
+    },
+    "Cooler paws by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cooler paws by then."
           }
         }
       }
@@ -1586,6 +1652,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Good"
+          }
+        }
+      }
+    },
+    "Good again %@." : {
+      "comment" : "Walk card caption after a walk now: the next spell of good walking hours, such as \"5 to 8 PM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good again %@."
+          }
+        }
+      }
+    },
+    "Good again tomorrow %@." : {
+      "comment" : "Walk card caption after a walk now: the next spell of good walking hours, such as \"7 to 10 AM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good again tomorrow %@."
           }
         }
       }
@@ -2849,6 +2937,28 @@
         }
       }
     },
+    "Or %@." : {
+      "comment" : "Walk card caption: a second spell of good walking hours, such as \"5 to 8 PM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or %@."
+          }
+        }
+      }
+    },
+    "Or tomorrow %@." : {
+      "comment" : "Walk card caption: a second spell of good walking hours, such as \"7 to 10 AM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Or tomorrow %@."
+          }
+        }
+      }
+    },
     "Overcast" : {
       "comment" : "The sky on the Misty's View tile",
       "localizations" : {
@@ -3885,6 +3995,39 @@
         }
       }
     },
+    "The rain's gone by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The rain's gone by then."
+          }
+        }
+      }
+    },
+    "The snow's gone by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The snow's gone by then."
+          }
+        }
+      }
+    },
+    "The storms have passed by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The storms have passed by then."
+          }
+        }
+      }
+    },
     "The streetlights look fuzzy" : {
       "comment" : "Misty's line about the view at night, on the Misty's View tile",
       "localizations" : {
@@ -4008,6 +4151,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Together they check the sky so you know what to expect, for you and your pets."
+          }
+        }
+      }
+    },
+    "Tomorrow %@" : {
+      "comment" : "Walk card headline: a spell of good walking hours tomorrow, such as \"7 to 10 AM\".",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tomorrow %@"
           }
         }
       }
@@ -4354,6 +4508,17 @@
         }
       }
     },
+    "Warmer by then." : {
+      "comment" : "Walk card caption: why the best time is better than now",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warmer by then."
+          }
+        }
+      }
+    },
     "We couldn't find that town or city. Try a different search." : {
       "comment" : "Error message when the weather can't be loaded",
       "localizations" : {
@@ -4487,6 +4652,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "[© OpenStreetMap contributors](https://www.openstreetmap.org/copyright) · Radar by [RainViewer](https://www.rainviewer.com)"
+          }
+        }
+      }
+    },
+    "around %@" : {
+      "comment" : "Walk card: a second time for a walk when only its start is known. The argument is a time of day.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "around %@"
           }
         }
       }

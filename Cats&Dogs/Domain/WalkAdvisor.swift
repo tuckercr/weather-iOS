@@ -31,13 +31,25 @@ enum WalkWarning: Equatable {
     case storms(from: String)
 }
 
+/// A spell of walkable hours: from `startLabel` to `endLabel`, the first hour after it that isn't
+/// walkable (nil when the forecast ends first). `isTomorrow` when it starts on the city's next day.
+/// Same as Android's `WalkWindow`.
+struct WalkWindow: Equatable {
+    let startLabel: String
+    var endLabel: String? = nil
+    var isTomorrow = false
+}
+
 /// `bestTimeLabel` is nil when now is a good time, or when there is no good window soon.
 /// `pavementNow` is the estimated pavement temperature for the current hour, in the forecast's
 /// units, when the source provides it. `bestTimeIsTomorrow` is set when the best time falls on the
 /// city's next day, since the label alone ("7 AM") doesn't say which morning. `outlook` is set only
 /// when now is a great time. `now` is the verdict on the hour under way, which `rating` sums up and
 /// whose reason the card's caption gives. `warning` is about later: hurricane force wind or likely
-/// storms in the next few hours that now doesn't already have.
+/// storms in the next few hours that now doesn't already have. `bestTimeEndLabel` is when the
+/// walkable spell from the best time ends (the first hour after it that isn't walkable), nil when
+/// the forecast ends first. `nextWindow` is the spell after that one (or after the one under way, for
+/// a walk now), within the day ahead: a second option for people who can't go at the first.
 struct WalkAdvice: Equatable {
     let rating: WalkRating
     let bestTimeLabel: String?
@@ -46,6 +58,8 @@ struct WalkAdvice: Equatable {
     var outlook: WalkOutlook? = nil
     var now = WalkCheck([])
     var warning: WalkWarning? = nil
+    var bestTimeEndLabel: String? = nil
+    var nextWindow: WalkWindow? = nil
 
     /// Hurricane force wind now or on its way: the card is a danger warning, shown even without a dog.
     var isDanger: Bool {
@@ -113,9 +127,26 @@ enum WalkAdvisor {
             darkNow: darkNow,
             hasDog: hasDog
         )
-        let firstGood = slots.dropFirst().first { isWalkable($0, thresholds) }
-        let rating = rating(check, hasBetterTime: firstGood != nil)
-        let bestSlot = rating == .great ? nil : firstGood
+        let firstGoodIndex = slots.indices.dropFirst().first { isWalkable(slots[$0], thresholds) }
+        let rating = rating(check, hasBetterTime: firstGoodIndex != nil)
+        let bestIndex = rating == .great ? nil : firstGoodIndex
+        let bestSlot = bestIndex.map { slots[$0] }
+        // The spell open now (a walk now) or the best time's spell ends at the first hour after it
+        // that isn't walkable; the next spell is the walkable hour after that, if the day ahead has one.
+        let spellStart = rating == .great ? 0 : bestIndex
+        let all = Array(upcoming)
+        let spellEnd = spellStart.flatMap { start in
+            all.indices.dropFirst(start + 1).first { !isWalkable(all[$0], thresholds) }
+        }
+        let nextWindow = spellEnd.flatMap { end in
+            slots.indices.dropFirst(end + 1).first { isWalkable(slots[$0], thresholds) }
+        }.map { start in
+            WalkWindow(
+                startLabel: slots[start].timeLabel,
+                endLabel: all.indices.dropFirst(start + 1).first { !isWalkable(all[$0], thresholds) }.map { all[$0].timeLabel },
+                isTomorrow: isOnALaterDay(slots[start], than: now, in: timeZone)
+            )
+        }
         return WalkAdvice(
             rating: rating,
             bestTimeLabel: bestSlot?.timeLabel,
@@ -123,7 +154,9 @@ enum WalkAdvisor {
             bestTimeIsTomorrow: bestSlot.map { isOnALaterDay($0, than: now, in: timeZone) } ?? false,
             outlook: rating == .great ? outlook(slots, check: check, sunsetEpoch: sunsetEpoch, now: now, thresholds) : nil,
             now: check,
-            warning: warning(slots, check: check, now: now, thresholds)
+            warning: warning(slots, check: check, now: now, thresholds),
+            bestTimeEndLabel: bestIndex == nil ? nil : spellEnd.map { all[$0].timeLabel },
+            nextWindow: nextWindow
         )
     }
 

@@ -165,13 +165,14 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(caption([slot(wind: 19), slot("4 PM")]), "Gale force winds. Potty breaks only.")
         XCTAssertEqual(caption([slot(wind: 26), slot("4 PM")]), "Storm force winds. Keep pets inside.")
         XCTAssertEqual(caption([slot(wind: 35), slot("4 PM")]), "Stay inside, away from the windows.")
-        XCTAssertNil(caption([slot(wind: 15), slot("4 PM")]))
+        // A near gale is only a wait: what's better by the best time.
+        XCTAssertEqual(caption([slot(wind: 15), slot("4 PM")]), "Calmer by then.")
         XCTAssertEqual(caption([slot(), slot("4 PM")], conditionNow: "Thunderstorm"), "Thunderstorms. Keep pets inside.")
     }
 
     func testThePavementNoteSaysItIsAboutNowAndNeverStandsInForRain() {
         XCTAssertEqual(caption([slot(pavement: 43), slot("6 PM", pavement: 30)]), "Paw check: about 43° now. Getting hot.")
-        XCTAssertNil(caption([slot(pavement: 43), slot("6 PM", pavement: 30)], conditionNow: "Drizzle"))
+        XCTAssertEqual(caption([slot(pavement: 43), slot("6 PM", pavement: 30)], conditionNow: "Drizzle"), "The rain's gone by then.")
     }
 
     private func caption(_ slots: [HourlySlot], conditionNow: String? = nil) -> String? {
@@ -361,6 +362,61 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertTrue(ahead.showsCard(hasDog: false, cardEnabled: false))
     }
 
+    // MARK: - Walk windows
+
+    private func card(now: HourlySlot? = nil, later: [HourlySlot], conditionNow: String? = nil) -> WalkCardContent? {
+        WalkAdvisor.advice(
+            currentFeelsLikeC: 18,
+            upcoming: [now ?? slot(epoch: start)] + later,
+            now: Date(timeIntervalSince1970: TimeInterval(start)),
+            timeZone: TimeZone(identifier: "UTC")!,
+            conditionNow: conditionNow
+        ).map(WalkCardContent.init)
+    }
+
+    func testALaterBestTimeGivesItsSpellAndTheNextOneAsASecondOption() {
+        let rainy = card(
+            later: [hour(1, "4 PM"), hour(2, "5 PM"), hour(3, "6 PM", rain: 80), hour(4, "7 PM"), hour(5, "8 PM"), hour(6, "9 PM", rain: 80)],
+            conditionNow: "Rain"
+        )
+        XCTAssertEqual(rainy?.title, "Best Walk Times")
+        XCTAssertEqual(rainy?.headline, "4 to 6 PM")
+        XCTAssertEqual(rainy?.caption, "Or 7 to 9 PM. The rain's gone by then.")
+    }
+
+    func testASecondOptionOnTheNextDaySaysTomorrow() {
+        let content = card(
+            later: [hour(1, "4 PM", rain: 80), hour(2, "5 PM"), hour(3, "6 PM", rain: 80), hour(19, "7 AM"), hour(20, "8 AM", rain: 80)],
+            conditionNow: "Rain"
+        )
+        XCTAssertEqual(content?.headline, "5 to 6 PM")
+        XCTAssertEqual(content?.caption, "Or tomorrow 7 to 8 AM. The rain's gone by then.")
+    }
+
+    func testABestTimeWithoutAnEndIsStillAroundThatHour() {
+        let content = card(later: [hour(1, "4 PM")], conditionNow: "Rain")
+        XCTAssertEqual(content?.title, "Best Walk Time")
+        XCTAssertEqual(content?.headline, "Around 4 PM")
+        XCTAssertEqual(content?.caption, "The rain's gone by then.")
+    }
+
+    func testAWalkNowGivesTheNextSpellAfterTheOutlook() {
+        let content = card(later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80), hour(3, "6 PM"), hour(4, "7 PM", rain: 80)])
+        XCTAssertEqual(content?.headline, "Now is a great time")
+        XCTAssertEqual(content?.title, "Best Walk Times")
+        XCTAssertEqual(content?.caption, "Good until 5 PM, then rain. Good again 6 to 7 PM.")
+        // A spell that lasts past the outlook's reach isn't news, so no second option either.
+        let long = card(later: (1 ... 8).map { hour($0, "\($0 + 3) PM") } + [hour(9, "12 AM", rain: 80)])
+        XCTAssertEqual(long?.title, "Best Walk Time")
+        XCTAssertNil(long?.caption)
+    }
+
+    func testTheRangeDropsTheHalfOfTheDayItSharesWithItsEnd() {
+        XCTAssertEqual(WalkCardContent.hourRange("5 PM", "8 PM"), "5 to 8 PM")
+        XCTAssertEqual(WalkCardContent.hourRange("11 AM", "1 PM"), "11 AM to 1 PM")
+        XCTAssertEqual(WalkCardContent.hourRange("17:00", "20:00"), "17:00 to 20:00")
+    }
+
     func testTheCardAddsStormsAheadToItsCaption() {
         let great = advice(later: [hour(1, "4 PM", rain: 80, icon: "11d")])
         XCTAssertEqual(great?.rating, .great)
@@ -369,14 +425,14 @@ final class WalkCheckTests: XCTestCase {
         // Too hot now, the best time later: the reason, then the storms.
         let hot = advice(later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80, icon: "11d")], feelsLikeC: 31)!
         let hotCard = WalkCardContent(advice: hot)
-        XCTAssertEqual(hotCard.headline, "Around 4 PM")
+        XCTAssertEqual(hotCard.headline, "4 to 5 PM")
         XCTAssertEqual(hotCard.caption, "Too hot for paws. Storms from 5 PM.")
         XCTAssertEqual(hotCard.title, "Best Walk Time")
         XCTAssertFalse(hotCard.isDanger)
         XCTAssertFalse(hot.showsCard(hasDog: false, cardEnabled: true))
-        // No caption of its own: just the storms.
+        // Only a wait now: what's better by then, and the storms.
         let wait = advice(now: slot(wind: 15, epoch: start), later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80, icon: "11d")])!
-        XCTAssertEqual(WalkCardContent(advice: wait).caption, "Storms from 5 PM.")
+        XCTAssertEqual(WalkCardContent(advice: wait).caption, "Calmer by then. Storms from 5 PM.")
         // A walk now whose outlook is something else: the outlook, then the storms.
         let rainFirst = WalkAdvice(
             rating: .great, bestTimeLabel: nil,
