@@ -94,8 +94,8 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      `SeasonalThemes.json`, which Remote Config's `seasonal_themes` can replace; a decoration this
      version can't draw is skipped, keeping the rest of the theme. Debug builds can force a theme on any date with the launch argument
      `-seasonalTheme thanksgiving` (or `halloween`).
-   - **Best Walk Time**: "Now is a great time", the next good hour ("Around 8 AM", or "Tomorrow
-     around 7 AM" when it falls on the city's next day), or "Not a good day for walkies" when nothing
+   - **Best Walk Time**: "Now is a great time", the next good hours ("11 AM to 1 PM", or
+     "Tomorrow 7 to 10 AM" when they fall on the city's next day), or "Not a good day for walkies" when nothing
      in the next 24 hours qualifies. A good hour is under 30% rain chance (the chance as the hourly
      strip shows it, so an hour shown as 30% counts and one shown as 60% is "rain", not "maybe
      rain"), at a comfortable
@@ -113,7 +113,13 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      everyone inside before then.", while the rating, the hero and its caption still describe the
      hour under way. Likely thunderstorms (60% and up) in the next 6 hours add "Storms from 4 PM."
      to the caption ("Too hot for paws. Storms from 4 PM."), unless it's storming now or the
-     outlook already says "Good until 4 PM, then storms." It can be turned off in Settings.
+     outlook already says "Good until 4 PM, then storms."
+     The best time is shown as its spell of good hours, up to the first hour that isn't good ("11 AM
+     to 1 PM", "5 to 8 PM", "Tomorrow 7 to 10 AM"; "Around 8 AM" when the forecast ends first), and
+     the next spell in the day ahead is a second option for people who can't go then: "Or 5 to 8
+     PM." (the title becomes "Best Walk Times"). After a walk now whose good spell ends within 6
+     hours, it's "Good again 5 to 8 PM." When now is only a wait, the caption says what's better by
+     the best time: "The rain's gone by then.", "Cooler by then.", "Calmer by then." It can be turned off in Settings.
    - **One walk verdict**: `WalkConditions.check` (`WalkCheck.swift`) judges an hour once, and the
      hero's caption, the walk card, the Air Quality tile's note and the notifications all read it,
      so they can't disagree. The screen gets it from `WeatherForecastViewModel.walkAdvice`. Each factor has a small rule and a level, and the worst one wins:

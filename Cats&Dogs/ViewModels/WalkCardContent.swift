@@ -1,9 +1,11 @@
 import Foundation
 
-/// What the walk card says: the title, the sentence that carries the advice, and a short caption
-/// with `WalkCheck`'s reason when it's more than a wait (the pavement, heat or cold, the air by its
-/// pollutant, a gale or storms), or the outlook after a walk now, and a warning about hurricane
-/// force wind or storms on their way. Built with the screen state;
+/// What the walk card says: the title, the sentence that carries the advice (a walk now, or the
+/// best time's spell of good hours, "11 AM to 1 PM"), and a short caption: the next spell as a
+/// second option ("Or 5 to 8 PM."), then `WalkCheck`'s reason when it's more than a wait (the
+/// pavement, heat or cold, the air by its pollutant, a gale or storms) or else what clears by the
+/// best time ("The rain's gone by then."), or the outlook after a walk now, and a warning about
+/// hurricane force wind or storms on their way. Built with the screen state;
 /// `WalkCard` draws it. Same wording as Android's `walkDetail` and `walkCaption`.
 struct WalkCardContent: Equatable {
     /// Picks the paw's tint.
@@ -17,7 +19,13 @@ struct WalkCardContent: Equatable {
     init(advice: WalkAdvice) {
         rating = advice.rating
         isDanger = advice.isDanger
-        title = isDanger ? String(localized: "Danger", comment: "Walk card title") : String(localized: "Best Walk Time", comment: "Walk card title")
+        title = if isDanger {
+            String(localized: "Danger", comment: "Walk card title")
+        } else if Self.second(advice) != nil {
+            String(localized: "Best Walk Times", comment: "Walk card title when it gives a second time")
+        } else {
+            String(localized: "Best Walk Time", comment: "Walk card title")
+        }
         headline = Self.headline(advice)
         caption = Self.caption(advice)
     }
@@ -29,6 +37,10 @@ struct WalkCardContent: Equatable {
             return String(localized: "Hurricane force winds from \(time)", comment: "Walk card headline: hurricane force wind on its way. The argument is a time of day.")
         }
         if advice.rating == .great { return String(localized: "Now is a great time", comment: "Walk card headline. The argument is a time of day.") }
+        if let best = advice.bestTimeLabel, let end = advice.bestTimeEndLabel {
+            let range = hourRange(best, end)
+            return advice.bestTimeIsTomorrow ? String(localized: "Tomorrow \(range)", comment: "Walk card headline: a spell of good walking hours tomorrow, such as \"7 to 10 AM\".") : range
+        }
         if let best = advice.bestTimeLabel {
             return advice.bestTimeIsTomorrow ? String(localized: "Tomorrow around \(best)", comment: "Walk card headline. The argument is a time of day.") : String(localized: "Around \(best)", comment: "Walk card headline. The argument is a time of day.")
         }
@@ -43,12 +55,61 @@ struct WalkCardContent: Equatable {
         if advice.rating != .danger, case .hurricane = advice.warning {
             return String(localized: "Get everyone inside before then.", comment: "Walk card caption under a warning of hurricane force wind later today")
         }
-        let caption = nowCaption(advice)
+        // After a walk now the outlook comes first ("Good until 4 PM, then rain. Good again 6 to 8
+        // PM."); after a later best time, the second option ("Or 5 to 8 PM. The rain's gone by then.").
+        let parts = advice.rating == .great
+            ? [nowCaption(advice), second(advice)].compactMap(\.self)
+            : [second(advice), nowCaption(advice) ?? clearsLine(advice)].compactMap(\.self)
+        let caption = parts.isEmpty ? nil : parts.joined(separator: " ")
         guard case let .storms(time) = advice.warning else { return caption }
         if case .until(_, .storms) = advice.outlook { return caption }
         if case .until(_, .maybeStorms) = advice.outlook { return caption }
         let storms = stormsFrom(time)
         return caption.map { "\($0) \(storms)" } ?? storms
+    }
+
+    /// "11 AM to 1 PM", or "5 to 8 PM" when both are in the same half of the day.
+    nonisolated static func hourRange(_ start: String, _ end: String) -> String {
+        let startParts = start.split(separator: " ", maxSplits: 1)
+        let endParts = end.split(separator: " ", maxSplits: 1)
+        let from = startParts.count == 2 && endParts.count == 2 && startParts[1] == endParts[1] ? String(startParts[0]) : start
+        return String(localized: "\(from) to \(end)", comment: "Walk card: a spell of good walking hours, such as \"11 AM to 1 PM\" or \"5 to 8 PM\".")
+    }
+
+    /// The next spell of good walking hours, as a second option: "Or 5 to 8 PM." after a later best
+    /// time, "Good again 5 to 8 PM." after a walk now whose spell ends within a few hours. Nil
+    /// otherwise, and under a warning.
+    static func second(_ advice: WalkAdvice) -> String? {
+        guard !advice.isDanger, let window = advice.nextWindow else { return nil }
+        let when = window.endLabel.map { hourRange(window.startLabel, $0) }
+            ?? String(localized: "around \(window.startLabel)", comment: "Walk card: a second time for a walk when only its start is known. The argument is a time of day.")
+        if advice.rating == .great {
+            guard case .until = advice.outlook else { return nil }
+            return window.isTomorrow
+                ? String(localized: "Good again tomorrow \(when).", comment: "Walk card caption after a walk now: the next spell of good walking hours, such as \"7 to 10 AM\".")
+                : String(localized: "Good again \(when).", comment: "Walk card caption after a walk now: the next spell of good walking hours, such as \"5 to 8 PM\".")
+        }
+        guard advice.bestTimeLabel != nil else { return nil }
+        return window.isTomorrow && !advice.bestTimeIsTomorrow
+            ? String(localized: "Or tomorrow \(when).", comment: "Walk card caption: a second spell of good walking hours, such as \"7 to 10 AM\".")
+            : String(localized: "Or \(when).", comment: "Walk card caption: a second spell of good walking hours, such as \"5 to 8 PM\".")
+    }
+
+    /// Why the best time is better than now, when now is only a wait for a reason that clears: "The
+    /// rain's gone by then." Nil after dark or outside the walking hours, and for a walk now.
+    static func clearsLine(_ advice: WalkAdvice) -> String? {
+        guard advice.rating != .great, advice.bestTimeLabel != nil, let reason = advice.now.reason else { return nil }
+        return switch reason {
+        case .rain: String(localized: "The rain's gone by then.", comment: "Walk card caption: why the best time is better than now")
+        case .snow: String(localized: "The snow's gone by then.", comment: "Walk card caption: why the best time is better than now")
+        case .storms: String(localized: "The storms have passed by then.", comment: "Walk card caption: why the best time is better than now")
+        case .heat: String(localized: "Cooler by then.", comment: "Walk card caption: why the best time is better than now")
+        case .cold: String(localized: "Warmer by then.", comment: "Walk card caption: why the best time is better than now")
+        case .wind: String(localized: "Calmer by then.", comment: "Walk card caption: why the best time is better than now")
+        case .pavement: String(localized: "Cooler paws by then.", comment: "Walk card caption: why the best time is better than now")
+        case .air: String(localized: "Cleaner air by then.", comment: "Walk card caption: why the best time is better than now")
+        case .dark: nil
+        }
     }
 
     /// "Storms from 4 PM.", for the walk card and the morning briefing.

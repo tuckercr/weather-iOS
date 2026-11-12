@@ -57,6 +57,13 @@ struct WalkCard: View {
         WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .great, bestTimeLabel: nil, outlook: .until(time: "6 PM", change: .storms))))
         WalkCard(content: WalkCardContent(advice: WalkAdvice(rating: .okay, bestTimeLabel: "6 PM")))
         WalkCard(content: WalkCardContent(advice: WalkAdvice(
+            rating: .okay,
+            bestTimeLabel: "11 AM",
+            now: WalkCheck([WalkFactor(reason: .rain(likely: true), level: .wait)]),
+            bestTimeEndLabel: "1 PM",
+            nextWindow: WalkWindow(startLabel: "5 PM", endLabel: "8 PM")
+        )))
+        WalkCard(content: WalkCardContent(advice: WalkAdvice(
             rating: .pawsHot,
             bestTimeLabel: "7 PM",
             pavementNow: 55,
