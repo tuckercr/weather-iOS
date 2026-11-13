@@ -26,6 +26,12 @@ enum AppStartup {
         #endif
     }
 
+    /// The app is in front, at launch and on every return: the analytics user properties catch up
+    /// with anything changed outside the app (permissions in the Settings app, the units).
+    static func becameActive() {
+        Task { await AnalyticsRepository.shared.refreshUserProperties() }
+    }
+
     /// The app went to the background: ask iOS for the next refresh.
     static func enteredBackground() {
         WeatherBackgroundRefresher.shared.scheduleNextRefresh()

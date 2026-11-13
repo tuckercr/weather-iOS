@@ -24,17 +24,25 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
     @ObservationIgnored private let preferences: PreferencesStore
     @ObservationIgnored private let refresh: () async -> Void
     @ObservationIgnored private let authorizationOverride: CLAuthorizationStatus?
+    @ObservationIgnored private let onAlwaysAnswered: @MainActor (_ granted: Bool) -> Void
+    /// "Always" was asked for and iOS hasn't answered yet, for `permission_changed`.
+    @ObservationIgnored private var awaitingAlwaysAnswer = false
 
     init(
         preferences: PreferencesStore? = nil,
         authorization: CLAuthorizationStatus? = nil,
-        refresh: (() async -> Void)? = nil
+        refresh: (() async -> Void)? = nil,
+        onAlwaysAnswered: (@MainActor (_ granted: Bool) -> Void)? = nil
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
         authorizationOverride = authorization
         self.refresh = refresh ?? {
             _ = await WeatherBackgroundRefresher.shared.performRefresh(replan: true)
+        }
+        self.onAlwaysAnswered = onAlwaysAnswered ?? { granted in
+            AnalyticsRepository.shared.logPermissionChanged(.locationAlways, granted: granted, from: .followMyLocation)
+            Task { await AnalyticsRepository.shared.refreshUserProperties() }
         }
         switchedOn = preferences.followMyLocation
         self.authorization = authorization ?? .notDetermined
@@ -66,6 +74,7 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
                 openSettings()
             } else {
                 preferences.setAlwaysLocationAsked()
+                awaitingAlwaysAnswer = true
                 manager.requestAlwaysAuthorization()
             }
         default:
@@ -106,11 +115,21 @@ final class MyLocationFollower: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    /// iOS reported the authorisation. After the "Always" prompt that's the answer; choosing "Keep
+    /// Only While Using" when it was already that may not report at all, so goes uncounted.
+    func authorizationChanged(to status: CLAuthorizationStatus) {
+        authorization = status
+        if awaitingAlwaysAnswer, status != .notDetermined {
+            awaitingAlwaysAnswer = false
+            onAlwaysAnswered(status == .authorizedAlways)
+        }
+        updateMonitoring()
+    }
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
             guard authorizationOverride == nil else { return }
-            authorization = manager.authorizationStatus
-            updateMonitoring()
+            authorizationChanged(to: manager.authorizationStatus)
         }
     }
 
