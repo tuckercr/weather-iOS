@@ -12,7 +12,7 @@ struct AddLocationView: View {
     let onClose: () -> Void
 
     @State private var geoViewModel: GeoLocationViewModel
-    @State private var locationViewModel = LocationPermissionViewModel()
+    @State private var locationViewModel = LocationPermissionViewModel(permissionSource: .addMyLocation)
     @FocusState private var searchFocused: Bool
 
     init(

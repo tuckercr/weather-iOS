@@ -55,6 +55,77 @@ final class WeatherRepositoryTests: XCTestCase {
         XCTAssertEqual(try? mine.get().cityName, "Knoxville")
     }
 
+    // MARK: - weather_error
+
+    private func reportingRepository(
+        api: FakeOpenWeatherAPI? = nil,
+        openMeteo: StubOpenMeteoAPI,
+        airQuality: StubAirQualityAPI? = nil,
+        failures: Locked<[WeatherRequestFailure]>
+    ) -> WeatherRepository {
+        WeatherRepository(
+            client: api ?? FakeOpenWeatherAPI(),
+            openMeteo: openMeteo,
+            airQuality: airQuality ?? StubAirQualityAPI(),
+            placeNames: StubPlaceNames(name: "Knoxville"),
+            timeZone: utc,
+            useOpenMeteo: { true },
+            useAirQuality: { true },
+            onRequestFailed: { failure in failures.change { $0.append(failure) } }
+        )
+    }
+
+    func testAnOpenMeteoReadingThatFailsIsReportedEvenWhenOpenWeatherCoversIt() async {
+        let failures = Locked<[WeatherRequestFailure]>([])
+        let repository = reportingRepository(openMeteo: StubOpenMeteoAPI(error: OpenWeatherClientError.network), failures: failures)
+
+        let result = await repository.fetchCurrentWeather(units: .metric, locationLabel: "Austin", latitude: 30.3, longitude: -97.7)
+
+        XCTAssertNotNil(try? result.get())
+        let key = WeatherErrorMessages.errorKey(for: OpenWeatherClientError.network)
+        XCTAssertEqual(failures.current, [WeatherRequestFailure(provider: .openMeteo, request: .current, errorKey: key)])
+    }
+
+    func testEachFailedServiceIsReportedWhenBothFail() async {
+        let failures = Locked<[WeatherRequestFailure]>([])
+        let repository = reportingRepository(
+            api: FakeOpenWeatherAPI(currentError: OpenWeatherClientError.network),
+            openMeteo: StubOpenMeteoAPI(error: OpenWeatherClientError.network),
+            failures: failures
+        )
+
+        _ = await repository.fetchCurrentWeather(units: .metric, locationLabel: "Austin", latitude: 30.3, longitude: -97.7)
+        _ = await repository.fetchForecast(units: .metric, latitude: 30.3, longitude: -97.7)
+
+        XCTAssertEqual(failures.current.map(\.provider), [.openMeteo, .openWeather, .openMeteo])
+        XCTAssertEqual(failures.current.map(\.request), [.current, .current, .forecast])
+    }
+
+    func testAirQualityThatFailsIsReportedWhileTheForecastStands() async {
+        let failures = Locked<[WeatherRequestFailure]>([])
+        let repository = reportingRepository(
+            openMeteo: StubOpenMeteoAPI(),
+            airQuality: StubAirQualityAPI(error: OpenWeatherClientError.network),
+            failures: failures
+        )
+
+        let result = await repository.fetchForecast(units: .metric, latitude: 30.3, longitude: -97.7)
+
+        XCTAssertNotNil(try? result.get())
+        XCTAssertEqual(failures.current.map(\.provider), [.openMeteo])
+        XCTAssertEqual(failures.current.map(\.request), [.airQuality])
+    }
+
+    func testNothingIsReportedWhenEveryRequestWorks() async {
+        let failures = Locked<[WeatherRequestFailure]>([])
+        let repository = reportingRepository(openMeteo: StubOpenMeteoAPI(currentResponse: openMeteoCurrentResponse()), failures: failures)
+
+        _ = await repository.fetchCurrentWeather(units: .metric, locationLabel: "Austin", latitude: 30.3, longitude: -97.7)
+        _ = await repository.fetchForecast(units: .metric, latitude: 30.3, longitude: -97.7)
+
+        XCTAssertEqual(failures.current, [])
+    }
+
     func testFetchCurrentWeatherNamesMyLocationWithThePhone() async {
         let placeNames = StubPlaceNames(name: "Knoxville")
         let repository = WeatherRepository(

@@ -55,6 +55,9 @@ final class SettingsViewModel {
     private let follower: MyLocationFollower
     private let notificationSettingsLink: NotificationSettingsLink
     private let sendSamples: () async -> Void
+    private let onPermissionAnswered: (AnalyticsPermission, _ granted: Bool) -> Void
+    /// The analytics user properties follow every change made here.
+    private let refreshAnalytics: () -> Void
     /// Turning Follow my location on without "Always" explains first.
     private(set) var isExplainingFollowMyLocation = false
 
@@ -70,7 +73,9 @@ final class SettingsViewModel {
         remotelyEnabled: ((NotificationKind) -> Bool)? = nil,
         follower: MyLocationFollower? = nil,
         notificationSettingsLink: NotificationSettingsLink? = nil,
-        sendSamples: (() async -> Void)? = nil
+        sendSamples: (() async -> Void)? = nil,
+        onPermissionAnswered: ((AnalyticsPermission, _ granted: Bool) -> Void)? = nil,
+        refreshAnalytics: (() -> Void)? = nil
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
@@ -98,6 +103,12 @@ final class SettingsViewModel {
             await WeatherNotificationScheduler.shared.sendSamples()
             #endif
         }
+        self.onPermissionAnswered = onPermissionAnswered ?? { permission, granted in
+            AnalyticsRepository.shared.logPermissionChanged(permission, granted: granted, from: .settings)
+        }
+        self.refreshAnalytics = refreshAnalytics ?? {
+            Task { await AnalyticsRepository.shared.refreshUserProperties() }
+        }
         unitOverride = preferences.unitOverride
         shareUsageStatistics = preferences.shareUsageStatistics
         showWalkCard = preferences.showWalkCard
@@ -110,6 +121,7 @@ final class SettingsViewModel {
     func setUnitOverride(_ override: UnitOverride) {
         unitOverride = override
         preferences.setUnitOverride(override)
+        refreshAnalytics()
     }
 
     /// Deliberately not tracked itself.
@@ -117,6 +129,7 @@ final class SettingsViewModel {
         shareUsageStatistics = enabled
         preferences.setShareUsageStatistics(enabled)
         applyUsageSharing()
+        if enabled { refreshAnalytics() }
     }
 
     /// "I have a dog": the walk card, Paw check, the briefing's walk sentence and Walk time. Walk time
@@ -124,6 +137,7 @@ final class SettingsViewModel {
     func setShowWalkCard(_ show: Bool) {
         showWalkCard = show
         preferences.setShowWalkCard(show)
+        refreshAnalytics()
         Task { await rescheduleNotifications() }
     }
 
@@ -147,18 +161,21 @@ final class SettingsViewModel {
     func setNotifyMorningBriefing(_ enabled: Bool) {
         notifyMorningBriefing = enabled
         preferences.setNotifyMorningBriefing(enabled)
+        refreshAnalytics()
         Task { await rescheduleNotifications() }
     }
 
     func setNotifyWalkTime(_ enabled: Bool) {
         notifyWalkTime = enabled
         preferences.setNotifyWalkTime(enabled)
+        refreshAnalytics()
         Task { await rescheduleNotifications() }
     }
 
     func setNotifyRain(_ enabled: Bool) {
         notifyRain = enabled
         preferences.setNotifyRain(enabled)
+        refreshAnalytics()
         Task { await rescheduleNotifications() }
     }
 
@@ -177,10 +194,14 @@ final class SettingsViewModel {
     /// "Allow location access": the system prompt, then, once allowed, My Location as a saved city,
     /// as onboarding adds it: location is only useful as a city.
     func requestLocationAccess() async {
-        if await location.requestPermission(), let here = await location.currentPosition() {
+        let asks = location.canRequestPermission()
+        let granted = await location.requestPermission()
+        if asks { onPermissionAnswered(.location, granted) }
+        if granted, let here = await location.currentPosition() {
             addCity(here)
         }
         await refreshPermissions()
+        refreshAnalytics()
     }
 
     // MARK: - Follow my location
@@ -193,8 +214,10 @@ final class SettingsViewModel {
     func setFollowMyLocation(_ on: Bool) {
         if !on {
             follower.turnOff()
+            refreshAnalytics()
         } else if follower.authorization == .authorizedAlways {
             follower.turnOn {}
+            refreshAnalytics()
         } else {
             isExplainingFollowMyLocation = true
         }
@@ -228,9 +251,13 @@ final class SettingsViewModel {
 
     /// Shows the system prompt. Only meaningful while the status is `.notDetermined`.
     func requestNotificationPermission() async {
-        if await requestNotificationAuthorization() {
+        let asks = PermissionStatus(await notificationStatus()) == .notDetermined
+        let granted = await requestNotificationAuthorization()
+        if asks { onPermissionAnswered(.notifications, granted) }
+        if granted {
             await rescheduleNotifications()
         }
         await refreshPermissions()
+        refreshAnalytics()
     }
 }

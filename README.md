@@ -546,14 +546,14 @@ Shared with Android (the same cases on both platforms):
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
 - `CityRepositoryTests`: loading and legacy migration, add (with geocoding and de-duplication), remove, set active, reorder
-- `WeatherForecastViewModelTests`: request routing, cache-first display, error mapping, silent background refresh, the foreground-refresh window, analytics events, and races between overlapping requests
+- `WeatherForecastViewModelTests`: request routing, cache-first display, error mapping, silent background refresh, the foreground-refresh window, the Settings event, and races between overlapping requests
 - `GeoLocationViewModelTests`: debounced search, latest-input-wins, a failed search told apart from finding nothing
 - `AddLocationRulesTests`: Add location's button: the first row named what was typed (accents ignored), the size check that stops "Nas" adding Nås, saved places (label or within 2 km, never My Location) gone to, and failed or empty searches
 - `LocationPermissionViewModelTests`: denied, located and failed states, and `LocationRepository`'s position reads
 - `WeatherScreenStepsTests`: the weather screen's refreshes, My Location and the notification city
 - `SettingsViewModelTests`: unit override persistence, clear cache, permission requests, usage-sharing opt-out, the walk card setting
 - `WelcomeViewModelTests`: onboarding flags, including installs that predate the notification step, and the onboarding-complete event
-- `AnalyticsRepositoryTests`: the three analytics gates and pushing the opt-out into the SDK
+- `AnalyticsRepositoryTests`: the three analytics gates, every event's parameters, the user properties and pushing the opt-out into the SDK
 - `PetWeatherThresholdsTests`: walk and pet threshold ranges and pair checks
 - `RainOutlookTests`: when the card shows, the headline and detail wording, metric and imperial amounts, the bars' labels, the chance read as the strip shows it
 - `SeasonalThemeTests`: the built-in themes and their dates (Halloween, Thanksgiving as the fourth Thursday), the city's own date, reading Remote Config's list (unknown themes and decorations skipped, bad JSON rejected), and which costumes and props the pets wear for a theme, the weather and the dark
@@ -666,12 +666,31 @@ The events and parameters match Android, so both platforms report into the same 
 
 | Event | Parameters | When |
 |---|---|---|
-| `onboarding_complete` | None | The last onboarding step (location) finished or was skipped |
+| `onboarding_step` | `step` (`welcome`, `dog`, `notifications`, `location`) | An onboarding step was shown, so drop-off shows step by step |
+| `onboarding_complete` | `has_dog` (`yes`, `no`), `notifications` and `location` (`granted`, `denied`, `skipped`) | The last onboarding step (location) finished or was skipped. `granted` is allowed at the end, `denied` was asked and refused, `skipped` was never asked ("Not now", or a town or city typed instead) |
+| `permission_changed` | `permission` (`notifications`, `location`, `location_always`), `result` (`granted`, `denied`), `from` (`settings`, `add_my_location`, `follow_my_location`) | After onboarding, the app asked for a permission and got an answer. Not sent when nothing was asked. On iOS, "Keep Only While Using" on the "Always" prompt may not be reported |
+| `notification_opened` | `kind` (`briefing`, `walk`, `rain`) | The app was opened by tapping one of its notifications |
 | `city_added` | `source` (`suggestion`, `typed_match`, `typed_name`, `my_location`), `provider` (`open_meteo`, `openweather`) | A new location was saved (re-adding an existing one doesn't count): how, and which search found it (for a typed name or My Location, the one search would use). Never which place |
 | `settings_opened` | None | Settings opened from the gear |
-| `weather_error` | `error_key` (e.g. `offline`, `city_not_found`) | A current-weather or forecast fetch failed, even if cached data hid the error |
+| `weather_error` | `error_key` (e.g. `offline`, `city_not_found`), `provider` (`open_meteo`, `openweather`), `request` (`current`, `forecast`, `air_quality`) | A request to a weather service failed, in the foreground or background, even when a fallback or cached data covered it (an Open-Meteo reading failing before OpenWeather's is used counts). City search isn't included |
 
-An event is sent only when all three gates are open:
+User properties describe each phone's setup, so every event can be split by it. They're refreshed
+when the app becomes active, after a change in Settings or the city list, and when sharing is turned
+on:
+
+| Property | Values | Meaning |
+|---|---|---|
+| `has_dog` | `yes`, `no` | The dog answer |
+| `briefing_on` | `yes`, `no` | Briefings would arrive: the switch is on, Remote Config has them on and notifications are allowed |
+| `walk_time_on` | `yes`, `no` | The same for walk nudges, which also need a dog |
+| `location_access` | `none`, `while_using`, `always` | What location access allows |
+| `follow_location` | `yes`, `no` | Follow my location is on and working |
+| `units` | `metric`, `imperial` | The units in use |
+| `city_count` | `0`, `1`, `2-3`, `4+` | How many locations are saved |
+
+Every value is a fixed category: never a place, coordinates or anything typed.
+
+An event is sent, or a user property set, only when all three gates are open:
 
 1. Firebase is configured.
 2. The Remote Config kill switch `analytics_enabled` is on.

@@ -161,7 +161,6 @@ final class WeatherScreenStepsTests: XCTestCase {
             refreshNotificationCity: { [unowned self] in notificationCityRefreshes += 1 },
             sleep: sleep,
             replanNotifications: {},
-            onError: { _ in },
             onSettingsOpened: {},
             foregroundRefreshMinInterval: { 0 },
             config: { WeatherScreenConfig() }

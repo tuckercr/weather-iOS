@@ -78,16 +78,37 @@ final class WelcomeViewModelTests: XCTestCase {
         XCTAssertTrue(preferences.reopened().locationOnboardingDone)
     }
 
-    func testOnlyTheLastOnboardingStepReportsOnboardingComplete() {
-        var completions = 0
-        let viewModel = WelcomeViewModel(preferences: preferences.store, onOnboardingComplete: { completions += 1 })
+    func testOnlyTheLastOnboardingStepReportsOnboardingCompleteWithTheAnswers() async {
+        var completions: [OnboardingAnswers] = []
+        let viewModel = WelcomeViewModel(
+            preferences: preferences.store,
+            onOnboardingComplete: { completions.append($0) },
+            permissionStatuses: { (.denied, .notDetermined) }
+        )
 
         viewModel.completeWelcome()
+        viewModel.answerDogQuestion(true)
         viewModel.completeNotificationOnboarding()
-        XCTAssertEqual(completions, 0)
+        try? await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(completions, [])
 
         viewModel.completeLocationOnboarding()
-        XCTAssertEqual(completions, 1)
+        await waitUntil { completions.count == 1 }
+        XCTAssertEqual(completions, [OnboardingAnswers(hasDog: true, notifications: .denied, location: .skipped)])
+    }
+
+    func testEachStepIsReportedOnceWhenShown() {
+        var shown: [OnboardingStep] = []
+        let viewModel = WelcomeViewModel(preferences: preferences.store, onStepShown: { shown.append($0) })
+
+        viewModel.stepShown(.welcome)
+        viewModel.stepShown(.welcome)
+        viewModel.stepShown(.dog)
+        viewModel.stepShown(.notifications)
+        viewModel.stepShown(.location)
+        viewModel.stepShown(.done)
+
+        XCTAssertEqual(shown, [.welcome, .dog, .notifications, .location])
     }
 
     /// Installs from before the notification step existed must not be sent back through onboarding.
@@ -139,7 +160,7 @@ final class WelcomeViewModelTests: XCTestCase {
         var chosen: SavedLocation?
         let viewModel = WelcomeViewModel(
             preferences: preferences.store,
-            onOnboardingComplete: {},
+            onOnboardingComplete: { _ in },
             requestNotificationAuthorization: { false },
             onDogAnswered: { dog = $0 },
             onLocationChosen: { chosen = $0 }
