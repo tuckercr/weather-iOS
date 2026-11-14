@@ -5,9 +5,10 @@ import Foundation
 /// second option ("Or 5 to 8 PM."), then `WalkCheck`'s reason when it's more than a wait (the
 /// pavement, heat or cold, the air by its pollutant, a gale or storms) or else what clears by the
 /// best time ("The rain's gone by then."), or the outlook after a walk now, and a warning about
-/// hurricane force wind or storms on their way. Only today's walks, unless it's night and none are
-/// left (`WalkAdvice.todayOnly`). Built with the screen state;
-/// `WalkCard` draws it. Same wording as Android's `walkDetail` and `walkCaption`.
+/// hurricane force wind or storms on their way. With no time to give, a wait's reason ("Rainy
+/// out."). Only today's walks, unless it's night and none are left (`WalkAdvice.todayOnly`). Built
+/// with the screen state; `WalkCard` draws it. Same wording as Android's `walkDetail` and `walkCaption`.
+/// sunnyandmisty.com/walk-card (unlisted, in the website repo) explains these rules: keep it in step.
 struct WalkCardContent: Equatable {
     /// Picks the paw's tint.
     let rating: WalkRating
@@ -47,10 +48,14 @@ struct WalkCardContent: Equatable {
         if let best = advice.bestTimeLabel {
             return advice.bestTimeIsTomorrow ? String(localized: "Tomorrow around \(best)", comment: "Walk card headline. The argument is a time of day.") : String(localized: "Around \(best)", comment: "Walk card headline. The argument is a time of day.")
         }
-        if advice.tomorrowLeftOut {
-            return String(localized: "No more walkies today", comment: "Walk card headline: no good walking hours are left today, by day")
+        // No time to give: at night nothing good tomorrow either, by day none left today.
+        if advice.isNight && !advice.isMorning {
+            return String(localized: "No walkies tomorrow either", comment: "Walk card headline: at night, no good walking hours tomorrow")
         }
-        return String(localized: "Not a good day for walkies", comment: "Walk card headline. The argument is a time of day.")
+        if advice.isMorning {
+            return String(localized: "Not a good day for walkies", comment: "Walk card headline: no good walking hours today, in the morning")
+        }
+        return String(localized: "No more walkies today", comment: "Walk card headline: no good walking hours are left today, in the afternoon or evening")
     }
 
     /// The outlook after a walk now; otherwise the reason now isn't the time, when it's worth more
@@ -65,7 +70,7 @@ struct WalkCardContent: Equatable {
         // PM."); after a later best time, the second option ("Or 5 to 8 PM. The rain's gone by then.").
         let parts = advice.rating == .great
             ? [nowCaption(advice), second(advice)].compactMap(\.self)
-            : [second(advice), nowCaption(advice) ?? clearsLine(advice)].compactMap(\.self)
+            : [second(advice), nowCaption(advice) ?? clearsLine(advice) ?? waitLine(advice)].compactMap(\.self)
         let caption = parts.isEmpty ? nil : parts.joined(separator: " ")
         guard case let .storms(time) = advice.warning else { return caption }
         if case .until(_, .storms) = advice.outlook { return caption }
@@ -112,6 +117,26 @@ struct WalkCardContent: Equatable {
         case .pavement: String(localized: "Cooler paws by then.", comment: "Walk card caption: why the best time is better than now")
         case .air: String(localized: "Cleaner air by then.", comment: "Walk card caption: why the best time is better than now")
         case .dark: nil
+        }
+    }
+
+    /// Why now isn't the time when there's no time to give and the reason is only a wait, so the
+    /// card doesn't say "No more walkies today" with no why: "Rainy out." Nil at night, when now's
+    /// reason isn't why tomorrow is no good, and for a walk now.
+    static func waitLine(_ advice: WalkAdvice) -> String? {
+        guard advice.rating != .great, advice.bestTimeLabel == nil, !advice.isNight, let reason = advice.now.reason else { return nil }
+        return switch reason {
+        case let .rain(likely): likely
+            ? String(localized: "Rainy out.", comment: "Walk card caption: why there's no walk today")
+            : String(localized: "Chance of showers.", comment: "Walk card caption: why there's no walk today")
+        case let .snow(likely): likely
+            ? String(localized: "Snowy out.", comment: "Walk card caption: why there's no walk today")
+            : String(localized: "Chance of snow.", comment: "Walk card caption: why there's no walk today")
+        case .storms: String(localized: "Chance of storms.", comment: "Walk card caption: why there's no walk today")
+        case .wind: String(localized: "Very windy out.", comment: "Walk card caption: why there's no walk today")
+        case .heat: String(localized: "Too warm out.", comment: "Walk card caption: why there's no walk today")
+        case .cold: String(localized: "Too chilly out.", comment: "Walk card caption: why there's no walk today")
+        case .pavement, .air, .dark: nil
         }
     }
 

@@ -94,11 +94,12 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      `SeasonalThemes.json`, which Remote Config's `seasonal_themes` can replace; a decoration this
      version can't draw is skipped, keeping the rest of the theme. Debug builds can force a theme on any date with the launch argument
      `-seasonalTheme thanksgiving` (or `halloween`).
-   - **Best Walk Time**: "Now is a great time", the next good hours ("11 AM to 1 PM"), or "Not a
-     good day for walkies" when nothing in the next 24 hours qualifies. The card is about today's
-     walks: only at night, with no good hours left today, does it look to tomorrow ("Tomorrow 7 to
-     10 AM"); by day it says "No more walkies today" instead, and it never adds tomorrow's hours as
-     a second option. A good hour is under 30% rain chance (the chance as the hourly
+   - **Best Walk Time**: "Now is a great time" or the next good hours ("11 AM to 1 PM"). The card
+     is about today's walks: only at night, with no good hours left today, does it look to tomorrow
+     ("Tomorrow 7 to 10 AM"), and it never adds tomorrow's hours as a second option. With no time
+     to give it says "Not a good day for walkies" before noon (city time), "No more walkies today"
+     after, and at night "No walkies tomorrow either"; by day the caption says why, even when it's
+     only a wait ("Rainy out.", "Chance of showers.", "Too chilly out."). A good hour is under 30% rain chance (the chance as the hourly
      strip shows it, so an hour shown as 30% counts and one shown as 60% is "rain", not "maybe
      rain"), at a comfortable
      feels-like temperature, between 7 AM and 8 PM, in daylight and with pavement under 40 °C
