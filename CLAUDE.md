@@ -144,7 +144,7 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
 
 ## Releasing to TestFlight
 
-- Run `scripts/bump-build.sh` before every upload: build N is version 1.0.(N-1), so the version
+- Run `scripts/bump-build.sh` before every upload: build N is version 1.0.N, so the version
   goes up with each build. The first build of each version goes through Beta App Review for external
   TestFlight testers, and the App Store Connect version is renamed to match when submitting.
 - Archive (Release, generic iOS, `-allowProvisioningUpdates`), then `xcodebuild -exportArchive` with
