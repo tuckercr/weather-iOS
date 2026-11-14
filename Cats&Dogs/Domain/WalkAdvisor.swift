@@ -60,6 +60,32 @@ struct WalkAdvice: Equatable {
     var warning: WalkWarning? = nil
     var bestTimeEndLabel: String? = nil
     var nextWindow: WalkWindow? = nil
+    /// Dark now, by the clock: the walk card only looks to tomorrow then.
+    var isNight = false
+    /// Set by `todayOnly` when it left out a best time tomorrow: no good hours are left today.
+    var tomorrowLeftOut = false
+
+    /// What the walk card shows: today's walks only. Tomorrow's hours stay in only once it's night
+    /// and nothing good is left today ("Tomorrow 7 to 10 AM"); by day the card says there are no
+    /// more walkies today instead, and a second option tomorrow is left out after a time today.
+    var todayOnly: WalkAdvice {
+        var today = self
+        if bestTimeIsTomorrow && !isNight {
+            today = WalkAdvice(
+                rating: rating,
+                bestTimeLabel: nil,
+                pavementNow: pavementNow,
+                outlook: outlook,
+                now: now,
+                warning: warning,
+                isNight: isNight,
+                tomorrowLeftOut: true
+            )
+        } else if nextWindow?.isTomorrow == true && !bestTimeIsTomorrow {
+            today.nextWindow = nil
+        }
+        return today
+    }
 
     /// Hurricane force wind now or on its way: the card is a danger warning, shown even without a dog.
     var isDanger: Bool {
@@ -156,7 +182,8 @@ enum WalkAdvisor {
             now: check,
             warning: warning(slots, check: check, now: now, thresholds),
             bestTimeEndLabel: bestIndex == nil ? nil : spellEnd.map { all[$0].timeLabel },
-            nextWindow: nextWindow
+            nextWindow: nextWindow,
+            isNight: darkNow
         )
     }
 

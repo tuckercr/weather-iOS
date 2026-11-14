@@ -5,7 +5,8 @@ import Foundation
 /// second option ("Or 5 to 8 PM."), then `WalkCheck`'s reason when it's more than a wait (the
 /// pavement, heat or cold, the air by its pollutant, a gale or storms) or else what clears by the
 /// best time ("The rain's gone by then."), or the outlook after a walk now, and a warning about
-/// hurricane force wind or storms on their way. Built with the screen state;
+/// hurricane force wind or storms on their way. Only today's walks, unless it's night and none are
+/// left (`WalkAdvice.todayOnly`). Built with the screen state;
 /// `WalkCard` draws it. Same wording as Android's `walkDetail` and `walkCaption`.
 struct WalkCardContent: Equatable {
     /// Picks the paw's tint.
@@ -16,7 +17,9 @@ struct WalkCardContent: Equatable {
     let headline: String
     let caption: String?
 
+    /// `advice` is cut down to today's walks first (`WalkAdvice.todayOnly`).
     init(advice: WalkAdvice) {
+        let advice = advice.todayOnly
         rating = advice.rating
         isDanger = advice.isDanger
         title = if isDanger {
@@ -43,6 +46,9 @@ struct WalkCardContent: Equatable {
         }
         if let best = advice.bestTimeLabel {
             return advice.bestTimeIsTomorrow ? String(localized: "Tomorrow around \(best)", comment: "Walk card headline. The argument is a time of day.") : String(localized: "Around \(best)", comment: "Walk card headline. The argument is a time of day.")
+        }
+        if advice.tomorrowLeftOut {
+            return String(localized: "No more walkies today", comment: "Walk card headline: no good walking hours are left today, by day")
         }
         return String(localized: "Not a good day for walkies", comment: "Walk card headline. The argument is a time of day.")
     }
@@ -85,14 +91,11 @@ struct WalkCardContent: Equatable {
             ?? String(localized: "around \(window.startLabel)", comment: "Walk card: a second time for a walk when only its start is known. The argument is a time of day.")
         if advice.rating == .great {
             guard case .until = advice.outlook else { return nil }
-            return window.isTomorrow
-                ? String(localized: "Good again tomorrow \(when).", comment: "Walk card caption after a walk now: the next spell of good walking hours, such as \"7 to 10 AM\".")
-                : String(localized: "Good again \(when).", comment: "Walk card caption after a walk now: the next spell of good walking hours, such as \"5 to 8 PM\".")
+            return String(localized: "Good again \(when).", comment: "Walk card caption after a walk now: the next spell of good walking hours, such as \"5 to 8 PM\".")
         }
         guard advice.bestTimeLabel != nil else { return nil }
-        return window.isTomorrow && !advice.bestTimeIsTomorrow
-            ? String(localized: "Or tomorrow \(when).", comment: "Walk card caption: a second spell of good walking hours, such as \"7 to 10 AM\".")
-            : String(localized: "Or \(when).", comment: "Walk card caption: a second spell of good walking hours, such as \"5 to 8 PM\".")
+        // Today's second spell, or, at night with the best time tomorrow, tomorrow's (`WalkAdvice.todayOnly`).
+        return String(localized: "Or \(when).", comment: "Walk card caption: a second spell of good walking hours, such as \"5 to 8 PM\".")
     }
 
     /// Why the best time is better than now, when now is only a wait for a reason that clears: "The

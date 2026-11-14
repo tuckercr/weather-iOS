@@ -364,13 +364,19 @@ final class WalkCheckTests: XCTestCase {
 
     // MARK: - Walk windows
 
-    private func card(now: HourlySlot? = nil, later: [HourlySlot], conditionNow: String? = nil) -> WalkCardContent? {
+    private func card(
+        now: HourlySlot? = nil,
+        later: [HourlySlot],
+        conditionNow: String? = nil,
+        darkNow: Bool = false
+    ) -> WalkCardContent? {
         WalkAdvisor.advice(
             currentFeelsLikeC: 18,
             upcoming: [now ?? slot(epoch: start)] + later,
             now: Date(timeIntervalSince1970: TimeInterval(start)),
             timeZone: TimeZone(identifier: "UTC")!,
-            conditionNow: conditionNow
+            conditionNow: conditionNow,
+            darkNow: darkNow
         ).map(WalkCardContent.init)
     }
 
@@ -384,13 +390,35 @@ final class WalkCheckTests: XCTestCase {
         XCTAssertEqual(rainy?.caption, "Or 7 to 9 PM. The rain's gone by then.")
     }
 
-    func testASecondOptionOnTheNextDaySaysTomorrow() {
+    func testTheCardLeavesOutASecondOptionTomorrow() {
         let content = card(
             later: [hour(1, "4 PM", rain: 80), hour(2, "5 PM"), hour(3, "6 PM", rain: 80), hour(19, "7 AM"), hour(20, "8 AM", rain: 80)],
             conditionNow: "Rain"
         )
+        XCTAssertEqual(content?.title, "Best Walk Time")
         XCTAssertEqual(content?.headline, "5 to 6 PM")
-        XCTAssertEqual(content?.caption, "Or tomorrow 7 to 8 AM. The rain's gone by then.")
+        XCTAssertEqual(content?.caption, "The rain's gone by then.")
+    }
+
+    func testAWalkNowEndsWithTodaysOutlookNotTomorrow() {
+        // Good now until 5 PM, then rain until tomorrow morning.
+        let content = card(
+            later: [hour(1, "4 PM"), hour(2, "5 PM", rain: 80), hour(3, "6 PM", rain: 80), hour(18, "7 AM"), hour(19, "8 AM", rain: 80)]
+        )
+        XCTAssertEqual(content?.headline, "Now is a great time")
+        XCTAssertEqual(content?.caption, "Good until 5 PM, then rain.")
+    }
+
+    func testByDayWithNothingLeftTodayTheCardDoesntLookToTomorrow() {
+        let content = card(later: [hour(1, "4 PM", rain: 80), hour(18, "7 AM"), hour(19, "8 AM", rain: 80)], conditionNow: "Rain")
+        XCTAssertEqual(content?.headline, "No more walkies today")
+        XCTAssertFalse(content?.caption?.contains("tomorrow") ?? false)
+        XCTAssertFalse(content?.caption?.contains("by then") ?? false)
+    }
+
+    func testAtNightWithNothingLeftTodayTheCardGivesTomorrow() {
+        let content = card(later: [hour(1, "4 PM", rain: 80), hour(18, "7 AM"), hour(19, "8 AM", rain: 80)], darkNow: true)
+        XCTAssertEqual(content?.headline, "Tomorrow 7 to 8 AM")
     }
 
     func testABestTimeWithoutAnEndIsStillAroundThatHour() {

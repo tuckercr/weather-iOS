@@ -1667,17 +1667,6 @@
         }
       }
     },
-    "Good again tomorrow %@." : {
-      "comment" : "Walk card caption after a walk now: the next spell of good walking hours, such as \"7 to 10 AM\".",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Good again tomorrow %@."
-          }
-        }
-      }
-    },
     "Good air for a long walk" : {
       "comment" : "Air Quality tile: what the air means for a dog walk",
       "localizations" : {
@@ -2738,6 +2727,17 @@
         }
       }
     },
+    "No more walkies today" : {
+      "comment" : "Walk card headline: no good walking hours are left today, by day",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more walkies today"
+          }
+        }
+      }
+    },
     "No radar here" : {
       "comment" : "Radar card: the city is outside RainViewer's radar coverage",
       "localizations" : {
@@ -2944,17 +2944,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Or %@."
-          }
-        }
-      }
-    },
-    "Or tomorrow %@." : {
-      "comment" : "Walk card caption: a second spell of good walking hours, such as \"7 to 10 AM\".",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Or tomorrow %@."
           }
         }
       }
