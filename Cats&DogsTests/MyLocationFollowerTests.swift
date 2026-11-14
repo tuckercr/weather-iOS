@@ -115,4 +115,38 @@ final class MyLocationFollowerTests: XCTestCase {
         preferences.store.setFollowMyLocation(switchedOn)
         return MyLocationFollower(preferences: preferences.store, authorization: authorization, refresh: { refresh() })
     }
+
+    // MARK: - Analytics
+
+    func testTheAnswerToTheAlwaysPromptIsReportedOnce() {
+        var answers: [Bool] = []
+        preferences.store.setSavedLocations([london, myLocation])
+        let follower = MyLocationFollower(
+            preferences: preferences.store,
+            authorization: .authorizedWhenInUse,
+            refresh: {},
+            onAlwaysAnswered: { answers.append($0) }
+        )
+
+        follower.turnOn {}
+        follower.authorizationChanged(to: .authorizedAlways)
+        follower.authorizationChanged(to: .authorizedWhenInUse)
+
+        XCTAssertEqual(answers, [true])
+        XCTAssertFalse(follower.isFollowing)
+    }
+
+    func testAChangeWithoutAPromptIsNotReported() {
+        var answers: [Bool] = []
+        let follower = MyLocationFollower(
+            preferences: preferences.store,
+            authorization: .authorizedWhenInUse,
+            refresh: {},
+            onAlwaysAnswered: { answers.append($0) }
+        )
+
+        follower.authorizationChanged(to: .authorizedAlways)
+
+        XCTAssertEqual(answers, [])
+    }
 }

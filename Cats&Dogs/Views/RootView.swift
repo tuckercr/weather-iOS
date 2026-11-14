@@ -93,6 +93,9 @@ struct RootView: View {
             }
         }
         .environment(radarViewModel)
+        .onChange(of: welcomeViewModel.step, initial: true) { _, step in
+            if let step { welcomeViewModel.stepShown(step) }
+        }
         // Remote Config values fetched in the background apply from the next read.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { updatePrompt.refresh() }

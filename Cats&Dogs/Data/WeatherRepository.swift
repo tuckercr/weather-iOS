@@ -17,6 +17,8 @@ struct WeatherRepository {
     private let now: @Sendable () -> Date
     private let useOpenMeteo: @Sendable () -> Bool
     private let useAirQuality: @Sendable () -> Bool
+    /// Every failed request to a weather service, for `weather_error`, even when a fallback covers it.
+    private let onRequestFailed: @Sendable (WeatherRequestFailure) -> Void
 
     init(
         client: any OpenWeatherAPI = OpenWeatherClient(),
@@ -26,7 +28,8 @@ struct WeatherRepository {
         timeZone: TimeZone = .current,
         now: @escaping @Sendable () -> Date = { Date() },
         useOpenMeteo: (@Sendable () -> Bool)? = nil,
-        useAirQuality: (@Sendable () -> Bool)? = nil
+        useAirQuality: (@Sendable () -> Bool)? = nil,
+        onRequestFailed: (@Sendable (WeatherRequestFailure) -> Void)? = nil
     ) {
         self.client = client
         self.openMeteo = openMeteo
@@ -36,6 +39,17 @@ struct WeatherRepository {
         self.now = now
         self.useOpenMeteo = useOpenMeteo ?? { RemoteConfigRepository.openMeteoEnabled }
         self.useAirQuality = useAirQuality ?? { RemoteConfigRepository.airQualityEnabled }
+        self.onRequestFailed = onRequestFailed ?? { failure in
+            Task { @MainActor in AnalyticsRepository.shared.logWeatherError(failure) }
+        }
+    }
+
+    private func reportFailure(_ provider: WeatherRequestFailure.Provider, _ request: WeatherRequestFailure.Request, _ error: Error) {
+        onRequestFailed(WeatherRequestFailure(
+            provider: provider,
+            request: request,
+            errorKey: WeatherErrorMessages.errorKey(for: error)
+        ))
     }
 
     /// `location`'s current reading: by coordinates when it has them, otherwise by name. My Location
@@ -167,6 +181,7 @@ struct WeatherRepository {
                 }
                 return .success(ForecastFetch(days: Self.withAirQuality(days, byHour: air?.byHour ?? [:]), airQuality: air))
             } catch {
+                reportFailure(.openMeteo, .forecast, error)
                 return .failure(error)
             }
         }
@@ -194,7 +209,11 @@ struct WeatherRepository {
         cached: AirQualityHours?
     ) async -> AirQualityHours? {
         if let scale, let cached, cached.canBeReused(on: scale, now: now()) { return cached }
-        guard let response = try? await airQuality.hourly(latitude: latitude, longitude: longitude, scale: scale) else {
+        let response: AirQualityHourlyResponse
+        do {
+            response = try await airQuality.hourly(latitude: latitude, longitude: longitude, scale: scale)
+        } catch {
+            reportFailure(.openMeteo, .airQuality, error)
             return nil
         }
         let used = scale ?? .forTimeZone(response.timezone)
@@ -209,8 +228,14 @@ struct WeatherRepository {
         latitude: Double,
         longitude: Double
     ) async -> CurrentWeather? {
-        guard let response = try? await openMeteo.current(latitude: latitude, longitude: longitude, units: units),
-              var weather = OpenMeteoCurrent.weather(from: response, units: units, cityName: "") else {
+        let response: OpenMeteoCurrentResponse
+        do {
+            response = try await openMeteo.current(latitude: latitude, longitude: longitude, units: units)
+        } catch {
+            reportFailure(.openMeteo, .current, error)
+            return nil
+        }
+        guard var weather = OpenMeteoCurrent.weather(from: response, units: units, cityName: "") else {
             return nil
         }
         let label = locationLabel.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -252,6 +277,7 @@ struct WeatherRepository {
             )
             return .success(try mapCurrent(response, units: units, locationLabel: locationLabel))
         } catch {
+            reportFailure(.openWeather, .current, error)
             return .failure(error)
         }
     }
@@ -271,6 +297,7 @@ struct WeatherRepository {
             )
             return .success(try mapForecast(response, units: units))
         } catch {
+            reportFailure(.openWeather, .forecast, error)
             return .failure(error)
         }
     }

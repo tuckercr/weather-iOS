@@ -21,7 +21,11 @@ final class WelcomeViewModel {
     private(set) var isAskingAboutDog = false
 
     private let preferences: PreferencesStore
-    private let onOnboardingComplete: @MainActor () -> Void
+    private let onOnboardingComplete: @MainActor (OnboardingAnswers) -> Void
+    private let onStepShown: @MainActor (OnboardingStep) -> Void
+    /// What iOS allows now, notifications then location, for `onboarding_complete`.
+    private let permissionStatuses: @MainActor () async -> (notifications: PermissionStatus, location: PermissionStatus)
+    private var lastShownStep: OnboardingStep?
     private let remotelyEnabled: @MainActor (NotificationKind) -> Bool
     private let requestNotificationAuthorization: @MainActor () async -> Bool
     private let scheduleNotifications: @MainActor () async -> Void
@@ -30,7 +34,9 @@ final class WelcomeViewModel {
 
     init(
         preferences: PreferencesStore? = nil,
-        onOnboardingComplete: (@MainActor () -> Void)? = nil,
+        onOnboardingComplete: (@MainActor (OnboardingAnswers) -> Void)? = nil,
+        onStepShown: (@MainActor (OnboardingStep) -> Void)? = nil,
+        permissionStatuses: (@MainActor () async -> (notifications: PermissionStatus, location: PermissionStatus))? = nil,
         remotelyEnabled: (@MainActor (NotificationKind) -> Bool)? = nil,
         requestNotificationAuthorization: (@MainActor () async -> Bool)? = nil,
         scheduleNotifications: (@MainActor () async -> Void)? = nil,
@@ -39,7 +45,14 @@ final class WelcomeViewModel {
     ) {
         let preferences = preferences ?? .shared
         self.preferences = preferences
-        self.onOnboardingComplete = onOnboardingComplete ?? { AnalyticsRepository.shared.logOnboardingComplete() }
+        self.onOnboardingComplete = onOnboardingComplete ?? { AnalyticsRepository.shared.logOnboardingComplete($0) }
+        self.onStepShown = onStepShown ?? { AnalyticsRepository.shared.logOnboardingStep($0) }
+        self.permissionStatuses = permissionStatuses ?? {
+            (
+                PermissionStatus(await WeatherNotificationScheduler.shared.authorizationStatus()),
+                PermissionStatus(LocationRepository.shared.authorizationStatus)
+            )
+        }
         self.remotelyEnabled = remotelyEnabled ?? { RemoteConfigRepository.shared.notificationsEnabled($0) }
         self.requestNotificationAuthorization = requestNotificationAuthorization ?? {
             await WeatherNotificationScheduler.shared.requestAuthorization()
@@ -74,6 +87,13 @@ final class WelcomeViewModel {
         if !state.notificationOnboardingDone { return .notifications }
         if !state.locationOnboardingDone { return .location }
         return .done
+    }
+
+    /// The root view showed `step`: counted once each time the step changes, for `onboarding_step`.
+    func stepShown(_ step: OnboardingStep) {
+        guard step != lastShownStep else { return }
+        lastShownStep = step
+        if step != .done { onStepShown(step) }
     }
 
     /// "Is there a dog at home?": the walk card, Paw Check and the walk notifications only show
@@ -123,6 +143,15 @@ final class WelcomeViewModel {
             updated.locationOnboardingDone = true
             return updated
         }
-        onOnboardingComplete()
+        // The answers are read from what's allowed now: on a new install a permission iOS hasn't
+        // asked about yet was skipped, and a refused one was asked and denied.
+        Task {
+            let statuses = await permissionStatuses()
+            onOnboardingComplete(OnboardingAnswers(
+                hasDog: preferences.showWalkCard,
+                notifications: OnboardingAnswers.Permission(statuses.notifications),
+                location: OnboardingAnswers.Permission(statuses.location)
+            ))
+        }
     }
 }

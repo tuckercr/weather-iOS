@@ -43,6 +43,7 @@ struct Cats_DogsApp: App {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { AppStartup.enteredBackground() }
+            if phase == .active { AppStartup.becameActive() }
         }
         .backgroundTask(.appRefresh(WeatherBackgroundRefresher.taskIdentifier)) {
             await AppStartup.backgroundRefresh()

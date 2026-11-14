@@ -261,4 +261,65 @@ final class SettingsViewModelTests: XCTestCase {
         viewModel.notificationSettingsShown()
         XCTAssertFalse(viewModel.notificationSettingsRequested)
     }
+
+    // MARK: - Analytics
+
+    func testANotificationPromptFromSettingsIsReportedWithItsAnswer() async {
+        var answers: [(AnalyticsPermission, Bool)] = []
+        var refreshes = 0
+        var status = UNAuthorizationStatus.notDetermined
+        let viewModel = SettingsViewModel(
+            preferences: preferences.store,
+            notificationStatus: { status },
+            requestNotificationAuthorization: { true },
+            rescheduleNotifications: {},
+            onPermissionAnswered: { answers.append(($0, $1)) },
+            refreshAnalytics: { refreshes += 1 }
+        )
+
+        await viewModel.requestNotificationPermission()
+        XCTAssertEqual(answers.map(\.0), [.notifications])
+        XCTAssertEqual(answers.map(\.1), [true])
+
+        // Already answered: iOS shows no prompt, so there's nothing to report.
+        status = .denied
+        await viewModel.requestNotificationPermission()
+        XCTAssertEqual(answers.count, 1)
+        XCTAssertEqual(refreshes, 2)
+    }
+
+    func testLocationAccessAlreadyAllowedReportsNoAnswer() async {
+        var answers = 0
+        let viewModel = SettingsViewModel(
+            preferences: preferences.store,
+            location: LocationRepository(authorizationStatus: { .authorizedWhenInUse }, locationFetcher: { nil }),
+            notificationStatus: { .authorized },
+            onPermissionAnswered: { _, _ in answers += 1 },
+            refreshAnalytics: {}
+        )
+
+        await viewModel.requestLocationAccess()
+
+        XCTAssertEqual(answers, 0)
+    }
+
+    func testSettingsChangesRefreshTheUserProperties() {
+        var refreshes = 0
+        let viewModel = SettingsViewModel(
+            preferences: preferences.store,
+            rescheduleNotifications: {},
+            applyUsageSharing: {},
+            refreshAnalytics: { refreshes += 1 }
+        )
+
+        viewModel.setUnitOverride(.metric)
+        viewModel.setShowWalkCard(true)
+        viewModel.setNotifyMorningBriefing(false)
+        viewModel.setNotifyWalkTime(true)
+        viewModel.setNotifyRain(false)
+        viewModel.setShareUsageStatistics(false)
+        XCTAssertEqual(refreshes, 5, "turning sharing off sends nothing more")
+        viewModel.setShareUsageStatistics(true)
+        XCTAssertEqual(refreshes, 6)
+    }
 }

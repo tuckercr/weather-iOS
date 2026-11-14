@@ -11,7 +11,6 @@ final class WeatherForecastViewModelTests: XCTestCase {
     private var preferences: IsolatedPreferences!
     private var api: ScriptedWeatherAPI!
     private var viewModel: WeatherForecastViewModel!
-    private var loggedErrors: [String] = []
     private var settingsOpenedCount = 0
     private var replans = 0
     private var foregroundRefreshWindow: TimeInterval = 0
@@ -25,7 +24,6 @@ final class WeatherForecastViewModelTests: XCTestCase {
         preferences = IsolatedPreferences()
         preferences.store.setUnitOverride(.metric)
         api = ScriptedWeatherAPI()
-        loggedErrors = []
         settingsOpenedCount = 0
         replans = 0
         foregroundRefreshWindow = 0
@@ -38,7 +36,6 @@ final class WeatherForecastViewModelTests: XCTestCase {
             cities: CityRepository(preferences: preferences.store, geocodingRepository: ScriptedGeocodingAPI().repository, onCityAdded: { _ in }),
             follower: MyLocationFollower(preferences: preferences.store, authorization: .denied, refresh: {}),
             replanNotifications: { [unowned self] in replans += 1 },
-            onError: { [unowned self] in loggedErrors.append($0) },
             onSettingsOpened: { [unowned self] in settingsOpenedCount += 1 },
             foregroundRefreshMinInterval: { [unowned self] in foregroundRefreshWindow },
             config: { [unowned self] in
@@ -199,7 +196,7 @@ final class WeatherForecastViewModelTests: XCTestCase {
     func testAFailedRefreshDoesNotReplan() async {
         api.onCurrent = { _ in throw self.offline }
         viewModel.refreshCurrent(location: austin)
-        await waitUntil { self.loggedErrors.count == 1 }
+        await waitUntil { !self.viewModel.isRefreshing }
         try? await Task.sleep(for: .milliseconds(1_500))
         XCTAssertEqual(replans, 0)
     }
@@ -500,26 +497,6 @@ final class WeatherForecastViewModelTests: XCTestCase {
     }
 
     // MARK: - Analytics
-
-    func testFailuresAreReportedEvenWhenCachedDataHidesThem() async {
-        preferences.store.setCachedWeather(await makeCurrentWeather(temperature: 5), for: austin.cacheKey)
-        api.onCurrent = { _ in throw self.offline }
-        api.onForecast = { _ in throw self.offline }
-
-        viewModel.refreshCurrent(location: austin)
-        viewModel.refreshForecast(location: austin)
-        await waitUntil { !self.viewModel.isRefreshing }
-
-        XCTAssertEqual(loggedErrors, ["offline", "offline"])
-    }
-
-    func testSuccessfulRefreshReportsNoError() async {
-        viewModel.refreshCurrent(location: austin)
-        viewModel.refreshForecast(location: austin)
-        await waitUntil { !self.viewModel.isRefreshing }
-
-        XCTAssertEqual(loggedErrors, [])
-    }
 
     func testLogSettingsOpenedReportsTheEvent() {
         viewModel.logSettingsOpened()

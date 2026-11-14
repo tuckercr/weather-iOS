@@ -18,6 +18,8 @@ final class CityRepository {
     private let preferences: PreferencesStore
     private let geocodingRepository: GeocodingRepository
     private let onCityAdded: @MainActor (CityAdded) -> Void
+    /// The list grew or shrank: the analytics user properties count the cities.
+    private let onCountChanged: @MainActor () -> Void
     /// Remote Config's search settings, for looking up name-only locations as search would.
     private let readPolicy: @MainActor () -> CitySearchPolicy
 
@@ -25,12 +27,16 @@ final class CityRepository {
         preferences: PreferencesStore? = nil,
         geocodingRepository: GeocodingRepository? = nil,
         onCityAdded: (@MainActor (CityAdded) -> Void)? = nil,
-        readPolicy: (@MainActor () -> CitySearchPolicy)? = nil
+        readPolicy: (@MainActor () -> CitySearchPolicy)? = nil,
+        onCountChanged: (@MainActor () -> Void)? = nil
     ) {
         self.preferences = preferences ?? .shared
         self.geocodingRepository = geocodingRepository ?? .live
         self.onCityAdded = onCityAdded ?? { AnalyticsRepository.shared.logCityAdded($0) }
         self.readPolicy = readPolicy ?? { RemoteConfigRepository.shared.citySearchPolicy }
+        self.onCountChanged = onCountChanged ?? {
+            Task { await AnalyticsRepository.shared.refreshUserProperties() }
+        }
         loadFromPreferences()
         fillInMissingCoordinates()
     }
@@ -55,6 +61,7 @@ final class CityRepository {
         ))
         preferences.setSavedLocations(updated)
         preferences.setActiveLocationIndex(newIndex)
+        onCountChanged()
 
         fillInMissingCoordinates()
     }
@@ -155,6 +162,7 @@ final class CityRepository {
         activeIndex = newIndex
         preferences.setSavedLocations(updated)
         preferences.setActiveLocationIndex(newIndex)
+        onCountChanged()
     }
 
     func setActiveIndex(_ index: Int) {

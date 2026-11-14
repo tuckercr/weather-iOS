@@ -17,9 +17,21 @@ final class LocationPermissionViewModel {
     private(set) var state: LocationFetchState = .idle
 
     @ObservationIgnored private let location: LocationRepository
+    /// Where the prompt was asked from, for `permission_changed`; nil in onboarding, which reports
+    /// its answers in `onboarding_complete` instead.
+    @ObservationIgnored private let permissionSource: AnalyticsPermissionSource?
+    @ObservationIgnored private let onPermissionAnswered: @MainActor (_ granted: Bool, AnalyticsPermissionSource) -> Void
 
-    init(location: LocationRepository? = nil) {
+    init(
+        location: LocationRepository? = nil,
+        permissionSource: AnalyticsPermissionSource? = nil,
+        onPermissionAnswered: (@MainActor (_ granted: Bool, AnalyticsPermissionSource) -> Void)? = nil
+    ) {
         self.location = location ?? .shared
+        self.permissionSource = permissionSource
+        self.onPermissionAnswered = onPermissionAnswered ?? { granted, source in
+            AnalyticsRepository.shared.logPermissionChanged(.location, granted: granted, from: source)
+        }
     }
 
     func hasLocationPermission() -> Bool { location.hasLocationPermission() }
@@ -39,7 +51,9 @@ final class LocationPermissionViewModel {
             state = .permissionDenied
         } else {
             Task {
-                if await location.requestPermission() {
+                let granted = await location.requestPermission()
+                if let permissionSource { onPermissionAnswered(granted, permissionSource) }
+                if granted {
                     fetchLocation()
                 } else {
                     state = .permissionDenied

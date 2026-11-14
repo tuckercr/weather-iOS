@@ -52,7 +52,6 @@ final class WeatherForecastViewModel {
     private let refreshNotificationCity: @MainActor () async -> Void
     private let sleep: (Duration) async throws -> Void
     private let replanNotifications: @MainActor () async -> Void
-    private let onError: @MainActor (_ errorKey: String) -> Void
     private let onSettingsOpened: @MainActor () -> Void
     private let foregroundRefreshMinInterval: () -> TimeInterval
     private let config: () -> WeatherScreenConfig
@@ -84,7 +83,6 @@ final class WeatherForecastViewModel {
         refreshNotificationCity: (@MainActor () async -> Void)? = nil,
         sleep: ((Duration) async throws -> Void)? = nil,
         replanNotifications: (@MainActor () async -> Void)? = nil,
-        onError: (@MainActor (_ errorKey: String) -> Void)? = nil,
         onSettingsOpened: (@MainActor () -> Void)? = nil,
         foregroundRefreshMinInterval: (() -> TimeInterval)? = nil,
         config: (() -> WeatherScreenConfig)? = nil,
@@ -102,7 +100,6 @@ final class WeatherForecastViewModel {
         }
         self.sleep = sleep ?? { try await Task.sleep(for: $0) }
         self.replanNotifications = replanNotifications ?? { await WeatherNotificationScheduler.shared.scheduleNotifications() }
-        self.onError = onError ?? { AnalyticsRepository.shared.logWeatherError($0) }
         self.onSettingsOpened = onSettingsOpened ?? { AnalyticsRepository.shared.logSettingsOpened() }
         self.foregroundRefreshMinInterval = foregroundRefreshMinInterval ?? {
             RemoteConfigRepository.shared.foregroundRefreshMinInterval
@@ -376,7 +373,6 @@ final class WeatherForecastViewModel {
                 currentFetchedAt[location.cacheKey] = clock()
             case .failure(let error):
                 let errorKey = WeatherErrorMessages.errorKey(for: error)
-                onError(errorKey)
                 // Keep cached data visible if there is any, flagged as old; only show the error on
                 // its own when there's nothing.
                 if cached == nil {
@@ -418,7 +414,6 @@ final class WeatherForecastViewModel {
                 forecastFetchedAt[location.cacheKey] = clock()
             case .failure(let error):
                 let errorKey = WeatherErrorMessages.errorKey(for: error)
-                onError(errorKey)
                 // Keep cached data visible if there is any; only show the error when there's nothing.
                 if cached == nil {
                     forecast = .error(
