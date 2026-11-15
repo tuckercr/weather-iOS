@@ -651,6 +651,11 @@ Remote Config parameters are defined and deployed from the Android repo
 | `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
 | `temperature_units_shown` | false | On adds the unit to temperatures that stand on their own: "89 °F" rather than "89°", "About 81 °F" on the Paw check tile. Units and the Settings choice are unchanged; the high and low, the hourly strip and notifications have no unit either way |
 
+The website's paw safety page (sunnyandmisty.com/paw-safety, `paw-safety/index.html` in
+tuckercr/sunny-misty-web) lists Paw Check's bands at the defaults of `walk_warm_pavement_c`,
+`walk_hot_pavement_c`, `walk_dangerous_pavement_c` and `walk_icy_pavement_c`. When one of those
+defaults changes, update that page in °C and °F and deploy the site.
+
 Walk and pet temperatures are Celsius whatever units the user picked. An out-of-range value falls
 back to its default, and if a pair ends up inverted (minimum not below maximum), both fall back to
 their defaults.
