@@ -934,6 +934,39 @@
         }
       }
     },
+    "Chance of showers." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chance of showers."
+          }
+        }
+      }
+    },
+    "Chance of snow." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chance of snow."
+          }
+        }
+      }
+    },
+    "Chance of storms." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chance of storms."
+          }
+        }
+      }
+    },
     "Chilly" : {
       "comment" : "Feels Like band name",
       "localizations" : {
@@ -1663,17 +1696,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Good again %@."
-          }
-        }
-      }
-    },
-    "Good again tomorrow %@." : {
-      "comment" : "Walk card caption after a walk now: the next spell of good walking hours, such as \"7 to 10 AM\".",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Good again tomorrow %@."
           }
         }
       }
@@ -2738,6 +2760,17 @@
         }
       }
     },
+    "No more walkies today" : {
+      "comment" : "Walk card headline: no good walking hours are left today, in the afternoon or evening",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No more walkies today"
+          }
+        }
+      }
+    },
     "No radar here" : {
       "comment" : "Radar card: the city is outside RainViewer's radar coverage",
       "localizations" : {
@@ -2782,8 +2815,19 @@
         }
       }
     },
+    "No walkies tomorrow either" : {
+      "comment" : "Walk card headline: at night, no good walking hours tomorrow",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No walkies tomorrow either"
+          }
+        }
+      }
+    },
     "Not a good day for walkies" : {
-      "comment" : "Walk card headline. The argument is a time of day.",
+      "comment" : "Walk card headline: no good walking hours today, in the morning",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2944,17 +2988,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Or %@."
-          }
-        }
-      }
-    },
-    "Or tomorrow %@." : {
-      "comment" : "Walk card caption: a second spell of good walking hours, such as \"7 to 10 AM\".",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Or tomorrow %@."
           }
         }
       }
@@ -3345,6 +3378,17 @@
         }
       }
     },
+    "Rainy out." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rainy out."
+          }
+        }
+      }
+    },
     "Retry" : {
       "localizations" : {
         "en" : {
@@ -3599,6 +3643,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Snow zoomies, then straight back to the blanket."
+          }
+        }
+      }
+    },
+    "Snowy out." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snowy out."
           }
         }
       }
@@ -4177,6 +4232,17 @@
         }
       }
     },
+    "Too chilly out." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too chilly out."
+          }
+        }
+      }
+    },
     "Too cold for a long walk." : {
       "comment" : "Walk card caption: why now isn't the time for a walk",
       "localizations" : {
@@ -4261,6 +4327,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Too many requests. Please wait a moment and try again."
+          }
+        }
+      }
+    },
+    "Too warm out." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Too warm out."
           }
         }
       }
@@ -4418,6 +4495,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Very unhealthy"
+          }
+        }
+      }
+    },
+    "Very windy out." : {
+      "comment" : "Walk card caption: why there's no walk today",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very windy out."
           }
         }
       }

@@ -60,6 +60,33 @@ struct WalkAdvice: Equatable {
     var warning: WalkWarning? = nil
     var bestTimeEndLabel: String? = nil
     var nextWindow: WalkWindow? = nil
+    /// Dark now, by the clock: the walk card only looks to tomorrow then.
+    var isNight = false
+    /// Before noon in the city: with no time to give, the card says it's not a good day for walkies
+    /// in the morning and that there are no more walkies today after.
+    var isMorning = false
+
+    /// What the walk card shows: today's walks only. Tomorrow's hours stay in only once it's night
+    /// and nothing good is left today ("Tomorrow 7 to 10 AM"); by day the card gives no time instead,
+    /// and a second option tomorrow is left out after a time today.
+    var todayOnly: WalkAdvice {
+        var today = self
+        if bestTimeIsTomorrow && !isNight {
+            today = WalkAdvice(
+                rating: rating,
+                bestTimeLabel: nil,
+                pavementNow: pavementNow,
+                outlook: outlook,
+                now: now,
+                warning: warning,
+                isNight: isNight,
+                isMorning: isMorning
+            )
+        } else if nextWindow?.isTomorrow == true && !bestTimeIsTomorrow {
+            today.nextWindow = nil
+        }
+        return today
+    }
 
     /// Hurricane force wind now or on its way: the card is a danger warning, shown even without a dog.
     var isDanger: Bool {
@@ -156,7 +183,9 @@ enum WalkAdvisor {
             now: check,
             warning: warning(slots, check: check, now: now, thresholds),
             bestTimeEndLabel: bestIndex == nil ? nil : spellEnd.map { all[$0].timeLabel },
-            nextWindow: nextWindow
+            nextWindow: nextWindow,
+            isNight: darkNow,
+            isMorning: isMorning(now, in: timeZone)
         )
     }
 
@@ -264,6 +293,13 @@ enum WalkAdvisor {
         case .cold: .cold
         case .dark: nil
         }
+    }
+
+    /// Before noon in the city's time zone.
+    private static func isMorning(_ now: Date, in timeZone: TimeZone) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        return calendar.component(.hour, from: now) < 12
     }
 
     /// Compared as calendar days in the city's own time zone, not the device's.
