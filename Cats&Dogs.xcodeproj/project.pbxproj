@@ -247,7 +247,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Release builds send their dSYM to Crashlytics, so crashes show function names and lines.\n# Debug builds don't report crashes, and builds without GoogleService-Info.plist have no Firebase.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nif [ ! -f \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist\" ]; then exit 0; fi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+			shellScript = "# Release builds send their dSYM to Crashlytics, so crashes show function names and lines.\n# Debug builds don't report crashes, and builds without GoogleService-Info.plist have no Firebase.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nif [ ! -f \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist\" ]; then exit 0; fi\n# Firebase's run script uploads in the background with its output discarded, and the upload\n# was lost when xcodebuild exited. Upload in the foreground instead, so it finishes and logs.\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols\" --build-phase\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
