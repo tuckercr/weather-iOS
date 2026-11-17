@@ -642,7 +642,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `walk_hours_start` / `walk_hours_end` | 7 / 20 (0–23) | Local hours walks are suggested in, inclusive |
 | `pet_hot_threshold_c` / `pet_cold_threshold_c` | 30 (20–45) / 0 (−20–10) | Feels-like temperatures that switch the pets to their hot and cold moods, and the walk card to "paws hot" and "too cold" |
 | `walk_bad_air_band` | 3 (1–5) | Air quality band (0 good to 5 worst) from which a walk is potty breaks only: hours aren't suggested, the walk card and hero say why, and the Air Quality tile says "Potty breaks only today". 3 is US "Unhealthy" and Europe's "Poor"; the worst band (5) keeps pets inside whatever this is |
-| `open_meteo_enabled` | true | Off sends the current reading and forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo, and town and city search to OpenWeather |
+| `open_meteo_enabled` | true | Off sends the current reading and forecasts for cities with coordinates to OpenWeatherMap (3-hourly) instead of Open-Meteo, and town and city search to OpenWeather. Off for debug builds (the "iOS debug builds" condition: debug builds send the custom signal `build_type` = `debug` before their first fetch) while the fallback is tested |
 | `city_search_provider` | `open_meteo` | Where search suggestions come from: `open_meteo` (prefix search) or `openweather` (whole names, at most 5). Anything else uses the default; `open_meteo_enabled` off forces `openweather` |
 | `city_search_results` | 8 (3–10) | Most suggestions shown |
 | `city_search_country_first` | true | Suggestions in the phone's region go first |
