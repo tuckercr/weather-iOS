@@ -1,8 +1,9 @@
 import FirebaseCore
+import FirebaseCrashlytics
 import Foundation
 
 /// Firebase is optional, like on Android: without `GoogleService-Info.plist` in the app bundle it
-/// stays unconfigured and analytics and Remote Config fall back to doing nothing / local defaults.
+/// stays unconfigured and analytics, crash reports and Remote Config fall back to doing nothing / local defaults.
 @MainActor
 enum FirebaseSetup {
     static var isConfigured: Bool { FirebaseApp.app() != nil }
@@ -15,5 +16,12 @@ enum FirebaseSetup {
               ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
         else { return }
         FirebaseApp.configure()
+        // Crash reports from release builds only, as on Android: a debug build's crashes are seen in
+        // Xcode, and its dSYM isn't uploaded. Set every launch, as the SDK keeps the last value.
+        #if DEBUG
+        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+        #else
+        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+        #endif
     }
 }
