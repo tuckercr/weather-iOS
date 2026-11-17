@@ -86,6 +86,9 @@ final class RemoteConfigRepository {
     nonisolated static let keyOpenMeteoEnabled = "open_meteo_enabled"
     /// Replacement OpenWeather API key, so a leaked key can be rotated without an app update.
     nonisolated static let keyOpenWeatherApiKey = "openweather_api_key"
+    /// Replacement Open-Meteo API key (the commercial plan's), so a leaked key can be rotated
+    /// without an app update.
+    nonisolated static let keyOpenMeteoApiKey = "open_meteo_api_key"
     /// Town and city search (SEARCH.md, "Remote Config design"): where suggestions come from, how
     /// many show, the two sorting rules and their size guard, and the wait after typing.
     nonisolated static let keyCitySearchProvider = "city_search_provider"
@@ -149,6 +152,7 @@ final class RemoteConfigRepository {
             Self.keySeasonalThemes: "" as NSString,
             Self.keyTemperatureUnitsShown: NSNumber(value: Self.defaultTemperatureUnitsShown),
             Self.keyOpenWeatherApiKey: "" as NSString,
+            Self.keyOpenMeteoApiKey: "" as NSString,
             Self.keyCitySearchProvider: CitySearchPolicy.standard.provider.rawValue as NSString,
             Self.keyCitySearchResults: NSNumber(value: CitySearchPolicy.standard.results),
             Self.keyCitySearchCountryFirst: NSNumber(value: CitySearchPolicy.standard.countryFirst),
@@ -317,8 +321,17 @@ final class RemoteConfigRepository {
     /// Nil when unset or blank, so the key built into the app is used. Not a secret: Remote Config
     /// values reach every device.
     nonisolated static var openWeatherApiKey: String? {
+        remoteApiKey(keyOpenWeatherApiKey)
+    }
+
+    /// Nil when unset or blank, so the Open-Meteo key built into the app is used.
+    nonisolated static var openMeteoApiKey: String? {
+        remoteApiKey(keyOpenMeteoApiKey)
+    }
+
+    private nonisolated static func remoteApiKey(_ name: String) -> String? {
         guard FirebaseApp.app() != nil else { return nil }
-        let value = RemoteConfig.remoteConfig()[keyOpenWeatherApiKey]
+        let value = RemoteConfig.remoteConfig()[name]
         guard value.source != .static else { return nil }
         let key: String? = value.stringValue
         return key?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfBlank

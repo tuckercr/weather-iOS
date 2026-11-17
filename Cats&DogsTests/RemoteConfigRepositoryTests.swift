@@ -32,12 +32,12 @@ final class RemoteConfigRepositoryTests: XCTestCase {
     }
 
     func testARemoteOpenWeatherKeyReplacesTheBuiltInOne() {
-        XCTAssertEqual(AppConfig.resolveOpenWeatherApiKey(remoteKey: " remote ", bundledKey: "bundled"), "remote")
+        XCTAssertEqual(AppConfig.resolveApiKey(remoteKey: " remote ", bundledKey: "bundled"), "remote")
     }
 
     func testTheBuiltInOpenWeatherKeyIsUsedWhenNoRemoteKeyIsSet() {
-        XCTAssertEqual(AppConfig.resolveOpenWeatherApiKey(remoteKey: nil, bundledKey: "bundled"), "bundled")
-        XCTAssertEqual(AppConfig.resolveOpenWeatherApiKey(remoteKey: "  ", bundledKey: "bundled"), "bundled")
+        XCTAssertEqual(AppConfig.resolveApiKey(remoteKey: nil, bundledKey: "bundled"), "bundled")
+        XCTAssertEqual(AppConfig.resolveApiKey(remoteKey: "  ", bundledKey: "bundled"), "bundled")
     }
 
     func testForegroundRefreshWindowDefaultsToOff() {
@@ -145,6 +145,7 @@ final class RemoteConfigRepositoryTests: XCTestCase {
         XCTAssertTrue(RemoteConfigRepository.openMeteoEnabled)
         XCTAssertFalse(RemoteConfigRepository.temperatureUnitsShown)
         XCTAssertNil(RemoteConfigRepository.openWeatherApiKey)
+        XCTAssertNil(RemoteConfigRepository.openMeteoApiKey)
         XCTAssertTrue(RemoteConfigRepository.shared.dailyWeatherNotificationsEnabled)
         XCTAssertTrue(RemoteConfigRepository.shared.walkTimeNotificationsEnabled)
         // Off for the first release.

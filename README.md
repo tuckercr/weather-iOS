@@ -34,12 +34,16 @@ The App Store set is in [`screenshots/app-store/`](screenshots/app-store/); see 
    cp "Cats&Dogs/Secrets.example.plist" "Cats&Dogs/Secrets.plist"
    ```
 
-3. Edit `Cats&Dogs/Secrets.plist` and replace `your_key_here` with your key.
+3. Edit `Cats&Dogs/Secrets.plist` and replace `your_key_here` under `OWM_API_KEY` with your key.
+   `OPEN_METEO_API_KEY` is the Open-Meteo commercial plan's key: with it the app uses Open-Meteo's
+   customer servers (`customer-api.open-meteo.com` and the like, with `apikey=`); left as
+   `your_key_here` it uses the free servers, which are fine for local work but not for commercial
+   use. Release builds need both.
 4. Open `Cats&Dogs.xcodeproj` in Xcode and run on a simulator or device.
 
 New API keys can take up to two hours to activate.
 
-`Secrets.plist` is gitignored so your key is never committed.
+`Secrets.plist` is gitignored so your keys are never committed.
 
 Firebase is optional. Without `GoogleService-Info.plist` the app builds and runs normally, with
 analytics off and Remote Config on its built-in defaults. See [Firebase](#firebase).
@@ -591,7 +595,9 @@ Add the same OpenWeather API key used for Android as a repository secret:
 1. GitHub repo → **Settings** → **Secrets and variables** → **Actions**
 2. Create secret **`OWM_API_KEY`** with your key
 
-At build time the workflow writes that value into `Secrets.plist` (the file stays gitignored locally).
+Optionally add **`OPEN_METEO_API_KEY`** too. At build time the workflow writes the values into
+`Secrets.plist` (the file stays gitignored locally); without the Open-Meteo one, CI's builds use
+Open-Meteo's free servers.
 
 Optionally add **`GOOGLE_SERVICE_INFO_PLIST`**, the base64 of `GoogleService-Info.plist`
 (`base64 -i "Cats&Dogs/GoogleService-Info.plist" | pbcopy`), to build CI with Firebase included.
@@ -645,6 +651,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `city_search_delay_ms` | 280 (100–1000) | Wait after the last keystroke before searching |
 | `air_quality_enabled` | true | Off stops fetching air quality: no Air quality tile, and the walk planner ignores the air |
 | `openweather_api_key` | "" | Replacement OpenWeather API key, used from the next launch; empty uses the key built into the app. Lets a leaked key be rotated without an update. Not secret: Remote Config values reach every device |
+| `open_meteo_api_key` | "" | Replacement Open-Meteo API key (the commercial plan's), used from the next launch; empty uses the key built into the app. Same purpose as `openweather_api_key` |
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |
 | `ios_min_recommended_version` | "" | Below this version a banner above the weather suggests updating; "Not now" hides it for a week. Empty never asks |
 | `ios_app_store_url` | "" | The App Store link behind the Update buttons; empty hides them until the App Store record exists |
@@ -738,8 +745,8 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   | `ipad-02-delhi.png` | New Delhi at night with unhealthy air: "Bad air. Potty breaks only." |
 
   Suggested upload order: 02, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
-- Release builds fail if `Cats&Dogs/Secrets.plist` is missing or has no OpenWeather key (the "Check
-  OpenWeather API key" build phase), so an archive can't ship without one. Debug builds skip the
+- Release builds fail if `Cats&Dogs/Secrets.plist` is missing or lacks the OpenWeather or the
+  Open-Meteo key (the "Check API keys" build phase), so an archive can't ship without them. Debug builds skip the
   check. Radar map tiles are requested with a `SunnyAndMisty/<version>` User-Agent and cached on
   disk, as OpenStreetMap's tile policy asks.
 - [`Cats&Dogs/PrivacyInfo.xcprivacy`](Cats&Dogs/PrivacyInfo.xcprivacy) is the privacy manifest: no
