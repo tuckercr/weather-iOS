@@ -175,15 +175,32 @@ final class RemoteConfigRepository {
             Self.keyPetColdThresholdC: NSNumber(value: PetWeatherThresholds.standard.petColdC),
             Self.keyWalkBadAirBand: NSNumber(value: PetWeatherThresholds.standard.badAirBand),
         ])
-        // Activated values apply from the next read. Screens that keep what they worked out (the
-        // weather screen) listen for `didActivate` to work it out again.
+        #if DEBUG
+        // Debug builds share the release bundle ID, so they say what they are before the first
+        // fetch, for conditions that only apply to them (such as Open-Meteo off for testing the
+        // OpenWeather fallback). Android's debug build is its own Firebase app instead.
+        Task {
+            try? await remoteConfig.setCustomSignals([Self.signalBuildType: .string("debug")])
+            Self.fetchAndActivate(remoteConfig)
+        }
+        #else
+        Self.fetchAndActivate(remoteConfig)
+        #endif
+        self.remoteConfig = remoteConfig
+    }
+
+    /// The custom signal debug builds send, matched by the "iOS debug builds" condition.
+    nonisolated static let signalBuildType = "build_type"
+
+    /// Activated values apply from the next read. Screens that keep what they worked out (the
+    /// weather screen) listen for `didActivate` to work it out again.
+    private static func fetchAndActivate(_ remoteConfig: RemoteConfig) {
         remoteConfig.fetchAndActivate { status, _ in
             guard status != .error else { return }
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: RemoteConfigRepository.didActivate, object: nil)
             }
         }
-        self.remoteConfig = remoteConfig
     }
 
     var refreshInterval: TimeInterval {

@@ -10,6 +10,8 @@ struct WeatherScreenConfig {
     var rainOutlookHours = RemoteConfigRepository.defaultRainOutlookHours
     var rainOutlookMinChance = RemoteConfigRepository.defaultRainOutlookMinChance
     var airQualityEnabled = true
+    /// Remote Config's `open_meteo_enabled`: which service the forecast is asked of.
+    var openMeteoEnabled = true
     var hourlyForecastEnabled = true
     var radarEnabled = true
     var weekForecastEnabled = true
@@ -28,6 +30,7 @@ struct WeatherScreenConfig {
             rainOutlookHours: config.rainOutlookHours,
             rainOutlookMinChance: config.rainOutlookMinChance,
             airQualityEnabled: RemoteConfigRepository.airQualityEnabled,
+            openMeteoEnabled: RemoteConfigRepository.openMeteoEnabled,
             hourlyForecastEnabled: config.hourlyForecastEnabled,
             radarEnabled: config.radarEnabled,
             weekForecastEnabled: config.weekForecastEnabled,
@@ -165,6 +168,10 @@ struct WeatherScreenState {
     /// The Today tiles, worked out from `tiles` and the reading.
     let todayTiles: TodayTilesState
     let showsRadar: Bool
+    /// The weather service Remote Config chose, shown at the bottom of debug builds to check a
+    /// condition reached the phone. It's the setting, not where this reading came from: a city
+    /// with no coordinates, or Open-Meteo failing, still gets OpenWeather.
+    let weatherService: String
     /// Nil when the rest of the week is switched off, or there's nothing to show for it.
     let week: Week?
 
@@ -266,6 +273,7 @@ struct WeatherScreenState {
             switches: config.todayTiles
         )
         showsRadar = config.radarEnabled
+        weatherService = config.openMeteoEnabled ? "Open-Meteo" : "OpenWeather"
 
         let upcomingDays = today != nil ? Array(days.dropFirst()) : days
         week = if !config.weekForecastEnabled {

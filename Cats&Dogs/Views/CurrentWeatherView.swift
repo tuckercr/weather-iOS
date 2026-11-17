@@ -224,6 +224,13 @@ struct CurrentWeatherView: View {
                         onDaySelected: { selectedDay = $0 },
                         onForecastRetry: viewModel.retry
                     )
+                    #if DEBUG
+                    // Debug builds only, to check which service Remote Config chose.
+                    Text(verbatim: "Using \(state.weatherService) service")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                    #endif
                 }
             }
             .padding(.horizontal, 12)
