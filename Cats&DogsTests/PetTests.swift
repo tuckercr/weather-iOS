@@ -702,9 +702,13 @@ final class WalkAdvisorTests: XCTestCase {
 
 private extension WalkAdvice {
     /// The advice without the verdict behind it, to compare with an expected rating and time.
+    /// Without `isMorning` too: it comes from the clock when the test runs, as these calls don't
+    /// pass `now`, so comparing it failed before noon (CI runs in UTC). The headline tests set the
+    /// time. Same as Android's `WalkAdvisorTest`.
     var withoutCheck: WalkAdvice {
         var copy = self
         copy.now = WalkCheck([])
+        copy.isMorning = false
         return copy
     }
 }
