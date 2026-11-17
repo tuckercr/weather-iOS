@@ -35,10 +35,14 @@ jobs:
       - name: Create Secrets.plist
         env:
           OWM_API_KEY: ${{ secrets.OWM_API_KEY }}
+          OPEN_METEO_API_KEY: ${{ secrets.OPEN_METEO_API_KEY }}
         run: |
           cp "Cats&Dogs/Secrets.example.plist" "Cats&Dogs/Secrets.plist"
           if [ -n "$OWM_API_KEY" ]; then
             /usr/libexec/PlistBuddy -c "Set :OWM_API_KEY $OWM_API_KEY" "Cats&Dogs/Secrets.plist"
+          fi
+          if [ -n "$OPEN_METEO_API_KEY" ]; then
+            /usr/libexec/PlistBuddy -c "Set :OPEN_METEO_API_KEY $OPEN_METEO_API_KEY" "Cats&Dogs/Secrets.plist"
           fi
 
       # GoogleService-Info.plist is git-ignored. Firebase is optional, so builds without the secret

@@ -50,7 +50,7 @@ xcrun simctl launch --terminate-running-process CatsDogs-Tests com.fangjet.weath
   missing). The other simulators hold the user's own app data and the App Store screenshot setup:
   never run tests on them, uninstall the app from them or erase them.
 - Installing a build on the user's phones is fine; don't drive their UI.
-- Release builds fail without `Cats&Dogs/Secrets.plist` holding an OpenWeather key. Without
+- Release builds fail without `Cats&Dogs/Secrets.plist` holding the OpenWeather and Open-Meteo keys. Without
   `GoogleService-Info.plist` Firebase never starts and Remote Config uses the in-app defaults; unit
   tests never start Firebase.
 - Background tasks never run on the simulator; README has the LLDB command to trigger one on a device.

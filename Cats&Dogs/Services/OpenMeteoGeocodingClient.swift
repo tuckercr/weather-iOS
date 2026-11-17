@@ -5,28 +5,30 @@ protocol OpenMeteoGeocodingAPI: Sendable {
 }
 
 /// Open-Meteo's geocoding search: prefix matching from 3 letters, up to 100 rows, with populations.
-/// Free and keyless for non-commercial use; data from GeoNames, credited in Settings.
+/// On the commercial plan's servers (`OpenMeteoEndpoint`); data from GeoNames, credited in Settings.
 struct OpenMeteoGeocodingClient: OpenMeteoGeocodingAPI {
     private let session: URLSession
     private static let baseURL = URL(string: "https://geocoding-api.open-meteo.com/v1/search")!
 
-    init(session: URLSession = .shared) {
+    private let apiKey: String
+
+    init(session: URLSession = .shared, apiKey: String = AppConfig.openMeteoApiKey) {
         self.session = session
+        self.apiKey = apiKey
     }
 
     func search(name: String, count: Int) async throws -> [OpenMeteoPlaceDTO] {
-        var components = URLComponents(url: Self.baseURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
+        let url = OpenMeteoEndpoint.url(Self.baseURL, apiKey: apiKey, query: [
             URLQueryItem(name: "name", value: name),
             URLQueryItem(name: "count", value: String(count)),
             // English names and states, so labels read as they do from OpenWeather.
             URLQueryItem(name: "language", value: "en"),
             URLQueryItem(name: "format", value: "json"),
-        ]
+        ])
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(from: components.url!)
+            (data, response) = try await session.data(from: url)
         } catch {
             throw OpenWeatherClientError.network
         }

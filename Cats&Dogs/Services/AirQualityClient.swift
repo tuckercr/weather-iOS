@@ -5,14 +5,18 @@ protocol AirQualityAPI: Sendable {
     func hourly(latitude: Double, longitude: Double, scale: AirQuality.Scale?) async throws -> AirQualityHourlyResponse
 }
 
-/// Open-Meteo's air quality endpoint: free, keyless and worldwide. Errors reuse
+/// Open-Meteo's air quality endpoint, worldwide, on the commercial plan's servers
+/// (`OpenMeteoEndpoint`). Errors reuse
 /// `OpenWeatherClientError`, like `OpenMeteoClient`.
 struct AirQualityClient: AirQualityAPI {
     private let session: URLSession
     private static let baseURL = URL(string: "https://air-quality-api.open-meteo.com/v1/air-quality")!
 
-    init(session: URLSession = .shared) {
+    private let apiKey: String
+
+    init(session: URLSession = .shared, apiKey: String = AppConfig.openMeteoApiKey) {
         self.session = session
+        self.apiKey = apiKey
     }
 
     /// The next three days hour by hour, enough for the walk planner's day ahead, with every index
@@ -36,18 +40,17 @@ struct AirQualityClient: AirQualityAPI {
         longitude: Double,
         _ fields: [URLQueryItem]
     ) async throws -> Response {
-        var components = URLComponents(url: Self.baseURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
+        let url = OpenMeteoEndpoint.url(Self.baseURL, apiKey: apiKey, query: [
             URLQueryItem(name: "latitude", value: String(latitude)),
             URLQueryItem(name: "longitude", value: String(longitude)),
             // The response's time zone picks the scale (European or US) when it wasn't known.
             URLQueryItem(name: "timezone", value: "auto"),
-        ] + fields
+        ] + fields)
 
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(from: components.url!)
+            (data, response) = try await session.data(from: url)
         } catch {
             throw OpenWeatherClientError.network
         }

@@ -6,7 +6,7 @@ protocol OpenMeteoAPI: Sendable {
     func current(latitude: Double, longitude: Double, units: WeatherUnits) async throws -> OpenMeteoCurrentResponse
 }
 
-/// Open-Meteo's forecast endpoint: free and keyless. Errors reuse `OpenWeatherClientError` so they
+/// Open-Meteo's forecast endpoint, on the commercial plan's servers (`OpenMeteoEndpoint`). Errors reuse `OpenWeatherClientError` so they
 /// map onto the same user-facing messages as the OpenWeatherMap calls.
 struct OpenMeteoClient: OpenMeteoAPI {
     private let session: URLSession
@@ -23,8 +23,11 @@ struct OpenMeteoClient: OpenMeteoAPI {
         "is_day",
     ].joined(separator: ",")
 
-    init(session: URLSession = .shared) {
+    private let apiKey: String
+
+    init(session: URLSession = .shared, apiKey: String = AppConfig.openMeteoApiKey) {
         self.session = session
+        self.apiKey = apiKey
     }
 
     func forecast(latitude: Double, longitude: Double, units: WeatherUnits) async throws -> OpenMeteoResponse {
@@ -57,8 +60,7 @@ struct OpenMeteoClient: OpenMeteoAPI {
         longitude: Double,
         units: WeatherUnits
     ) async throws -> Response {
-        var components = URLComponents(url: Self.baseURL, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
+        let query = [
             URLQueryItem(name: "latitude", value: String(latitude)),
             URLQueryItem(name: "longitude", value: String(longitude)),
         ] + items + [
@@ -67,11 +69,12 @@ struct OpenMeteoClient: OpenMeteoAPI {
             URLQueryItem(name: "temperature_unit", value: units == .imperial ? "fahrenheit" : "celsius"),
             URLQueryItem(name: "wind_speed_unit", value: units == .imperial ? "mph" : "ms"),
         ]
+        let url = OpenMeteoEndpoint.url(Self.baseURL, apiKey: apiKey, query: query)
 
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await session.data(from: components.url!)
+            (data, response) = try await session.data(from: url)
         } catch {
             throw OpenWeatherClientError.network
         }

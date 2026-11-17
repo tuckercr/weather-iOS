@@ -99,7 +99,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C6ACE5DB2FD1E5C3008E6E91 /* Build configuration list for PBXNativeTarget "Cats&Dogs" */;
 			buildPhases = (
-				C6F1BB012FF2000000A1B2C3 /* Check OpenWeather API key */,
+				C6F1BB012FF2000000A1B2C3 /* Check API keys */,
 				C6ACE5CC2FD1E5C2008E6E91 /* Sources */,
 				C6ACE5CD2FD1E5C2008E6E91 /* Frameworks */,
 				C6ACE5CE2FD1E5C2008E6E91 /* Resources */,
@@ -203,7 +203,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		C6F1BB012FF2000000A1B2C3 /* Check OpenWeather API key */ = {
+		C6F1BB012FF2000000A1B2C3 /* Check API keys */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -213,14 +213,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Check OpenWeather API key";
+			name = "Check API keys";
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Release builds must not ship without the OpenWeather key, or every current-weather request fails.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nSECRETS=\"$SRCROOT/Cats&Dogs/Secrets.plist\"\n# PlistBuddy prints to stdout when the file is missing, so check the file exists first.\nKEY=\"\"\nif [ -f \"$SECRETS\" ]; then KEY=$(/usr/libexec/PlistBuddy -c \"Print :OWM_API_KEY\" \"$SECRETS\" 2>/dev/null); fi\nif [ -z \"$KEY\" ] || [ \"$KEY\" = \"your_key_here\" ]; then\n  echo \"error: Cats&Dogs/Secrets.plist has no OWM_API_KEY. Copy Secrets.example.plist and add the OpenWeather key before archiving.\"\n  exit 1\nfi\n";
+			shellScript = "# Release builds must not ship without the OpenWeather key, or every current-weather request fails.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nSECRETS=\"$SRCROOT/Cats&Dogs/Secrets.plist\"\n# PlistBuddy prints to stdout when the file is missing, so check the file exists first.\nKEY=\"\"\nif [ -f \"$SECRETS\" ]; then KEY=$(/usr/libexec/PlistBuddy -c \"Print :OWM_API_KEY\" \"$SECRETS\" 2>/dev/null); fi\nif [ -z \"$KEY\" ] || [ \"$KEY\" = \"your_key_here\" ]; then\n  echo \"error: Cats&Dogs/Secrets.plist has no OWM_API_KEY. Copy Secrets.example.plist and add the OpenWeather key before archiving.\"\n  exit 1\nfi\n# Nor without the Open-Meteo key: without it the app uses the free servers, which aren't for commercial use.\nOM_KEY=\"\"\nif [ -f \"$SECRETS\" ]; then OM_KEY=$(/usr/libexec/PlistBuddy -c \"Print :OPEN_METEO_API_KEY\" \"$SECRETS\" 2>/dev/null); fi\nif [ -z \"$OM_KEY\" ] || [ \"$OM_KEY\" = \"your_key_here\" ]; then\n  echo \"error: Cats&Dogs/Secrets.plist has no OPEN_METEO_API_KEY. Add the Open-Meteo commercial key before archiving.\"\n  exit 1\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
