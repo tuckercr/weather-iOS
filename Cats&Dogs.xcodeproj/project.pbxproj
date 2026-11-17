@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		C6F1BA032FF1000000A1B2C3 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = C6F1BA012FF1000000A1B2C3 /* FirebaseAnalyticsCore */; };
 		C6F1BA042FF1000000A1B2C3 /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = C6F1BA022FF1000000A1B2C3 /* FirebaseRemoteConfig */; };
+		C6F1BA062FF1000000A1B2C3 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = C6F1BA052FF1000000A1B2C3 /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 			files = (
 				C6F1BA032FF1000000A1B2C3 /* FirebaseAnalyticsCore in Frameworks */,
 				C6F1BA042FF1000000A1B2C3 /* FirebaseRemoteConfig in Frameworks */,
+				C6F1BA062FF1000000A1B2C3 /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,6 +105,7 @@
 				C6ACE5CC2FD1E5C2008E6E91 /* Sources */,
 				C6ACE5CD2FD1E5C2008E6E91 /* Frameworks */,
 				C6ACE5CE2FD1E5C2008E6E91 /* Resources */,
+				C6F1BB022FF2000000A1B2C3 /* Upload dSYMs to Crashlytics */,
 			);
 			buildRules = (
 			);
@@ -115,6 +118,7 @@
 			packageProductDependencies = (
 				C6F1BA012FF1000000A1B2C3 /* FirebaseAnalyticsCore */,
 				C6F1BA022FF1000000A1B2C3 /* FirebaseRemoteConfig */,
+				C6F1BA052FF1000000A1B2C3 /* FirebaseCrashlytics */,
 			);
 			productName = "Cats&Dogs";
 			productReference = C6ACE5D02FD1E5C2008E6E91 /* Cats&Dogs.app */;
@@ -221,6 +225,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "# Release builds must not ship without the OpenWeather key, or every current-weather request fails.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nSECRETS=\"$SRCROOT/Cats&Dogs/Secrets.plist\"\n# PlistBuddy prints to stdout when the file is missing, so check the file exists first.\nKEY=\"\"\nif [ -f \"$SECRETS\" ]; then KEY=$(/usr/libexec/PlistBuddy -c \"Print :OWM_API_KEY\" \"$SECRETS\" 2>/dev/null); fi\nif [ -z \"$KEY\" ] || [ \"$KEY\" = \"your_key_here\" ]; then\n  echo \"error: Cats&Dogs/Secrets.plist has no OWM_API_KEY. Copy Secrets.example.plist and add the OpenWeather key before archiving.\"\n  exit 1\nfi\n# Nor without the Open-Meteo key: without it the app uses the free servers, which aren't for commercial use.\nOM_KEY=\"\"\nif [ -f \"$SECRETS\" ]; then OM_KEY=$(/usr/libexec/PlistBuddy -c \"Print :OPEN_METEO_API_KEY\" \"$SECRETS\" 2>/dev/null); fi\nif [ -z \"$OM_KEY\" ] || [ \"$OM_KEY\" = \"your_key_here\" ]; then\n  echo \"error: Cats&Dogs/Secrets.plist has no OPEN_METEO_API_KEY. Add the Open-Meteo commercial key before archiving.\"\n  exit 1\nfi\n";
+		};
+		C6F1BB022FF2000000A1B2C3 /* Upload dSYMs to Crashlytics */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+			);
+			name = "Upload dSYMs to Crashlytics";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Release builds send their dSYM to Crashlytics, so crashes show function names and lines.\n# Debug builds don't report crashes, and builds without GoogleService-Info.plist have no Firebase.\nif [ \"$CONFIGURATION\" != \"Release\" ]; then exit 0; fi\nif [ ! -f \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/GoogleService-Info.plist\" ]; then exit 0; fi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -565,6 +592,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C6F1BA002FF1000000A1B2C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseRemoteConfig;
+		};
+		C6F1BA052FF1000000A1B2C3 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C6F1BA002FF1000000A1B2C3 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -522,7 +522,7 @@ The iOS and Android apps have the same features. Where the platforms differ:
 | Briefing, walk time, rain alerts | Planned ahead from the latest cached forecast | Worked out at the time (walk time re-checked when due) |
 | Background weather refresh | `BGAppRefreshTask`, no sooner than the Remote Config interval | WorkManager, every 90 minutes (Remote Config) |
 | "Use system setting" for temperature | By region | Android 14+ temperature preference, else region |
-| Crash reporting | Xcode Organizer crash reports | Crashlytics, release builds only |
+| Crash reporting | Crashlytics, release builds only; the "Upload dSYMs to Crashlytics" build phase sends each Release build's dSYM | Crashlytics, release builds only; R8 mapping files uploaded by the Gradle plugin |
 | *Share usage statistics* | Settings › Privacy | Settings › About |
 | UI tests in CI | None yet | Compose UI tests |
 | Release code shrinking | Not needed (Swift compiles to native code) | R8 minification and resource shrinking |
@@ -755,8 +755,8 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   check. Radar map tiles are requested with a `SunnyAndMisty/<version>` User-Agent and cached on
   disk, as OpenStreetMap's tile policy asks.
 - [`Cats&Dogs/PrivacyInfo.xcprivacy`](Cats&Dogs/PrivacyInfo.xcprivacy) is the privacy manifest: no
-  tracking or tracking domains, product interaction data for analytics and precise location for
-  app functionality (neither linked to the user), and `UserDefaults` as the only required-reason API.
+  tracking or tracking domains, product interaction data for analytics, and precise location and
+  crash data (Crashlytics, release builds) for app functionality (none linked to the user), and `UserDefaults` as the only required-reason API.
   The App Store privacy answers in `listing.md` cover this plus what the Firebase SDK collects itself
   (coarse location and a per-install ID, for analytics).
 - `ITSAppUsesNonExemptEncryption` is false in `Info.plist`, so uploads skip the export-compliance

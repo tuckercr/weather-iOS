@@ -85,8 +85,9 @@ Tracking: **No**. Data collected, all **not linked to the user's identity** and 
 | Location > Coarse Location | Analytics | Google Analytics derives general location from the (masked) IP address |
 | Identifiers > Device ID | Analytics | Google Analytics assigns a per-install app instance ID |
 | Usage Data > Product Interaction | Analytics | The four anonymous events (onboarding complete, city added, settings opened, weather error) |
+| Diagnostics > Crash Data | App Functionality | Crashlytics crash reports from release builds: the error, device model and iOS version |
 
-Not collected: contact info, health, financial, user content, browsing or search history, contacts, purchases, diagnostics. No advertising ID (FirebaseAnalyticsCore, no AdSupport).
+Not collected: contact info, health, financial, user content, browsing or search history, contacts, purchases, performance data or other diagnostics. No advertising ID (FirebaseAnalyticsCore, no AdSupport).
 
 ## Export compliance
 
