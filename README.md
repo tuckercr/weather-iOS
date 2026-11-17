@@ -745,6 +745,11 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   | `ipad-02-delhi.png` | New Delhi at night with unhealthy air: "Bad air. Potty breaks only." |
 
   Suggested upload order: 02, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
+- `screenshots/app-store/header-5244x2950.png` is the product page header (Product Page
+  Information, Header). It's built from the app icon's artwork. The App Store crops headers hard: an
+  iPhone shows about the middle 55% of the width, and every device hides the bottom 40% under the
+  app's name and icon. So the sun, Sunny and Misty sit between 12% and 60% of the height, on a
+  grassy hill that only larger screens show. Check a new one with the Preview button there.
 - Release builds fail if `Cats&Dogs/Secrets.plist` is missing or lacks the OpenWeather or the
   Open-Meteo key (the "Check API keys" build phase), so an archive can't ship without them. Debug builds skip the
   check. Radar map tiles are requested with a `SunnyAndMisty/<version>` User-Agent and cached on
