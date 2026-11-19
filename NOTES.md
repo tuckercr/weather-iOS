@@ -263,6 +263,9 @@ noted. Checked against the code, not fixed yet.
 - [ ] Plan for supporting the app after launch. (10-31)
 - [ ] Website store buttons: both point to the stores since 11-18 but are plain text buttons;
       swap in the official App Store and Google Play badges. (10-27, updated 11-18)
+- [ ] Website support page: "Why does Sunny say Potty breaks only?" only gives bad air as the
+      reason. The app also says it for storms, gales and extreme heat or cold, as the home page
+      does. (11-18)
 - Debug builds can show either update prompt: launch iOS with `-updatePrompt required` (or
   `recommended`); on Android,
   `adb shell am start -n com.fangjet.weather.debug/com.fangjet.weather.MainActivity --es updatePrompt required`.
