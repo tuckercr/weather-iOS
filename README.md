@@ -654,7 +654,7 @@ Remote Config parameters are defined and deployed from the Android repo
 | `open_meteo_api_key` | "" | Replacement Open-Meteo API key (the commercial plan's), used from the next launch; empty uses the key built into the app. Same purpose as `openweather_api_key` |
 | `ios_min_supported_version` | "" | Below this version (e.g. `1.1`) the app shows only "Time for an update" until it's updated. Empty never asks. Android has its own key |
 | `ios_min_recommended_version` | "" | Below this version a banner above the weather suggests updating; "Not now" hides it for a week. Empty never asks |
-| `ios_app_store_url` | "" | The App Store link behind the Update buttons; empty hides them until the App Store record exists |
+| `ios_app_store_url` | "https://apps.apple.com/app/id6827945995" | The App Store link behind the Update buttons; empty hides them |
 | `tile_feels_like_enabled`, `tile_wind_enabled`, `tile_humidity_enabled`, `tile_paw_check_enabled`, `tile_daylight_enabled`, `tile_sky_enabled` | true | One switch per Today tile (`tile_sky_enabled` is Misty's View, the sky and visibility tile); false hides that tile for everyone |
 | `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
 | `seasonal_themes_enabled` | true | Seasonal themes (Halloween, Thanksgiving); false switches them all off |

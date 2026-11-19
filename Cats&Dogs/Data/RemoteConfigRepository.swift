@@ -161,7 +161,7 @@ final class RemoteConfigRepository {
             Self.keyCitySearchDelayMs: NSNumber(value: CitySearchPolicy.standard.delayMilliseconds),
             Self.keyIosMinSupportedVersion: "" as NSString,
             Self.keyIosMinRecommendedVersion: "" as NSString,
-            Self.keyIosAppStoreURL: "" as NSString,
+            Self.keyIosAppStoreURL: "https://apps.apple.com/app/id6827945995" as NSString,
             Self.keyWalkHotPavementC: NSNumber(value: PetWeatherThresholds.standard.hotPavementC),
             Self.keyWalkWarmPavementC: NSNumber(value: PetWeatherThresholds.standard.warmPavementC),
             Self.keyWalkIcyPavementC: NSNumber(value: PetWeatherThresholds.standard.icyPavementC),
