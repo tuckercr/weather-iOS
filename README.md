@@ -777,3 +777,7 @@ Weather data by [OpenWeather](https://openweathermap.org/) and [Open-Meteo.com](
 (CC BY 4.0). Location data based on [GeoNames](https://www.geonames.org), through Open-Meteo's search. Radar by [RainViewer](https://www.rainviewer.com). Base map ©
 [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors. [Baloo 2](https://github.com/EkType/Baloo2)
 by Ek Type, under the SIL Open Font License.
+
+## Author
+
+Built by [Colin Tucker](https://fangjet.com), a senior Android engineer. More projects at [fangjet.com/projects](https://fangjet.com/projects).
