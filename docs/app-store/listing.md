@@ -38,6 +38,7 @@ Copy each field into App Store Connect. Character counts are checked against App
 > - Animated precipitation radar
 > - Save as many cities as you like, or use your current location, each shown in its own time zone
 > - A morning briefing at 8:30 and a nudge at the best walk time, both optional
+> - Follow my location: the briefing and walk nudges follow you when you travel, even when the app is closed
 > - Celsius or Fahrenheit, or follow your device setting
 > - Designed for iPhone and iPad, in portrait and landscape
 >
@@ -59,9 +60,9 @@ Copy each field into App Store Connect. Character counts are checked against App
 | Privacy policy URL | https://sunnyandmisty.com/privacy |
 
 **Screenshots** (both sets are required, because the app runs on iPhone and iPad):
-- 6.3-inch iPhone (1206 × 2622), now the required size: `screenshots/app-store/6.3-inch/`, order 02, 03, 04, 05, 06. These are the 6.9-inch shots scaled down (`sips -z 2622 1206`)
+- 6.3-inch iPhone (1206 × 2622), now the required size: `screenshots/app-store/6.3-inch/`, order 02, 07, 03, 04, 05, 06. These are the 6.9-inch shots scaled down (`sips -z 2622 1206`)
 - 6.9-inch iPhone (1320 × 2868), optional but sharper on the largest phones: `screenshots/app-store/`, same order (01 optional); the README's App Store section lists what each shows
-- 13-inch iPad (2064 × 2752): `screenshots/app-store/ipad-02-delhi.png`, then `ipad-01-amsterdam.png`
+- 13-inch iPad (2064 × 2752): `screenshots/app-store/ipad-02-beijing.png`, then `ipad-01-kanazawa.png`
 
 ## App Review information
 

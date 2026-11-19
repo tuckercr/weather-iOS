@@ -15,11 +15,11 @@ Firebase project and the same Remote Config keys, and new features ship on both.
 
 | Pets, walk time & hourly | Today tiles & air quality | Radar & rest of week | Day detail | Settings |
 |---|---|---|---|---|
-| ![Sunny and Misty in the sun on a clear, mild day, with best walk time and the hourly strip](./screenshots/current.png) | ![Today's tiles: Feels Like, the windsock, Fluff Factor, Paw Check, Air Quality across the full width, Daylight and Misty's View](./screenshots/today.png) | ![Animated RainViewer radar and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with I have a dog, locations, notifications and units](./screenshots/settings.png) |
+| ![Sunny and Misty in the sun on a clear, mild day in Tokyo, with "Now is a great time" and the hourly strip](./screenshots/current.png) | ![Today's tiles in Alice Springs: Feels Like, the windsock, Fluff Factor, Paw Check at about 139° and dangerously hot, Air Quality across the full width, Daylight and Misty's View](./screenshots/today.png) | ![Animated RainViewer radar with rain over Japan, and the rest of the week](./screenshots/forecast.png) | ![Hour-by-hour temperature and rain chance for a day](./screenshots/day.png) | ![Settings with I have a dog, locations, notifications and units](./screenshots/settings.png) |
 
 On iPad and in landscape, the pets sit beside today's details and the week splits into two columns.
-Here New Delhi's air is "Unhealthy", so the walk card says "Not a good day for walkies" and
-"Bad air. Potty breaks only.":
+Here Beijing's air is "Very unhealthy", so the walk card says "Not a good day for walkies" and
+"Smoky air. Potty breaks only.":
 
 ![iPad layout with the pets beside today's details, unhealthy air and the bad-air walk card](./screenshots/tablet.png)
 
@@ -731,20 +731,21 @@ Firebase 13 needs Xcode 26.1 (Swift 6.2.1). The project stays on 12.x until CI m
   name, subtitle, description, keywords and the rest.
 - [`screenshots/app-store/`](screenshots/app-store/) holds the 6.9-inch iPhone screenshots
   (1320 × 2868) and the 13-inch iPad ones (2064 × 2752). App Store Connect requires iPad
-  screenshots because the app runs on iPad. Taken on 11-07 with the status bar at 9:41:
+  screenshots because the app runs on iPad. Taken on 11-18 from build 10 (1.0.10) with live weather and the status bar at 9:41:
 
   | File | Shows |
   |---|---|
   | `01-welcome.png` | Onboarding: meet Sunny and Misty |
-  | `02-today.png` | Vienna (My Location) on a clear, mild day: the pets in the sun, "Now is a great time" and the hourly strip |
-  | `03-rain-walk.png` | Kigali in the rain: the umbrella scene, "Tomorrow around 7 AM" and the rain chart, "Rain stopping around 4:00 PM" |
-  | `04-radar-week.png` | The animated radar and the rest of the week |
-  | `05-day-detail.png` | A day's hour-by-hour detail |
+  | `02-today.png` | Tokyo (My Location, named Chiyoda) on a clear, mild day: the pets in the sun, "Now is a great time" and the hourly strip |
+  | `03-rain-walk.png` | Kanazawa in drizzle: the umbrella scene, "Not a good day for walkies" and the rain chart |
+  | `04-radar-week.png` | The animated radar with rain over Japan, and the rest of the week |
+  | `05-day-detail.png` | A day's hour-by-hour detail, with the chance of rain |
   | `06-settings.png` | Settings: I have a dog, locations, notifications, units |
-  | `ipad-01-amsterdam.png` | Amsterdam by day, with air quality on Europe's scale and rain on the radar |
-  | `ipad-02-delhi.png` | New Delhi at night with unhealthy air: "Bad air. Potty breaks only." |
+  | `07-hot-pavement.png` | Alice Springs at 87°: sunglasses, "Too hot underfoot" and Paw check at about 139°, dangerously hot |
+  | `ipad-01-kanazawa.png` | Kanazawa in drizzle by day, with the tiles beside the pets and rain on the radar |
+  | `ipad-02-beijing.png` | Beijing with very unhealthy air: "Smoky air. Potty breaks only." |
 
-  Suggested upload order: 02, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
+  Suggested upload order: 02, 07, 03, 04, 05, 06 (01 optional); iPad 02 then 01.
 - `screenshots/app-store/header-5244x2950.png` is the product page header (Product Page
   Information, Header). It's built from the app icon's artwork. The App Store crops headers hard: an
   iPhone shows about the middle 55% of the width, and every device hides the bottom 40% under the
