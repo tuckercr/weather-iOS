@@ -35,6 +35,14 @@ final class AnalyticsRepositoryTests: XCTestCase {
         XCTAssertEqual(strings(sent[3]), ["error_key": "offline", "provider": "open_meteo", "request": "air_quality"])
     }
 
+    func testReviewPromptRequests() {
+        let analytics = makeRepository()
+        analytics.logReviewPromptRequested(.greatWalk, requestNumber: 2)
+        XCTAssertEqual(sent.map(\.name), ["review_prompt_requested"])
+        XCTAssertEqual(strings(sent[0]), ["moment": "great_walk"])
+        XCTAssertEqual(sent[0].parameters?["request_number"] as? Int, 2)
+    }
+
     func testOnboardingStepsPermissionsAndNotificationOpens() {
         let analytics = makeRepository()
 

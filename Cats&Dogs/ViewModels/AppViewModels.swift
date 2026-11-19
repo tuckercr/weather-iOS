@@ -11,6 +11,7 @@ final class AppViewModels {
     let weather: WeatherForecastViewModel
     let welcome: WelcomeViewModel
     let updatePrompt: UpdatePromptViewModel
+    let reviewPrompt: ReviewPromptViewModel
     /// The radar's frames are the same for every city, so one view model holds them for the app.
     let radar: RadarViewModel
 
@@ -26,6 +27,7 @@ final class AppViewModels {
             onLocationChosen: { cities.addLocation($0) }
         )
         updatePrompt = UpdatePromptViewModel()
+        reviewPrompt = ReviewPromptViewModel()
         radar = RadarViewModel()
     }
 }

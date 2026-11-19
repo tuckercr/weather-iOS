@@ -12,6 +12,7 @@ struct RootView: View {
     private let weatherViewModel: WeatherForecastViewModel
     private let settingsViewModel: SettingsViewModel
     private let updatePrompt: UpdatePromptViewModel
+    private let reviewPrompt: ReviewPromptViewModel
     private let radarViewModel: RadarViewModel
     @State private var path: [AppScreen] = []
     @Environment(\.scenePhase) private var scenePhase
@@ -22,6 +23,7 @@ struct RootView: View {
         weatherViewModel = viewModels.weather
         settingsViewModel = viewModels.settings
         updatePrompt = viewModels.updatePrompt
+        reviewPrompt = viewModels.reviewPrompt
         radarViewModel = viewModels.radar
     }
 
@@ -53,6 +55,8 @@ struct RootView: View {
                         CurrentWeatherView(
                             viewModel: weatherViewModel,
                             settingsViewModel: settingsViewModel,
+                            reviewPrompt: reviewPrompt,
+                            isFrontmost: path.isEmpty && updatePrompt.prompt == .none,
                             onOpenSettings: {
                                 weatherViewModel.logSettingsOpened()
                                 path.append(.settings)
@@ -99,6 +103,12 @@ struct RootView: View {
         // Remote Config values fetched in the background apply from the next read.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { updatePrompt.refresh() }
+            switch phase {
+            case .active: reviewPrompt.becameActive()
+            case .inactive: reviewPrompt.becameInactive()
+            case .background: reviewPrompt.enteredBackground()
+            @unknown default: break
+            }
         }
     }
 }

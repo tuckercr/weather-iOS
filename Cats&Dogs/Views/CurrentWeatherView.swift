@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 struct CurrentWeatherView: View {
@@ -5,6 +6,11 @@ struct CurrentWeatherView: View {
     /// the navigation stack, Settings screen included, under the user's finger.
     let settingsViewModel: SettingsViewModel
     let onOpenSettings: () -> Void
+    /// Told what's on screen; asks for the App Store rating when it's time.
+    let reviewPrompt: ReviewPromptViewModel
+    /// Nothing covers this screen from outside: Settings or the update banner.
+    let isFrontmost: Bool
+    @Environment(\.requestReview) private var requestReview
 
     private var unitOverride: UnitOverride { settingsViewModel.unitOverride }
     /// The user's Settings choice; Remote Config can also hide the card for everyone.
@@ -21,11 +27,24 @@ struct CurrentWeatherView: View {
     init(
         viewModel: WeatherForecastViewModel,
         settingsViewModel: SettingsViewModel,
+        reviewPrompt: ReviewPromptViewModel,
+        isFrontmost: Bool,
         onOpenSettings: @escaping () -> Void
     ) {
         self.viewModel = viewModel
         self.settingsViewModel = settingsViewModel
+        self.reviewPrompt = reviewPrompt
+        self.isFrontmost = isFrontmost
         self.onOpenSettings = onOpenSettings
+    }
+
+    /// What the ratings prompt is told: covered by a sheet or Add Location counts as not in front.
+    private var reviewPromptScreen: ReviewPromptScreen {
+        ReviewPromptScreen(
+            screen: viewModel.screen,
+            isRefreshing: viewModel.isRefreshing,
+            frontmost: isFrontmost && selectedDay == nil && !showAddLocation
+        )
     }
 
     var body: some View {
@@ -87,6 +106,12 @@ struct CurrentWeatherView: View {
         }
         .task {
             viewModel.appeared()
+        }
+        .onChange(of: reviewPromptScreen, initial: true) { _, screen in
+            reviewPrompt.screenChanged(screen)
+        }
+        .onChange(of: reviewPrompt.requests) { _, _ in
+            requestReview()
         }
         .fullScreenCover(isPresented: $showAddLocation) {
             AddLocationView(

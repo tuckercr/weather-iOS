@@ -11,6 +11,9 @@ final class NotificationSettingsLink: NSObject, UNUserNotificationCenterDelegate
     static let shared = NotificationSettingsLink()
 
     var isRequested = false
+    /// When one of the app's notifications was last tapped, so the ratings prompt can leave that
+    /// visit alone.
+    private(set) var lastOpenedAt: Date?
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
@@ -27,6 +30,7 @@ final class NotificationSettingsLink: NSObject, UNUserNotificationCenterDelegate
         guard response.actionIdentifier == UNNotificationDefaultActionIdentifier else { return }
         let category = response.notification.request.content.categoryIdentifier
         await MainActor.run {
+            self.lastOpenedAt = Date()
             if let kind = NotificationKind.allCases.first(where: {
                 WeatherNotificationScheduler.threadIdentifier($0) == category
             }) {

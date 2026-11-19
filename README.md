@@ -326,6 +326,18 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
    "Time for an update" with an Update button; below `ios_min_recommended_version` a banner offers
    the update, and *Not now* hides it for a week. Debug builds can show either with the launch
    argument `-updatePrompt required` or `-updatePrompt recommended`.
+9. **Ratings prompt** (off until `review_prompt_enabled` is turned on; the decisions are in
+   [RATINGS.md](RATINGS.md)): Apple's own prompt, never one of ours and never from a button. It's
+   asked for at a happy moment, the walk card's "Now is a great time" or the pets' sunny or fair
+   mood by day, 3 seconds after the weather screen settles with fresh weather and nothing over it,
+   for someone who installed at least 7 days ago and has seen the weather on 5 different days. Not
+   in a visit that started from a notification or was interrupted (a permission request or another
+   system alert), and not in storms, gales, bad air, hot pavement or hurricane warnings. At most
+   once per version, 120 days apart and 3 times in all; iOS itself shows it at most 3 times a year
+   and never says whether it did. The install date is saved on first use, taken from when iOS made
+   the app's Documents folder, so people updating count from their real install. Debug builds always
+   show Apple's prompt (TestFlight never does): launch with `-reviewPromptForce YES` to ask once, a
+   few seconds after the weather shows, whatever the counts say.
 
 ### Where the data comes from
 
@@ -549,6 +561,7 @@ Shared with Android (the same cases on both platforms):
 - `RadarTests`: RainViewer timeline parsing, tile URLs, load-once and retry, refreshing a stale timeline while the old one stays on screen, the coverage layer and "No radar here"
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy and fog captions, cold fog and a foggy night keeping their own, fog never a mood, and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
+- `ReviewPromptTests`: the ratings prompt's rule (days installed by the calendar, never on install day, active days, moments, interruptions and notification visits, once per version, the cooldown and the limit), its Remote Config validation, which weather screens are a happy moment, and the view model's delay, day counting and visits
 - `ScrollEdgeFadeTests`: which edges of the hourly strip fade at the start, partway, at the end, bouncing past either end and when every hour fits
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present
@@ -659,6 +672,15 @@ Remote Config parameters are defined and deployed from the Android repo
 | `tile_uv_enabled` | false | The UV index tile; while off, UV stays in the Daylight tile's header (it still gets its own tile when there's no Daylight tile) |
 | `seasonal_themes_enabled` | true | Seasonal themes (Halloween, Thanksgiving); false switches them all off |
 | `seasonal_themes` | the built-in list | The themes as a JSON list (format: `SeasonalTheme`), replacing the list built into the apps when valid; empty keeps it. A new theme for a fixed date, a date range or an nth weekday needs no app update |
+| `review_prompt_enabled` | false | The ratings prompt (RATINGS.md). Off for now: turned on from the console once it's been tried on a phone |
+| `review_prompt_min_days_installed` | 7 (1–365) | Days since install before asking; never on the day of install |
+| `review_prompt_min_active_days` | 5 (1–100) | Different days the weather screen was shown before asking |
+| `review_prompt_moments` | `great_walk,pleasant_weather` | The happy moments that can ask, comma-separated: `great_walk` (the walk card's "Now is a great time") and `pleasant_weather` (the pets' sunny or fair mood by day). Unknown names are ignored; empty never asks |
+| `review_prompt_delay_seconds` | 3 (0–30) | Wait after a moment, with the screen unchanged, before asking |
+| `review_prompt_once_per_version` | true | Never ask twice in the same app version |
+| `review_prompt_cooldown_days` | 120 (30–365) | Days between asks |
+| `review_prompt_max_requests` | 3 (0–20, 0 for no limit) | Asks in all, ever |
+| `review_prompt_on_notification_open` | false | Allows asking in a visit that started from a notification |
 | `temperature_units_shown` | false | On adds the unit to temperatures that stand on their own: "89 °F" rather than "89°", "About 81 °F" on the Paw check tile. Units and the Settings choice are unchanged; the high and low, the hourly strip and notifications have no unit either way |
 
 The website's paw safety page (sunnyandmisty.com/paw-safety, `paw-safety/index.html` in
@@ -685,6 +707,7 @@ The events and parameters match Android, so both platforms report into the same 
 | `onboarding_complete` | `has_dog` (`yes`, `no`), `notifications` and `location` (`granted`, `denied`, `skipped`) | The last onboarding step (location) finished or was skipped. `granted` is allowed at the end, `denied` was asked and refused, `skipped` was never asked ("Not now", or a town or city typed instead) |
 | `permission_changed` | `permission` (`notifications`, `location`, `location_always`), `result` (`granted`, `denied`), `from` (`settings`, `add_my_location`, `follow_my_location`) | After onboarding, the app asked for a permission and got an answer. Not sent when nothing was asked. On iOS, "Keep Only While Using" on the "Always" prompt may not be reported |
 | `notification_opened` | `kind` (`briefing`, `walk`, `rain`) | The app was opened by tapping one of its notifications |
+| `review_prompt_requested` | `moment` (`great_walk`, `pleasant_weather`), `request_number` (1, 2, 3...) | The app asked iOS for the ratings prompt. iOS doesn't say whether it showed or what was given, so the stores' own ratings show the result |
 | `city_added` | `source` (`suggestion`, `typed_match`, `typed_name`, `my_location`), `provider` (`open_meteo`, `openweather`) | A new location was saved (re-adding an existing one doesn't count): how, and which search found it (for a typed name or My Location, the one search would use). Never which place |
 | `settings_opened` | None | Settings opened from the gear |
 | `weather_error` | `error_key` (e.g. `offline`, `city_not_found`), `provider` (`open_meteo`, `openweather`), `request` (`current`, `forecast`, `air_quality`) | A request to a weather service failed, in the foreground or background, even when a fallback or cached data covered it (an Open-Meteo reading failing before OpenWeather's is used counts). City search isn't included |
