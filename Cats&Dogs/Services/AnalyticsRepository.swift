@@ -146,6 +146,7 @@ final class AnalyticsRepository {
     nonisolated static let eventOnboardingStep = "onboarding_step"
     nonisolated static let eventPermissionChanged = "permission_changed"
     nonisolated static let eventNotificationOpened = "notification_opened"
+    nonisolated static let eventReviewPromptRequested = "review_prompt_requested"
 
     private let preferences: PreferencesStore
     private let isConfigured: () -> Bool
@@ -221,6 +222,15 @@ final class AnalyticsRepository {
     }
 
     func logSettingsOpened() { log(Self.eventSettingsOpened) }
+
+    /// The app asked iOS for the ratings prompt, at `moment`, for the `requestNumber`th time. iOS
+    /// doesn't say whether it showed or what was given.
+    func logReviewPromptRequested(_ moment: ReviewPromptMoment, requestNumber: Int) {
+        log(Self.eventReviewPromptRequested, parameters: [
+            "moment": moment.rawValue,
+            "request_number": requestNumber,
+        ])
+    }
 
     func logWeatherError(_ failure: WeatherRequestFailure) {
         log(Self.eventWeatherError, parameters: [

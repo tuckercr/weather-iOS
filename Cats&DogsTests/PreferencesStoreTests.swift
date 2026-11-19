@@ -120,4 +120,22 @@ final class PreferencesStoreTests: XCTestCase {
 
         XCTAssertEqual(store.cachedWeather(for: austin.cacheKey), weather)
     }
+
+    func testTheInstallDateIsSavedOnce() {
+        let preferences = IsolatedPreferences()
+        defer { preferences.destroy() }
+        let first = preferences.store.installedAt(fallback: Date(timeIntervalSince1970: 1_000))
+        let again = preferences.reopened().installedAt(fallback: Date(timeIntervalSince1970: 2_000))
+        XCTAssertEqual(first, again)
+    }
+
+    func testTheReviewPromptHistoryIsSaved() {
+        let preferences = IsolatedPreferences()
+        defer { preferences.destroy() }
+        XCTAssertEqual(preferences.store.reviewPromptHistory, ReviewPromptHistory())
+        let history = ReviewPromptHistory(activeDays: 4, lastActiveDay: Date(timeIntervalSince1970: 86_400), requests: 1,
+                                          lastRequestAt: Date(timeIntervalSince1970: 90_000), lastRequestVersion: "1.1")
+        preferences.store.setReviewPromptHistory(history)
+        XCTAssertEqual(preferences.reopened().reviewPromptHistory, history)
+    }
 }

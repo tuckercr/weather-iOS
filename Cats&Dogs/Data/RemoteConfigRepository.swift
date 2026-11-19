@@ -108,6 +108,18 @@ final class RemoteConfigRepository {
     /// Where the Update button goes. Empty hides the button, until the App Store record exists.
     nonisolated static let keyIosAppStoreURL = "ios_app_store_url"
 
+    /// The ratings prompt (`ReviewPromptPolicy`, RATINGS.md), with the same keys and defaults as
+    /// Android. Off for the first release.
+    nonisolated static let keyReviewPromptEnabled = "review_prompt_enabled"
+    nonisolated static let keyReviewPromptMinDaysInstalled = "review_prompt_min_days_installed"
+    nonisolated static let keyReviewPromptMinActiveDays = "review_prompt_min_active_days"
+    nonisolated static let keyReviewPromptMoments = "review_prompt_moments"
+    nonisolated static let keyReviewPromptDelaySeconds = "review_prompt_delay_seconds"
+    nonisolated static let keyReviewPromptOncePerVersion = "review_prompt_once_per_version"
+    nonisolated static let keyReviewPromptCooldownDays = "review_prompt_cooldown_days"
+    nonisolated static let keyReviewPromptMaxRequests = "review_prompt_max_requests"
+    nonisolated static let keyReviewPromptOnNotificationOpen = "review_prompt_on_notification_open"
+
     /// Posted on the main queue when newly fetched values have been activated.
     nonisolated static let didActivate = Notification.Name("RemoteConfigRepository.didActivate")
 
@@ -174,6 +186,15 @@ final class RemoteConfigRepository {
             Self.keyPetHotThresholdC: NSNumber(value: PetWeatherThresholds.standard.petHotC),
             Self.keyPetColdThresholdC: NSNumber(value: PetWeatherThresholds.standard.petColdC),
             Self.keyWalkBadAirBand: NSNumber(value: PetWeatherThresholds.standard.badAirBand),
+            Self.keyReviewPromptEnabled: NSNumber(value: ReviewPromptSettings.standard.enabled),
+            Self.keyReviewPromptMinDaysInstalled: NSNumber(value: ReviewPromptSettings.standard.minDaysInstalled),
+            Self.keyReviewPromptMinActiveDays: NSNumber(value: ReviewPromptSettings.standard.minActiveDays),
+            Self.keyReviewPromptMoments: ReviewPromptMoment.allCases.map(\.rawValue).joined(separator: ",") as NSString,
+            Self.keyReviewPromptDelaySeconds: NSNumber(value: ReviewPromptSettings.standard.delaySeconds),
+            Self.keyReviewPromptOncePerVersion: NSNumber(value: ReviewPromptSettings.standard.oncePerVersion),
+            Self.keyReviewPromptCooldownDays: NSNumber(value: ReviewPromptSettings.standard.cooldownDays),
+            Self.keyReviewPromptMaxRequests: NSNumber(value: ReviewPromptSettings.standard.maxRequests),
+            Self.keyReviewPromptOnNotificationOpen: NSNumber(value: ReviewPromptSettings.standard.onNotificationOpen),
         ])
         #if DEBUG
         // Debug builds share the release bundle ID, so they say what they are before the first
@@ -286,6 +307,25 @@ final class RemoteConfigRepository {
             nearestFirst: Self.flag(Self.keyCitySearchNearestFirst, fallback: CitySearchPolicy.standard.nearestFirst),
             sizeRatio: number(Self.keyCitySearchSizeRatio)?.doubleValue,
             delayMilliseconds: number(Self.keyCitySearchDelayMs)?.doubleValue
+        )
+    }
+
+    var reviewPromptSettings: ReviewPromptSettings {
+        let standard = ReviewPromptSettings.standard
+        // Read without `string(_:)`, which treats an empty value as unset: here empty never asks.
+        let moments = remoteConfig.flatMap { config in
+            config[Self.keyReviewPromptMoments].source == .static ? nil : config[Self.keyReviewPromptMoments].stringValue
+        }
+        return Self.reviewPromptSettings(
+            enabled: Self.flag(Self.keyReviewPromptEnabled, fallback: standard.enabled),
+            minDaysInstalled: number(Self.keyReviewPromptMinDaysInstalled)?.doubleValue,
+            minActiveDays: number(Self.keyReviewPromptMinActiveDays)?.doubleValue,
+            moments: moments,
+            delaySeconds: number(Self.keyReviewPromptDelaySeconds)?.doubleValue,
+            oncePerVersion: Self.flag(Self.keyReviewPromptOncePerVersion, fallback: standard.oncePerVersion),
+            cooldownDays: number(Self.keyReviewPromptCooldownDays)?.doubleValue,
+            maxRequests: number(Self.keyReviewPromptMaxRequests)?.doubleValue,
+            onNotificationOpen: Self.flag(Self.keyReviewPromptOnNotificationOpen, fallback: standard.onNotificationOpen)
         )
     }
 
@@ -434,6 +474,34 @@ final class RemoteConfigRepository {
             nearestFirst: nearestFirst,
             sizeRatio: ratio ?? standard.sizeRatio,
             delayMilliseconds: wholeNumber(delayMilliseconds, in: citySearchDelayRangeMs) ?? standard.delayMilliseconds
+        )
+    }
+
+    /// Each number is a whole number in its range, otherwise the default, so a bad console value
+    /// can't make the app ask sooner or more often than it should.
+    static func reviewPromptSettings(
+        enabled: Bool,
+        minDaysInstalled: Double?,
+        minActiveDays: Double?,
+        moments: String?,
+        delaySeconds: Double?,
+        oncePerVersion: Bool,
+        cooldownDays: Double?,
+        maxRequests: Double?,
+        onNotificationOpen: Bool
+    ) -> ReviewPromptSettings {
+        typealias Settings = ReviewPromptSettings
+        let standard = Settings.standard
+        return ReviewPromptSettings(
+            enabled: enabled,
+            minDaysInstalled: wholeNumber(minDaysInstalled, in: Settings.minDaysInstalledRange) ?? standard.minDaysInstalled,
+            minActiveDays: wholeNumber(minActiveDays, in: Settings.minActiveDaysRange) ?? standard.minActiveDays,
+            moments: Settings.moments(fromList: moments),
+            delaySeconds: wholeNumber(delaySeconds, in: Settings.delaySecondsRange) ?? standard.delaySeconds,
+            oncePerVersion: oncePerVersion,
+            cooldownDays: wholeNumber(cooldownDays, in: Settings.cooldownDaysRange) ?? standard.cooldownDays,
+            maxRequests: wholeNumber(maxRequests, in: Settings.maxRequestsRange) ?? standard.maxRequests,
+            onNotificationOpen: onNotificationOpen
         )
     }
 

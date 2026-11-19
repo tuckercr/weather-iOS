@@ -30,6 +30,8 @@ final class PreferencesStore {
     private let updateBannerDismissedKey = "update_banner_dismissed_at"
     private let followMyLocationKey = "follow_my_location"
     private let alwaysLocationAskedKey = "always_location_asked"
+    private let installedAtKey = "installed_at"
+    private let reviewPromptHistoryKey = "review_prompt_history"
 
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -175,6 +177,34 @@ final class PreferencesStore {
 
     func setUpdateBannerDismissedAt(_ date: Date) {
         defaults.set(date.timeIntervalSince1970, forKey: updateBannerDismissedKey)
+    }
+
+    /// When the app was installed, saved the first time it's asked for. Builds before it was saved
+    /// get the creation date of the app's Documents folder, which iOS makes at install, so people
+    /// updating aren't counted as new. `fallback` is for when even that can't be read.
+    func installedAt(fallback: Date = Date()) -> Date {
+        if let saved = defaults.object(forKey: installedAtKey) as? Double {
+            return Date(timeIntervalSince1970: saved)
+        }
+        let installed = Self.documentsCreationDate() ?? fallback
+        defaults.set(installed.timeIntervalSince1970, forKey: installedAtKey)
+        return installed
+    }
+
+    private static func documentsCreationDate() -> Date? {
+        guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
+        return (try? FileManager.default.attributesOfItem(atPath: documents.path))?[.creationDate] as? Date
+    }
+
+    /// The ratings prompt's counts (`ReviewPromptHistory`).
+    var reviewPromptHistory: ReviewPromptHistory {
+        guard let data = defaults.data(forKey: reviewPromptHistoryKey) else { return ReviewPromptHistory() }
+        return (try? decoder.decode(ReviewPromptHistory.self, from: data)) ?? ReviewPromptHistory()
+    }
+
+    func setReviewPromptHistory(_ history: ReviewPromptHistory) {
+        guard let data = try? encoder.encode(history) else { return }
+        defaults.set(data, forKey: reviewPromptHistoryKey)
     }
 
     func setHasSeenWelcome(_ value: Bool) {
