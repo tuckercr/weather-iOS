@@ -139,6 +139,8 @@ struct WeatherScreenState {
     /// Fog, mist or haze (`PetMood.isFoggy`): the scene draws it over `mood`, which still picks the
     /// pets' look.
     let foggy: Bool
+    /// Smoky air (`HeroSmoke`), drawn over `mood` in place of fog.
+    let smoke: HeroSmoke?
     /// Today's seasonal theme by the city's own date, so it ends by itself when its day does.
     let seasonalTheme: SeasonalTheme?
     /// Dark in the city by the clock: the hero's colours and the theme's extras take their night
@@ -229,6 +231,16 @@ struct WeatherScreenState {
             ? nil
             : WalkAdvisor.advice(for: weather, forecast: days, at: now, thresholds: config.thresholds, hasDog: hasDog)
         self.walkAdvice = walkAdvice
+        var smoke = HeroSmoke.from(walk: walkAdvice?.now, conditionMain: weather.conditionMain)
+        #if DEBUG
+        // Launch with -heroSmoke haze (or ash) to see the smoky hero whatever the air.
+        switch UserDefaults.standard.string(forKey: "heroSmoke") {
+        case "haze": smoke = .haze
+        case "ash": smoke = .ash
+        default: break
+        }
+        #endif
+        self.smoke = smoke
         showsWalkCard = walkAdvice?.showsCard(hasDog: hasDog, cardEnabled: config.walkCardEnabled) ?? false
         walkCard = showsWalkCard ? walkAdvice.map(WalkCardContent.init) : nil
         var calendar = Calendar(identifier: .gregorian)
