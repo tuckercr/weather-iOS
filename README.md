@@ -82,7 +82,13 @@ and scheme keep the original Cats&Dogs name on purpose. The bundle ID is `com.fa
      cloud, moon or frost, on a grey card by day, and the mood under it still dresses the pets and
      picks the caption. So cold fog keeps the scarves and the cold captions, a foggy night the night
      sky, and a grey day in fog gets fog captions ("Misty's kind of weather. Sunny's nose knows the
-     way."). Cold on its own shows frost sparkles rather than the snow's falling dots. Tap the card for today's
+     way."). Smoky air is drawn the same way, in place of fog (`HeroSmoke`): when smoke (fine
+     particles) makes the air bad enough for potty breaks only (`walk_bad_air_band`), brown haze
+     bands with the sun dulled to an orange disc behind them, on a toast-brown card by day; at the
+     worst band, where the walk card says to stay in, grey ash falls too, on a grey-brown card.
+     OpenWeather's own "Smoke" and "Ash" conditions count, for cities without air quality, and a
+     smoky night keeps the night sky with the moon behind the haze. Debug builds can show it with
+     the launch argument `-heroSmoke haze` (or `ash`). Cold on its own shows frost sparkles rather than the snow's falling dots. Tap the card for today's
      hourly detail. The art is drawn in code as a placeholder, isolated in `PetScene`.
      **Seasonal themes** dress the hero on their day, by the city's own date: Halloween (31 October:
      bats, Misty's witch hat, Sunny's bandana, a jack-o'-lantern) and Thanksgiving (the fourth
@@ -562,6 +568,7 @@ Shared with Android (the same cases on both platforms):
 - `PetMoodTests`, `WalkAdvisorTests` (both in `PetTests.swift`): mood mapping, night captions by the city's local hour, partly cloudy and fog captions, cold fog and a foggy night keeping their own, fog never a mood, and no nap caption before noon, walk ratings including walking hours, daylight, raining now and pavement heat, Remote Config thresholds, today vs tomorrow in the city's time zone, the 24-hour cap, dropping past hours
 - `WalkCheckTests`: the walk verdict's levels for wind (near gale to hurricane force), air (by `walk_bad_air_band`), pavement, heat, cold, storms, rain and the dark; the order of reasons; pollutant names; the walk card's captions and danger rating; hurricane and storm warnings about later; the hero's reason captions and leaving out walk captions; the Air Quality tile following the walk rules
 - `ReviewPromptTests`: the ratings prompt's rule (days installed by the calendar, never on install day, active days, moments, interruptions and notification visits, once per version, the cooldown and the limit), its Remote Config validation, which weather screens are a happy moment, and the view model's delay, day counting and visits
+- `HeroSmokeTests`: when the hero is smoky: haze for smoke at potty breaks only, ash at the worst band, not for a caveat, dust or ozone, smoke found behind a worse reason, and OpenWeather's Smoke and Ash
 - `ScrollEdgeFadeTests`: which edges of the hourly strip fade at the start, partway, at the end, bouncing past either end and when every hour fits
 - `MoonPhaseTests`: the phase from the date, checked against published phases
 - `WeatherIconViewTests`: icon for each condition by day and night, moon phases, southern-hemisphere mirroring, every asset present

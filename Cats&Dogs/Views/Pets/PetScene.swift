@@ -16,6 +16,8 @@ struct PetScene: View {
     var dark: Bool?
     /// Fog, mist or haze, drawn over the mood: see `PetMood.isFoggy`.
     var foggy = false
+    /// Smoky air, drawn over the mood in place of fog: see `HeroSmoke`.
+    var smoke: HeroSmoke?
     @Environment(\.southernHemisphere) private var southernHemisphere
     @Environment(\.screenNow) private var screenNow
 
@@ -34,7 +36,8 @@ struct PetScene: View {
                 knockedOverRouter: knockedOverRouter,
                 decorations: decorations,
                 dark: dark ?? (mood == .night),
-                foggy: foggy
+                foggy: foggy,
+                smoke: smoke
             )
         }
         .aspectRatio(Self.sceneWidth / Self.sceneHeight, contentMode: .fit)
@@ -55,12 +58,16 @@ extension PetScene {
         knockedOverRouter: Bool = false,
         decorations: Set<SceneDecoration> = [],
         dark: Bool? = nil,
-        foggy: Bool = false
+        foggy: Bool = false,
+        smoke: HeroSmoke? = nil
     ) {
         let dark = dark ?? (mood == .night)
         let painter = Painter(context: context, scale: scale)
-        // Fog takes the sky's place: no sun, cloud, moon or frost shows through it.
-        if foggy {
+        // Smoke takes the sky's place, a dim sun (or moon) behind brown haze; fog does the same,
+        // with nothing showing through it.
+        if let smoke {
+            painter.smokeBehind(smoke, moonPhase: moonPhase, southernHemisphere: southernHemisphere, dark: dark, nightCard: mood == .night)
+        } else if foggy {
             painter.fog(Painter.fogBehind, dark: dark)
         } else {
             painter.sky(mood, moonPhase: moonPhase, southernHemisphere: southernHemisphere, dark: dark)
@@ -79,7 +86,11 @@ extension PetScene {
         pets.dress(PetOutfit.accessories(mood: mood, decorations: decorations, dark: dark), catDrop: mood == .storm ? 14 : 0)
         pets.groundDecorations(decorations, dark: dark)
         // And some in front, so the pets are half lost in it.
-        if foggy { painter.fog(Painter.fogInFront, dark: dark) }
+        if let smoke {
+            painter.smokeInFront(smoke, nightCard: mood == .night)
+        } else if foggy {
+            painter.fog(Painter.fogInFront, dark: dark)
+        }
         if knockedOverRouter {
             // Tipped back on the ground to Misty's right, antennas splayed.
             let pivot = CGPoint(x: 216 * scale, y: 128 * scale)
@@ -167,6 +178,12 @@ private enum Palette {
     static let pieCrust = Color(hex: 0xE8A23A)
     static let pieTop = Color(hex: 0xD2862A)
     static let steam = Color.white.opacity(0.75)
+    /// Smoke: a brown haze, the sun dulled to orange through it, and grey ash.
+    static let smoke = Color(hex: 0xF4EADB)
+    static let smokeNight = Color(hex: 0x8A7A66)
+    static let smokeSun = Color(hex: 0xF0A868)
+    static let ash = Color(hex: 0x888780)
+    static let ashDark = Color(hex: 0x5F5E5A)
     static let leafVein = Color(hex: 0xFFF2E2).opacity(0.55)
 }
 
@@ -272,6 +289,49 @@ private struct Painter {
         let fog = Palette.cloud.opacity(dark ? 0.3 : 0.55)
         for band in bands {
             roundedRect(fog, x: band.x, y: band.y, width: band.width, height: band.height, radius: band.height / 2)
+        }
+    }
+
+    /// Smoke behind the pets: the sun dulled to an orange disc by day, the moon on the night card,
+    /// haze bands, and for ash the first of the falling flakes. `nightCard` is the night mood's dark card, which
+    /// takes darker haze and pale ash; every other card stays light, even after dark.
+    func smokeBehind(_ smoke: HeroSmoke, moonPhase: MoonPhase, southernHemisphere: Bool, dark: Bool, nightCard: Bool) {
+        // After dark on a light card (rain at night, say) neither shows, as in fog: the moon's
+        // unlit side is drawn for the night sky.
+        if nightCard {
+            moon(moonPhase, southernHemisphere: southernHemisphere, cx: 215, cy: 30, r: 16)
+        } else if !dark {
+            circle(Palette.smokeSun.opacity(0.8), cx: 220, cy: 32, r: 18)
+        }
+        let haze = nightCard ? Palette.smokeNight.opacity(0.45) : Palette.smoke.opacity(0.8)
+        for band in Self.fogBehind {
+            roundedRect(haze, x: band.x, y: band.y, width: band.width, height: band.height, radius: band.height / 2)
+        }
+        if smoke == .ash { ash(Self.ashBehind, nightCard: nightCard) }
+    }
+
+    /// Smoke in front of the pets, so they're half lost in it, and for ash more flakes, some on the
+    /// ground.
+    func smokeInFront(_ smoke: HeroSmoke, nightCard: Bool) {
+        let haze = nightCard ? Palette.smokeNight.opacity(0.4) : Palette.smoke.opacity(0.65)
+        for band in Self.fogInFront {
+            roundedRect(haze, x: band.x, y: band.y, width: band.width, height: band.height, radius: band.height / 2)
+        }
+        if smoke == .ash { ash(Self.ashInFront, nightCard: nightCard) }
+    }
+
+    /// Flakes of ash: x, y and radius in scene units. A few are darker scraps.
+    static let ashBehind: [(CGFloat, CGFloat, CGFloat)] = [
+        (24, 16, 2), (64, 34, 1.6), (112, 12, 2.2), (150, 50, 1.6), (246, 66, 2), (16, 70, 1.6), (186, 18, 1.8),
+    ]
+    static let ashInFront: [(CGFloat, CGFloat, CGFloat)] = [
+        (50, 98, 2), (228, 104, 1.8), (36, 128, 1.6), (238, 130, 1.6), (88, 142, 1.8), (176, 140, 1.6),
+    ]
+
+    func ash(_ flakes: [(CGFloat, CGFloat, CGFloat)], nightCard: Bool) {
+        for (index, flake) in flakes.enumerated() {
+            let color = nightCard ? Palette.catBelly.opacity(0.55) : (index % 3 == 0 ? Palette.ashDark : Palette.ash)
+            circle(color, cx: flake.0, cy: flake.1, r: flake.2)
         }
     }
 
